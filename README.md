@@ -269,6 +269,7 @@ DIRECT_URL="postgresql://user:pass@ep-xxx.neon.tech/emplobo?sslmode=require"
 DATABASE_URL="..."   # pooled, sama seperti packages/db
 DIRECT_URL="..."
 CLERK_SECRET_KEY="sk_test_xxx"
+CLERK_PUBLISHABLE_KEY="pk_test_xxx"
 CLERK_WEBHOOK_SECRET="whsec_xxx"
 WEB_APP_ORIGIN="http://localhost:3000"
 PORT="4000"
@@ -409,27 +410,26 @@ const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roles`, {
 ### Running Tests
 
 ```bash
-# Unit tests
-npm run test
+# Type-check API
+pnpm --filter @emplobo/api lint
 
-# Integration tests
-npm run test:integration
+# Lint web
+pnpm --filter @emplobo/web lint
 
-# E2E tests
-npm run test:e2e
+# Production build web
+pnpm --filter @emplobo/web build
 
-# Test coverage
-npm run test:coverage
+# Runtime smoke checks
+curl http://localhost:4000/health
+curl http://localhost:4000/api/me                # expected 401 without token
+curl http://localhost:3000/favicon.ico           # expected 200
+curl http://localhost:3000/nonexistent           # expected 404
 ```
 
 ### Test Coverage
 
-```
-Statements   : XX%
-Branches     : XX%
-Functions    : XX%
-Lines        : XX%
-```
+Belum ada suite unit/integration/e2e terpisah pada tahap ini. Validasi saat ini
+berbasis lint/typecheck/build + smoke test endpoint/routing sesuai Section 0–3.
 
 ---
 

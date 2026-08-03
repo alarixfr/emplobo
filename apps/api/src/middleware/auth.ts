@@ -30,7 +30,10 @@ function toFetchRequest(req: Request, webOrigin: string): globalThis.Request {
 }
 
 export function createAuthMiddleware(env: Env) {
-  const clerk = createClerkClient({ secretKey: env.CLERK_SECRET_KEY });
+  const clerk = createClerkClient({
+    secretKey: env.CLERK_SECRET_KEY,
+    publishableKey: env.CLERK_PUBLISHABLE_KEY,
+  });
 
   async function resolveAuth(req: Request): Promise<AuthContext | null> {
     // Prefer Authorization bearer (apps/web will attach the session token).
@@ -50,6 +53,7 @@ export function createAuthMiddleware(env: Env) {
     const fetchReq = toFetchRequest(req, env.WEB_APP_ORIGIN);
     const state = await clerk.authenticateRequest(fetchReq, {
       secretKey: env.CLERK_SECRET_KEY,
+      publishableKey: env.CLERK_PUBLISHABLE_KEY,
       authorizedParties,
       acceptsToken: "session_token",
     });

@@ -8,6 +8,9 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   DIRECT_URL: z.string().min(1).optional(),
   CLERK_SECRET_KEY: z.string().min(1),
+  // @clerk/backend's authenticateRequest parses the Clerk instance id from
+  // the publishable key — it throws "Publishable key is missing" without it.
+  CLERK_PUBLISHABLE_KEY: z.string().min(1),
   CLERK_WEBHOOK_SECRET: z.string().min(1),
   WEB_APP_ORIGIN: z.string().url(),
   ANTHROPIC_API_KEY: z.string().optional(),
@@ -25,6 +28,7 @@ export function loadEnv(): Env {
     DATABASE_URL: process.env.DATABASE_URL,
     DIRECT_URL: process.env.DIRECT_URL,
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,
+    CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
     CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
     WEB_APP_ORIGIN: process.env.WEB_APP_ORIGIN,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,

@@ -148,7 +148,10 @@ async function updateUserProfile(user: ClerkUserPayload): Promise<void> {
 
 export function createClerkWebhookRouter(env: Env) {
   const router = Router();
-  const clerk = createClerkClient({ secretKey: env.CLERK_SECRET_KEY });
+  const clerk = createClerkClient({
+    secretKey: env.CLERK_SECRET_KEY,
+    publishableKey: env.CLERK_PUBLISHABLE_KEY,
+  });
 
   // Mounted at /webhooks/clerk with express.raw — path here is "/".
   router.post("/", async (req: Request, res: Response) => {
