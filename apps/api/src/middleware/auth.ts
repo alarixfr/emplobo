@@ -40,10 +40,17 @@ export function createAuthMiddleware(env: Env) {
       return null;
     }
 
+    const authorizedParties = Array.from(
+      new Set([
+        env.WEB_APP_ORIGIN,
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+      ]),
+    );
     const fetchReq = toFetchRequest(req, env.WEB_APP_ORIGIN);
     const state = await clerk.authenticateRequest(fetchReq, {
       secretKey: env.CLERK_SECRET_KEY,
-      authorizedParties: [env.WEB_APP_ORIGIN],
+      authorizedParties,
       acceptsToken: "session_token",
     });
 

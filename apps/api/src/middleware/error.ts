@@ -14,5 +14,9 @@ export function errorHandler(
   if (res.headersSent) {
     return;
   }
-  res.status(500).json({ error: "internal server error" });
+  const message =
+    process.env.NODE_ENV === "development" && err instanceof Error
+      ? err.message
+      : "internal server error";
+  res.status(500).json({ error: message });
 }
