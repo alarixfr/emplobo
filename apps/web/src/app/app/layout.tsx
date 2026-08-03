@@ -53,9 +53,12 @@ export default async function AppLayout({
               <p className="mt-4 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Segera
               </p>
-              <span className="rounded-md px-3 py-2 text-muted-foreground">
+              <Link
+                href="/app/training"
+                className="rounded-md px-3 py-2 font-medium text-foreground transition hover:bg-muted"
+              >
                 Training Room
-              </span>
+              </Link>
             </>
           ) : null}
         </nav>
@@ -70,12 +73,20 @@ export default async function AppLayout({
           </div>
           <div className="ml-auto flex items-center gap-3">
             {isAdmin ? (
-              <Link
-                href="/app/roles"
-                className="text-sm font-medium text-foreground md:hidden"
-              >
-                Roles
-              </Link>
+              <div className="flex items-center gap-3 md:hidden">
+                <Link
+                  href="/app/roles"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Roles
+                </Link>
+                <Link
+                  href="/app/training"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Training
+                </Link>
+              </div>
             ) : null}
             <OrganizationSwitcher
               hidePersonal

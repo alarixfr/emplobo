@@ -88,7 +88,7 @@ export function createApp(env: Env): Express {
   });
 
   // Section 3 — Admin Role CRUD
-  app.use("/api/roles", createRolesRouter(requireAdmin));
+  app.use("/api/roles", createRolesRouter(requireAdmin, env));
 
   app.use(notFound);
   app.use(errorHandler);

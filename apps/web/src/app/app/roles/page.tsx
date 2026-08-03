@@ -82,6 +82,14 @@ export default async function RolesPage() {
                     <p className="mt-0.5">{role.completenessScore}% lengkap</p>
                   </div>
                 </Link>
+                <div className="px-4 pb-3">
+                  <Link
+                    href={`/app/training/${role.id}`}
+                    className="inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-muted"
+                  >
+                    Train
+                  </Link>
+                </div>
               </li>
             ))}
           </ul>

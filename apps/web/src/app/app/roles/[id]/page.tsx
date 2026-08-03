@@ -52,6 +52,20 @@ export default async function RoleDetailPage({ params }: PageProps) {
         ) : null}
       </div>
 
+      <div className="rounded-xl border border-border bg-card p-4">
+        <p className="text-sm text-muted-foreground">
+          Training dipindahkan ke halaman terpusat dengan tampilan chat AI.
+        </p>
+        <div className="mt-3">
+          <Link
+            href={`/app/training/${role.id}`}
+            className="inline-flex items-center justify-center rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90"
+          >
+            Train role ini
+          </Link>
+        </div>
+      </div>
+
       <dl className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-border bg-card p-4">
           <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -82,8 +96,9 @@ export default async function RoleDetailPage({ params }: PageProps) {
       <div className="rounded-lg border border-dashed border-border bg-brand-muted/40 p-4 text-sm text-foreground">
         <p className="font-medium">Training Room — Section 4</p>
         <p className="mt-1 text-muted-foreground">
-          Setelah Role dibuat (status DRAFT), admin melatih AI di Training Room.
-          Fitur itu dibangun di langkah berikutnya.
+          Setelah Role dibuat (status DRAFT), admin melatih AI di halaman
+          Training Room terpusat sampai completeness naik. Tiap 5 pesan admin,
+          AI akan mengevaluasi skor kelengkapan dan status bisa berubah ke READY.
         </p>
       </div>
     </div>

@@ -351,7 +351,7 @@ pnpm lint
 
 1. **Dashboard**: `/app` menampilkan org aktif dan peran `ADMIN`.
 2. **Roles**: buka `/app/roles` → buat role (nama + deskripsi opsional) → lihat detail di `/app/roles/[id]`.
-3. **Training Room**: Section 4 (belum di-wire) — setelah Role ada, admin melatih AI di sini.
+3. **Training Room**: Buka detail role di `/app/roles/[id]`, sistem akan mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin.
 
 #### Untuk Karyawan (`org:member`)
 
@@ -385,7 +385,7 @@ GET  /api/roles              # list active roles in org
 GET  /api/roles/:id          # single role (404 if wrong org / missing)
 ```
 
-Training, guides, assignments, employee modules, chat: Section 4+.
+Training Room lock/heartbeat/messages sudah tersedia di Section 4 (awal). Guide generation, assignments, employee modules, dan chat tutor tetap di Section berikutnya.
 
 ### Example Request
 
