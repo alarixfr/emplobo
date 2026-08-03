@@ -29,6 +29,70 @@ function toFetchRequest(req: Request, webOrigin: string): globalThis.Request {
   });
 }
 
+function isLocalDevOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin);
+    return url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function buildAuthorizedParties(req: Request, env: Env): string[] {
+  const parties = new Set<string>([
+    env.WEB_APP_ORIGIN,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+  ]);
+
+  if (env.NODE_ENV !== "production") {
+    // Server-side requests from Next.js (RSC) often have no Origin/Referer.
+    // Include a bounded local dev port range so tokens minted on fallback ports
+    // (3001, 3002, 3003, …) are still accepted in development.
+    for (let port = 3000; port <= 3010; port += 1) {
+      parties.add(`http://localhost:${port}`);
+      parties.add(`http://127.0.0.1:${port}`);
+    }
+
+    const requestOrigin = req.headers.origin;
+    if (typeof requestOrigin === "string" && isLocalDevOrigin(requestOrigin)) {
+      parties.add(requestOrigin);
+    }
+
+    const referer = req.headers.referer;
+    if (typeof referer === "string") {
+      try {
+        const refererOrigin = new URL(referer).origin;
+        if (isLocalDevOrigin(refererOrigin)) {
+          parties.add(refererOrigin);
+        }
+      } catch {
+        // Ignore malformed referer.
+      }
+    }
+  }
+
+  return Array.from(parties);
+}
+
+function extractAuthContext(value: unknown): AuthContext | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const obj = value as Record<string, unknown>;
+  const userId = obj.userId;
+  if (typeof userId !== "string" || userId.length === 0) {
+    return null;
+  }
+
+  return {
+    userId,
+    orgId: typeof obj.orgId === "string" ? obj.orgId : "",
+    orgRole: typeof obj.orgRole === "string" ? obj.orgRole : "",
+  };
+}
+
 export function createAuthMiddleware(env: Env) {
   const clerk = createClerkClient({
     secretKey: env.CLERK_SECRET_KEY,
@@ -43,35 +107,23 @@ export function createAuthMiddleware(env: Env) {
       return null;
     }
 
-    const authorizedParties = Array.from(
-      new Set([
-        env.WEB_APP_ORIGIN,
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-      ]),
-    );
+    const authorizedParties = buildAuthorizedParties(req, env);
     const fetchReq = toFetchRequest(req, env.WEB_APP_ORIGIN);
     const state = await clerk.authenticateRequest(fetchReq, {
       secretKey: env.CLERK_SECRET_KEY,
       publishableKey: env.CLERK_PUBLISHABLE_KEY,
       authorizedParties,
-      acceptsToken: "session_token",
+      // `auth().getToken()` from Next.js/Clerk can yield different verified
+      // token types depending on runtime/config. Accept any Clerk token here,
+      // then enforce org + role at app level below.
+      acceptsToken: "any",
     });
 
     if (!state.isSignedIn) {
       return null;
     }
 
-    const auth = state.toAuth();
-    if (!auth.userId) {
-      return null;
-    }
-
-    return {
-      userId: auth.userId,
-      orgId: auth.orgId ?? "",
-      orgRole: auth.orgRole ?? "",
-    };
+    return extractAuthContext(state.toAuth());
   }
 
   async function requireAuth(

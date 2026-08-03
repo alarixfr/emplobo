@@ -1,5 +1,25 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV !== "production";
+
+const connectSrc = [
+  "'self'",
+  "http://localhost:4000",
+  "https://*.clerk.accounts.dev",
+  "https://*.clerk.com",
+  "https://api.clerk.com",
+  "https://clerk-telemetry.com",
+  ...(isDev
+    ? [
+        // Next.js dev HMR / overlay channels
+        "http://localhost:*",
+        "http://127.0.0.1:*",
+        "ws://localhost:*",
+        "ws://127.0.0.1:*",
+      ]
+    : []),
+];
+
 const securityHeaders = [
   {
     key: "X-Frame-Options",
@@ -25,7 +45,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://*.clerk.com https://img.clerk.com",
       "font-src 'self' data:",
-      "connect-src 'self' http://localhost:4000 https://*.clerk.accounts.dev https://*.clerk.com https://api.clerk.com https://clerk-telemetry.com",
+      `connect-src ${connectSrc.join(" ")}`,
       "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com",
       "worker-src 'self' blob:",
       "form-action 'self'",

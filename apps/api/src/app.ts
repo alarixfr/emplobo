@@ -9,6 +9,15 @@ import { healthRouter } from "./routes/health.js";
 import { createRolesRouter } from "./routes/roles.js";
 import { createClerkWebhookRouter } from "./routes/webhooks/clerk.js";
 
+function isLocalDevOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin);
+    return url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 export function createApp(env: Env): Express {
   const app = express();
   const { requireAuth, requireAdmin } = createAuthMiddleware(env);
@@ -30,7 +39,25 @@ export function createApp(env: Env): Express {
 
   app.use(
     cors({
-      origin: env.WEB_APP_ORIGIN,
+      origin(origin, callback) {
+        // Non-browser / same-origin requests may omit Origin.
+        if (!origin) {
+          callback(null, true);
+          return;
+        }
+
+        if (origin === env.WEB_APP_ORIGIN) {
+          callback(null, true);
+          return;
+        }
+
+        if (env.NODE_ENV !== "production" && isLocalDevOrigin(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error("CORS origin not allowed"));
+      },
       credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],
