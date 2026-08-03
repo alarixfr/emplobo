@@ -1,0 +1,18 @@
+{
+  "name": "emplobo",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter @emplobo/web --filter @emplobo/api run dev",
+    "dev:web": "pnpm --filter @emplobo/web dev",
+    "dev:api": "pnpm --filter @emplobo/api dev",
+    "build": "pnpm -r run build",
+    "db:generate": "pnpm --filter @emplobo/db generate",
+    "db:migrate": "pnpm --filter @emplobo/db migrate",
+    "db:migrate:deploy": "pnpm --filter @emplobo/db migrate:deploy",
+    "lint": "pnpm -r run lint"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

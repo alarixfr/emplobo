@@ -1,0 +1,231 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum AppRole {
+  ADMIN
+  EMPLOYEE
+}
+
+enum RoleStatus {
+  DRAFT
+  READY
+  PUBLISHED
+}
+
+// Local mirror of Clerk users — synced via Clerk webhook, not app routes.
+model User {
+  id        String   @id // Clerk user.id
+  orgId     String // Clerk org.id at time of last sync
+  email     String   @db.VarChar(320)
+  name      String   @db.VarChar(200)
+  role      AppRole // mirrors Clerk org role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  employeeModules EmployeeModule[]
+  chapterProgress ChapterProgress[]
+  chatSessions    ChatSession[]
+  quizAttempts    QuizAttempt[]
+
+  @@index([orgId, role])
+}
+
+// ── TRAINING ──────────────────────────────────────────────────────────────
+
+model TrainingRole {
+  id                    String     @id @default(cuid())
+  orgId                 String
+  name                  String     @db.VarChar(100)
+  description           String?    @db.VarChar(500)
+  status                RoleStatus @default(DRAFT)
+  isActive              Boolean    @default(true)
+  completenessScore     Int        @default(0)
+  trainingMessageCount  Int        @default(0)
+  activeTrainerId       String?
+  activeTrainerAt       DateTime?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  trainingMessages TrainingMessage[]
+  guide            Guide?
+  employeeModules  EmployeeModule[]
+
+  @@index([orgId])
+  @@index([orgId, status])
+  @@index([activeTrainerId])
+}
+
+model TrainingMessage {
+  id        String   @id @default(cuid())
+  roleId    String
+  orgId     String
+  sender    String   @db.VarChar(10) // "admin" | "ai"
+  content   String   @db.Text
+  tokenEst  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  trainingRole TrainingRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@index([roleId, createdAt])
+  @@index([orgId])
+}
+
+// ── GUIDES ────────────────────────────────────────────────────────────────
+
+model Guide {
+  id          String    @id @default(cuid())
+  orgId       String
+  roleId      String    @unique
+  title       String    @db.VarChar(200)
+  version     Int       @default(1)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  role     TrainingRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  chapters Chapter[]
+
+  @@index([orgId])
+}
+
+model Chapter {
+  id      String @id @default(cuid())
+  guideId String
+  orgId   String
+  order   Int
+  title   String @db.VarChar(200)
+  content String @db.Text
+
+  guide    Guide             @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  quiz     Quiz?
+  progress ChapterProgress[]
+
+  @@index([guideId, order])
+  @@index([orgId])
+}
+
+// ── QUIZ ──────────────────────────────────────────────────────────────────
+
+model Quiz {
+  id        String @id @default(cuid())
+  chapterId String @unique
+  orgId     String
+
+  chapter   Chapter        @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+
+  @@index([orgId])
+}
+
+model QuizQuestion {
+  id           String @id @default(cuid())
+  quizId       String
+  orgId        String
+  question     String @db.Text
+  options      Json // string[4]
+  correctIndex Int // NEVER send to client before submission
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+}
+
+model QuizAttempt {
+  id        String   @id @default(cuid())
+  quizId    String
+  userId    String
+  orgId     String
+  score     Int
+  answers   Json
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([quizId, userId])
+  @@index([orgId])
+}
+
+// ── EMPLOYEE ASSIGNMENT & PROGRESS ─────────────────────────────────────────
+
+model EmployeeModule {
+  id         String   @id @default(cuid())
+  orgId      String
+  userId     String
+  roleId     String
+  assignedAt DateTime @default(now())
+  assignedBy String
+
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role TrainingRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([orgId])
+  @@index([userId])
+}
+
+model ChapterProgress {
+  id          String    @id @default(cuid())
+  orgId       String
+  userId      String
+  chapterId   String
+  completedAt DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapterId])
+  @@index([orgId])
+}
+
+// ── EMPLOYEE AI CHAT TUTOR ──────────────────────────────────────────────────
+
+model ChatSession {
+  id        String   @id @default(cuid())
+  orgId     String
+  userId    String
+  roleId    String
+  title     String   @db.VarChar(200)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@index([orgId])
+  @@index([userId, updatedAt])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  sessionId String
+  orgId     String
+  sender    String   @db.VarChar(10) // "user" | "ai"
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+}
+
+// ── AI USAGE AUDIT ──────────────────────────────────────────────────────────
+
+model AiUsageLog {
+  id        String   @id @default(cuid())
+  orgId     String
+  userId    String
+  kind      String   @db.VarChar(20) // "training" | "chat" | "guide_gen"
+  tokensIn  Int
+  tokensOut Int
+  createdAt DateTime @default(now())
+
+  @@index([orgId, createdAt])
+  @@index([userId, createdAt])
+}
