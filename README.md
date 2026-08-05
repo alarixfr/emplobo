@@ -390,9 +390,13 @@ PATCH  /api/roles/:id/training/heartbeat  # refresh lock heartbeat (every 60s)
 DELETE /api/roles/:id/training/lock       # explicit lock release on room close/unload
 GET    /api/roles/:id/training/messages   # load transcript + role status
 POST   /api/roles/:id/training/messages   # send admin message, get AI reply, score every 5 admin msgs
+
+# Section 5 — Guide Generation (requireAdmin; role must be READY/PUBLISHED)
+GET    /api/roles/:id/guide               # fetch generated guide + chapters + quiz questions (without answer key leak)
+POST   /api/roles/:id/guide/generate      # generate/regenerate guide from full transcript (transactional write)
 ```
 
-Training Room lock/heartbeat/messages sudah tersedia di Section 4, termasuk observer mode saat lock dipakai admin lain, server cooldown 2 detik, dan rate limit per user. Guide generation, assignments, employee modules, dan chat tutor tetap di Section berikutnya.
+Training Room lock/heartbeat/messages sudah tersedia di Section 4, termasuk observer mode saat lock dipakai admin lain, server cooldown 2 detik, dan rate limit per user. Step 5 (Guide Generation) sudah aktif dengan validasi JSON ketat, retry sekali untuk output model invalid, rate limit, cooldown, dan penulisan DB atomik via transaction.
 
 ### Example Request
 

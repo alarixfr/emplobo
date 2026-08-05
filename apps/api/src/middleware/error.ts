@@ -22,6 +22,10 @@ export function errorHandler(
   }
 
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    if (err.code === "P2024") {
+      res.status(503).json({ error: "database connection pool exhausted" });
+      return;
+    }
     res.status(400).json({ error: "database request failed" });
     return;
   }

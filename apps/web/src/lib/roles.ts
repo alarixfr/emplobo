@@ -17,6 +17,32 @@ export type TrainingRoleDetail = TrainingRoleSummary & {
   activeTrainerAt: string | null;
 };
 
+export type GuideQuestion = {
+  id: string;
+  question: string;
+  options: [string, string, string, string];
+};
+
+export type GuideChapter = {
+  id: string;
+  order: number;
+  title: string;
+  content: string;
+  quiz: {
+    id: string;
+    questions: GuideQuestion[];
+  } | null;
+};
+
+export type RoleGuide = {
+  id: string;
+  title: string;
+  version: number;
+  publishedAt: string | null;
+  updatedAt: string;
+  chapters: GuideChapter[];
+};
+
 export const STATUS_LABEL: Record<RoleStatus, string> = {
   DRAFT: "Draft",
   READY: "Siap",

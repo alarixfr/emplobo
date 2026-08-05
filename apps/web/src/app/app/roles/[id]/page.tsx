@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
+import { GuideGeneratorPanel } from "@/components/roles/guide-generator-panel";
 import { ApiError, apiFetch } from "@/lib/api";
-import { STATUS_LABEL, type TrainingRoleDetail } from "@/lib/roles";
+import { STATUS_LABEL, type RoleGuide, type TrainingRoleDetail } from "@/lib/roles";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -22,6 +23,7 @@ export default async function RoleDetailPage({ params }: PageProps) {
   }
 
   let role: TrainingRoleDetail;
+  let guide: RoleGuide | null = null;
   try {
     const data = await apiFetch<{ role: TrainingRoleDetail }>(
       `/api/roles/${id}`,
@@ -33,6 +35,19 @@ export default async function RoleDetailPage({ params }: PageProps) {
       notFound();
     }
     throw err;
+  }
+
+  try {
+    const guideData = await apiFetch<{ guide: RoleGuide }>(`/api/roles/${id}/guide`, {
+      token,
+    });
+    guide = guideData.guide;
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) {
+      guide = null;
+    } else {
+      throw err;
+    }
   }
 
   return (
@@ -65,6 +80,13 @@ export default async function RoleDetailPage({ params }: PageProps) {
           </Link>
         </div>
       </div>
+
+      <GuideGeneratorPanel
+        roleId={role.id}
+        roleName={role.name}
+        roleStatus={role.status}
+        initialGuide={guide}
+      />
 
       <dl className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-border bg-card p-4">
