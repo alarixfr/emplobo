@@ -27,19 +27,47 @@ const STATUS_LABEL: Record<RoleStatus, string> = {
 };
 
 export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
+  const [rolesState, setRolesState] = useState<TrainingRoleSummary[]>(roles);
+
+  useEffect(() => {
+    setRolesState(roles);
+  }, [roles]);
+
   const initialSelectedRoleId =
-    initialRoleId && roles.some((role) => role.id === initialRoleId)
+    initialRoleId && rolesState.some((role) => role.id === initialRoleId)
       ? initialRoleId
-      : roles[0]?.id;
+      : rolesState[0]?.id;
 
   const [selectedRoleId, setSelectedRoleId] = useState<string | undefined>(
     initialSelectedRoleId,
   );
 
   const selectedRole = useMemo(
-    () => roles.find((role) => role.id === selectedRoleId) ?? null,
-    [roles, selectedRoleId],
+    () => rolesState.find((role) => role.id === selectedRoleId) ?? null,
+    [rolesState, selectedRoleId],
   );
+
+  function handleRoleRuntimeUpdate(patch: {
+    roleId: string;
+    status: RoleStatus;
+    completenessScore: number;
+    trainingMessageCount?: number;
+  }) {
+    setRolesState((prev) =>
+      prev.map((role) => {
+        if (role.id !== patch.roleId) {
+          return role;
+        }
+        return {
+          ...role,
+          status: patch.status,
+          completenessScore: patch.completenessScore,
+          trainingMessageCount:
+            patch.trainingMessageCount ?? role.trainingMessageCount,
+        };
+      }),
+    );
+  }
 
   if (!selectedRole) {
     return (
@@ -64,7 +92,7 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
           onChange={(e) => setSelectedRoleId(e.target.value)}
           className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-ring focus:ring-2"
         >
-          {roles.map((role) => (
+          {rolesState.map((role) => (
             <option key={role.id} value={role.id}>
               {role.name} — {STATUS_LABEL[role.status]} ({role.completenessScore}%)
             </option>
@@ -72,16 +100,26 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
         </select>
       </div>
 
-      <RoleTrainingChat key={selectedRole.id} role={selectedRole} />
+      <RoleTrainingChat
+        key={selectedRole.id}
+        role={selectedRole}
+        onRoleRuntimeUpdate={handleRoleRuntimeUpdate}
+      />
     </section>
   );
 }
 
 type RoleTrainingChatProps = {
   role: TrainingRoleSummary;
+  onRoleRuntimeUpdate: (patch: {
+    roleId: string;
+    status: RoleStatus;
+    completenessScore: number;
+    trainingMessageCount?: number;
+  }) => void;
 };
 
-function RoleTrainingChat({ role }: RoleTrainingChatProps) {
+function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) {
   const { getToken } = useAuth();
   const [messages, setMessages] = useState<TrainingMessage[]>([]);
   const [input, setInput] = useState("");
@@ -99,6 +137,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
   const isMountedRef = useRef(true);
   const messagesViewportRef = useRef<HTMLDivElement | null>(null);
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
+  const forceScrollToBottomRef = useRef(false);
 
   const canSend = useMemo(
     () => isLocked && !isSending && !isLoading && input.trim().length > 0,
@@ -131,6 +170,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
           role: {
             status: RoleStatus;
             completenessScore: number;
+            trainingMessageCount: number;
           };
           messages: TrainingMessage[];
         }>(`/api/roles/${role.id}/training/messages`, { token }),
@@ -139,6 +179,13 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
       setStatus(data.role.status);
       setCompleteness(data.role.completenessScore);
       setMessages(data.messages);
+      forceScrollToBottomRef.current = true;
+      onRoleRuntimeUpdate({
+        roleId: role.id,
+        status: data.role.status,
+        completenessScore: data.role.completenessScore,
+        trainingMessageCount: data.role.trainingMessageCount,
+      });
     } catch (err) {
       if (err instanceof ApiError && err.status === 423) {
         setIsLocked(false);
@@ -217,6 +264,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
           role: {
             status: RoleStatus;
             completenessScore: number;
+            trainingMessageCount: number;
           };
           becameReady: boolean;
         }>(`/api/roles/${role.id}/training/messages`, {
@@ -230,6 +278,13 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
       setMessages((prev) => [...prev, data.adminMessage, data.aiMessage]);
       setStatus(data.role.status);
       setCompleteness(data.role.completenessScore);
+      forceScrollToBottomRef.current = true;
+      onRoleRuntimeUpdate({
+        roleId: role.id,
+        status: data.role.status,
+        completenessScore: data.role.completenessScore,
+        trainingMessageCount: data.role.trainingMessageCount,
+      });
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
         const retry =
@@ -280,8 +335,9 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
 
     const distanceFromBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
     const nearBottom = distanceFromBottom < 140;
-    if (nearBottom) {
+    if (nearBottom || forceScrollToBottomRef.current) {
       endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      forceScrollToBottomRef.current = false;
     }
   }, [messages]);
 
