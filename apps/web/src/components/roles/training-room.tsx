@@ -2,6 +2,9 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
 import type { RoleStatus, TrainingRoleSummary } from "@/lib/roles";
 
@@ -286,7 +289,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
   }, [role.id, isLocked]);
 
   function onTextareaKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canSend) {
+    if (e.key === "Enter" && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey && canSend) {
       e.preventDefault();
       void submitMessage();
     }
@@ -356,7 +359,18 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
                   <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide opacity-75">
                     {message.sender === "admin" ? "Anda" : "AI"}
                   </p>
-                  <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                  {message.sender === "ai" ? (
+                    <div className="prose prose-sm max-w-none whitespace-normal text-current prose-headings:mb-2 prose-headings:mt-3 prose-p:my-1 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-strong:text-current prose-code:text-current">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeSanitize]}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                  )}
                 </div>
               </div>
             ))}
@@ -389,7 +403,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
           ) : null}
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
-              {input.length}/4000 • Kirim cepat: Ctrl/Cmd + Enter
+              {input.length}/4000 • Enter: kirim • Shift+Enter: baris baru
             </p>
             <button
               type="button"
