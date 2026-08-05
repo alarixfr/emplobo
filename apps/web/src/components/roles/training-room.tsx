@@ -97,6 +97,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
   const pollRef = useRef<number | null>(null);
   const tokenRef = useRef<string | null>(null);
   const isMountedRef = useRef(true);
+  const messagesViewportRef = useRef<HTMLDivElement | null>(null);
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
 
   const canSend = useMemo(
@@ -274,7 +275,14 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
   }, [isLocked, role.id]);
 
   useEffect(() => {
-    endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    const viewport = messagesViewportRef.current;
+    if (!viewport) return;
+
+    const distanceFromBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+    const nearBottom = distanceFromBottom < 140;
+    if (nearBottom) {
+      endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -296,7 +304,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
   }
 
   return (
-    <section className="flex min-h-[68vh] flex-col rounded-2xl border border-border bg-card">
+    <section className="flex h-[68vh] min-h-[68vh] max-h-[68vh] flex-col overflow-hidden rounded-2xl border border-border bg-card">
       <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3 md:px-5">
         <div>
           <h2 className="font-display text-lg font-semibold text-foreground">
@@ -309,6 +317,13 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
         <div className="rounded-lg border border-border px-3 py-2 text-right text-xs">
           <p className="font-semibold text-foreground">{STATUS_LABEL[status]}</p>
           <p className="text-muted-foreground">{completeness}% lengkap</p>
+          <div className="mt-2 h-2 w-28 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-brand transition-all"
+              style={{ width: `${Math.max(0, Math.min(100, completeness))}%` }}
+              aria-hidden="true"
+            />
+          </div>
         </div>
       </div>
 
@@ -333,7 +348,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
         </div>
       ) : null}
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 md:px-5">
+      <div ref={messagesViewportRef} className="flex-1 overflow-y-auto px-4 py-4 md:px-5">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Memuat percakapan...</p>
         ) : messages.length === 0 ? (
@@ -379,7 +394,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
         )}
       </div>
 
-      <div className="border-t border-border bg-background/70 p-4 md:p-5">
+      <div className="shrink-0 border-t border-border bg-background/70 p-4 md:p-5">
         <div className="space-y-2">
           <textarea
             value={input}
