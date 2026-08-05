@@ -62,9 +62,17 @@ export default async function AppHomePage() {
           </Link>
         </div>
       ) : (
-        <div className="rounded-lg border border-dashed border-border bg-brand-muted/40 p-4 text-sm text-muted-foreground">
-          Belum ada modul yang di-assign. Minta admin organisasi Anda untuk
-          menetapkan role setelah guide dipublikasikan.
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="font-medium text-foreground">Pembelajaran Anda</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Buka modul yang sudah di-assign admin dan lanjutkan progress chapter.
+          </p>
+          <Link
+            href="/app/my/modules"
+            className="mt-3 inline-flex rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90"
+          >
+            Buka Modul Saya
+          </Link>
         </div>
       )}
     </div>

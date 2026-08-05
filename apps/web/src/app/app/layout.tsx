@@ -44,9 +44,12 @@ export default async function AppLayout({
               Roles
             </Link>
           ) : (
-            <span className="rounded-md px-3 py-2 text-muted-foreground">
+            <Link
+              href="/app/my/modules"
+              className="rounded-md px-3 py-2 font-medium text-foreground transition hover:bg-muted"
+            >
               Modul Saya
-            </span>
+            </Link>
           )}
           {isAdmin ? (
             <>
@@ -87,7 +90,16 @@ export default async function AppLayout({
                   Training
                 </Link>
               </div>
-            ) : null}
+            ) : (
+              <div className="flex items-center gap-3 md:hidden">
+                <Link
+                  href="/app/my/modules"
+                  className="text-sm font-medium text-foreground"
+                >
+                  Modul Saya
+                </Link>
+              </div>
+            )}
             <OrganizationSwitcher
               hidePersonal
               afterCreateOrganizationUrl="/app"

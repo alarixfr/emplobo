@@ -19,6 +19,12 @@ const trainingMessageBodySchema = z
   })
   .strict();
 
+const assignEmployeesSchema = z
+  .object({
+    userIds: z.array(z.string().min(1)).min(1).max(200),
+  })
+  .strict();
+
 type AuthMiddleware = (
   req: Request,
   res: Response,
@@ -1153,11 +1159,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
             guideId = createdGuide.id;
           }
 
-          for (let chapterIndex = 0; chapterIndex < parsedGuide.chapters.length; chapterIndex += 1) {
-            const chapter = parsedGuide.chapters[chapterIndex];
-            if (!chapter) {
-              continue;
-            }
+          for (const [chapterIndex, chapter] of parsedGuide.chapters.entries()) {
             const createdChapter = await tx.chapter.create({
               data: {
                 guideId,
@@ -1226,6 +1228,182 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           },
           guide: txResult.guide,
           version: txResult.version,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
+  // POST /api/roles/:id/assignments
+  router.get(
+    "/:id/assignable-users",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const auth = requireAuthContext(req);
+        const id = z.string().cuid().safeParse(req.params.id);
+        if (!id.success) {
+          res.status(400).json({ error: "invalid role id" });
+          return;
+        }
+
+        const role = await prisma.trainingRole.findFirst({
+          where: {
+            id: id.data,
+            orgId: auth.orgId,
+            isActive: true,
+          },
+          select: {
+            id: true,
+            status: true,
+          },
+        });
+
+        if (!role) {
+          res.status(404).json({ error: "role not found" });
+          return;
+        }
+
+        const users = await prisma.user.findMany({
+          where: {
+            orgId: auth.orgId,
+            role: "EMPLOYEE",
+          },
+          orderBy: { name: "asc" },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        });
+
+        const assigned = await prisma.employeeModule.findMany({
+          where: {
+            orgId: auth.orgId,
+            roleId: role.id,
+          },
+          select: {
+            userId: true,
+            assignedAt: true,
+          },
+        });
+
+        const assignedMap = new Map(assigned.map((a) => [a.userId, a.assignedAt.toISOString()]));
+
+        res.json({
+          role: {
+            id: role.id,
+            status: role.status,
+          },
+          users: users.map((u) => ({
+            ...u,
+            assignedAt: assignedMap.get(u.id) ?? null,
+            isAssigned: assignedMap.has(u.id),
+          })),
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
+  // POST /api/roles/:id/assignments
+  router.post(
+    "/:id/assignments",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const auth = requireAuthContext(req);
+        const id = z.string().cuid().safeParse(req.params.id);
+        if (!id.success) {
+          res.status(400).json({ error: "invalid role id" });
+          return;
+        }
+
+        const body = assignEmployeesSchema.safeParse(req.body);
+        if (!body.success) {
+          res.status(400).json({ error: "invalid body", details: body.error.flatten() });
+          return;
+        }
+
+        const role = await prisma.trainingRole.findFirst({
+          where: {
+            id: id.data,
+            orgId: auth.orgId,
+            isActive: true,
+          },
+          select: {
+            id: true,
+            status: true,
+          },
+        });
+
+        if (!role) {
+          res.status(404).json({ error: "role not found" });
+          return;
+        }
+
+        if (role.status !== "PUBLISHED") {
+          res.status(400).json({ error: "role is not published" });
+          return;
+        }
+
+        const uniqueUserIds = Array.from(new Set(body.data.userIds.map((v) => v.trim()).filter(Boolean)));
+        if (uniqueUserIds.length === 0) {
+          res.status(400).json({ error: "userIds must contain at least one valid id" });
+          return;
+        }
+
+        const members = await prisma.user.findMany({
+          where: {
+            orgId: auth.orgId,
+            id: { in: uniqueUserIds },
+            role: "EMPLOYEE",
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        });
+
+        const memberIds = new Set(members.map((m) => m.id));
+        const invalidUserIds = uniqueUserIds.filter((userId) => !memberIds.has(userId));
+
+        const created = await prisma.employeeModule.createMany({
+          data: members.map((member) => ({
+            orgId: auth.orgId,
+            userId: member.id,
+            roleId: role.id,
+            assignedBy: auth.userId,
+          })),
+          skipDuplicates: true,
+        });
+
+        const assignments = await prisma.employeeModule.findMany({
+          where: {
+            orgId: auth.orgId,
+            roleId: role.id,
+            userId: { in: members.map((m) => m.id) },
+          },
+          select: {
+            id: true,
+            userId: true,
+            assignedAt: true,
+          },
+        });
+
+        const assignedByUserId = new Set(assignments.map((a) => a.userId));
+        const skippedExisting = members
+          .filter((member) => assignedByUserId.has(member.id))
+          .length - created.count;
+
+        res.status(201).json({
+          roleId: role.id,
+          createdCount: created.count,
+          skippedExisting: Math.max(0, skippedExisting),
+          invalidUserIds,
+          assignedUsers: members,
         });
       } catch (err) {
         next(err);

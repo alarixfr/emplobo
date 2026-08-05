@@ -6,6 +6,7 @@ import type { Env } from "./env.js";
 import { createAuthMiddleware } from "./middleware/auth.js";
 import { errorHandler, notFound } from "./middleware/error.js";
 import { healthRouter } from "./routes/health.js";
+import { createMyRouter } from "./routes/my.js";
 import { createRolesRouter } from "./routes/roles.js";
 import { createClerkWebhookRouter } from "./routes/webhooks/clerk.js";
 
@@ -89,6 +90,9 @@ export function createApp(env: Env): Express {
 
   // Section 3 — Admin Role CRUD
   app.use("/api/roles", createRolesRouter(requireAdmin, env));
+
+  // Section 6 — Employee modules + chapters
+  app.use("/api/my", createMyRouter(requireAuth));
 
   app.use(notFound);
   app.use(errorHandler);

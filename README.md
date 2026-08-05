@@ -394,9 +394,16 @@ POST   /api/roles/:id/training/messages   # send admin message, get AI reply, sc
 # Section 5 — Guide Generation (requireAdmin; role must be READY/PUBLISHED)
 GET    /api/roles/:id/guide               # fetch generated guide + chapters + quiz questions (without answer key leak)
 POST   /api/roles/:id/guide/generate      # generate/regenerate guide from full transcript (transactional write)
+
+# Section 6 — Assignment & Employee Learning
+GET    /api/roles/:id/assignable-users    # admin list employee candidates + assigned state
+POST   /api/roles/:id/assignments         # admin assign published role to employee(s), idempotent
+GET    /api/my/modules                    # employee list of assigned modules
+GET    /api/my/modules/:roleId/chapters   # employee chapter reader payload + completion state
+POST   /api/my/chapters/:id/complete      # employee mark chapter complete (upsert)
 ```
 
-Training Room lock/heartbeat/messages sudah tersedia di Section 4, termasuk observer mode saat lock dipakai admin lain, server cooldown 2 detik, dan rate limit per user. Step 5 (Guide Generation) sudah aktif dengan validasi JSON ketat, retry sekali untuk output model invalid, rate limit, cooldown, dan penulisan DB atomik via transaction.
+Training Room lock/heartbeat/messages sudah tersedia di Section 4, termasuk observer mode saat lock dipakai admin lain, server cooldown 2 detik, dan rate limit per user. Step 5 (Guide Generation) sudah aktif dengan validasi JSON ketat, retry sekali untuk output model invalid, rate limit, cooldown, dan penulisan DB atomik via transaction. Step 6 juga aktif: admin bisa assign employee dari role detail page, employee bisa membuka modul sendiri, membaca chapter, dan menyimpan completion progress.
 
 ### Example Request
 
