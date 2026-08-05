@@ -28,9 +28,14 @@ export default async function RolesPage() {
   let loadError: string | null = null;
   try {
     roles = await fetchRoles(token);
-  } catch {
-    loadError =
-      "Gagal memuat daftar role. Pastikan API berjalan dan sesi masih aktif.";
+  } catch (err) {
+    if (err instanceof Error && "status" in err && (err as { status?: number }).status === 503) {
+      loadError =
+        "Database sedang tidak tersedia. Coba lagi beberapa saat atau periksa koneksi Neon.";
+    } else {
+      loadError =
+        "Gagal memuat daftar role. Pastikan API berjalan dan sesi masih aktif.";
+    }
   }
 
   return (

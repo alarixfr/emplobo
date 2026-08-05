@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { TrainingRoom } from "@/components/roles/training-room";
-import { apiFetch } from "@/lib/api";
+import { ApiError, apiFetch } from "@/lib/api";
 import type { TrainingRoleSummary } from "@/lib/roles";
 
 export default async function TrainingIndexPage() {
@@ -17,13 +17,19 @@ export default async function TrainingIndexPage() {
   }
 
   let roles: TrainingRoleSummary[] = [];
+  let loadError: string | null = null;
   try {
     const data = await apiFetch<{ roles: TrainingRoleSummary[] }>("/api/roles", {
       token,
     });
     roles = data.roles;
-  } catch {
-    roles = [];
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 503) {
+      loadError =
+        "Database sedang tidak tersedia. Coba refresh beberapa saat lagi atau periksa koneksi Neon.";
+    } else {
+      loadError = "Gagal memuat role training. Pastikan API aktif dan sesi masih valid.";
+    }
   }
 
   return (
@@ -37,7 +43,11 @@ export default async function TrainingIndexPage() {
         </p>
       </div>
 
-      {roles.length === 0 ? (
+      {loadError ? (
+        <div className="rounded-lg border border-border bg-card p-6 text-sm text-accent">
+          {loadError}
+        </div>
+      ) : roles.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-card p-6 text-sm text-muted-foreground">
           Belum ada role. Buat role baru dulu di halaman Roles.
         </div>
