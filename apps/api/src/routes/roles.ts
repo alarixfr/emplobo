@@ -1,4 +1,6 @@
 import { prisma } from "@emplobo/db";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
 import type { Env } from "../env.js";
@@ -31,8 +33,10 @@ const TRAINING_RATE_WINDOW_MS = 10 * 60 * 1000;
 const TRAINING_RATE_LIMIT = 20;
 const TRAINING_LOCK_STALE_MS = 30 * 60 * 1000;
 const TRAINING_CONTEXT_TOKEN_BUDGET = 6000;
+const TRAINING_COOLDOWN_MS = 2_000;
 
 const trainingRateState = new Map<string, number[]>();
+const trainingCooldownState = new Map<string, number>();
 
 function estimateTokens(text: string): number {
   return Math.max(1, Math.ceil(text.length / 4));
@@ -58,6 +62,39 @@ function enforceTrainingRateLimit(userId: string): { ok: true } | { ok: false; r
   kept.push(now);
   trainingRateState.set(userId, kept);
   return { ok: true };
+}
+
+function enforceTrainingCooldown(key: string): { ok: true } | { ok: false; retryAfter: number } {
+  const now = Date.now();
+  const nextAllowedAt = trainingCooldownState.get(key) ?? 0;
+
+  if (now < nextAllowedAt) {
+    const retryAfter = Math.max(1, Math.ceil((nextAllowedAt - now) / 1000));
+    return { ok: false, retryAfter };
+  }
+
+  trainingCooldownState.set(key, now + TRAINING_COOLDOWN_MS);
+  return { ok: true };
+}
+
+function createTrainingRateLimiter(env: Env): Ratelimit | null {
+  const url = env.UPSTASH_REDIS_REST_URL?.trim();
+  const token = env.UPSTASH_REDIS_REST_TOKEN?.trim();
+  if (!url || !token) {
+    return null;
+  }
+
+  const redis = new Redis({
+    url,
+    token,
+  });
+
+  return new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(TRAINING_RATE_LIMIT, `${Math.floor(TRAINING_RATE_WINDOW_MS / 1000)} s`),
+    prefix: "rl:training-messages",
+    analytics: true,
+  });
 }
 
 function toOpenRouterModel(model: string): string {
@@ -152,17 +189,21 @@ function buildScoringPrompt(): string {
 }
 
 function parseScoringJson(raw: string): { score: number; missingAreas: string[] } | null {
-  const block = raw.match(/\{[\s\S]*\}/)?.[0] ?? raw;
-  const parsed = z
-    .object({
-      score: z.number().int().min(0).max(100),
-      missingAreas: z.array(z.string().trim().min(1)).max(30),
-    })
-    .safeParse(JSON.parse(block));
-  if (!parsed.success) {
+  try {
+    const block = raw.match(/\{[\s\S]*\}/)?.[0] ?? raw;
+    const parsed = z
+      .object({
+        score: z.number().int().min(0).max(100),
+        missingAreas: z.array(z.string().trim().min(1)).max(30),
+      })
+      .safeParse(JSON.parse(block));
+    if (!parsed.success) {
+      return null;
+    }
+    return parsed.data;
+  } catch {
     return null;
   }
-  return parsed.data;
 }
 
 function toAnthropicMessages(
@@ -183,6 +224,7 @@ function requireAuthContext(req: Request): AuthContext {
 
 export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Router {
   const router = Router();
+  const upstashTrainingRateLimiter = createTrainingRateLimiter(env);
 
   // All role routes are admin-only (Section 9).
   router.use(requireAdmin);
@@ -387,6 +429,43 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
     },
   );
 
+  // DELETE /api/roles/:id/training/lock
+  router.delete(
+    "/:id/training/lock",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const auth = requireAuthContext(req);
+        const id = z.string().cuid().safeParse(req.params.id);
+        if (!id.success) {
+          res.status(400).json({ error: "invalid role id" });
+          return;
+        }
+
+        const released = await prisma.trainingRole.updateMany({
+          where: {
+            id: id.data,
+            orgId: auth.orgId,
+            isActive: true,
+            activeTrainerId: auth.userId,
+          },
+          data: {
+            activeTrainerId: null,
+            activeTrainerAt: null,
+          },
+        });
+
+        if (released.count === 0) {
+          res.status(204).end();
+          return;
+        }
+
+        res.status(204).end();
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
   // GET /api/roles/:id/training/messages
   router.get(
     "/:id/training/messages",
@@ -457,8 +536,23 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         }
 
         const limit = enforceTrainingRateLimit(auth.userId);
-        if (!limit.ok) {
+        if (upstashTrainingRateLimiter) {
+          const rl = await upstashTrainingRateLimiter.limit(`${auth.orgId}:${auth.userId}`);
+          if (!rl.success) {
+            res.status(429).json({
+              error: "rate limit exceeded",
+              retryAfter: Math.max(1, Math.ceil((rl.reset - Date.now()) / 1000)),
+            });
+            return;
+          }
+        } else if (!limit.ok) {
           res.status(429).json({ error: "rate limit exceeded", retryAfter: limit.retryAfter });
+          return;
+        }
+
+        const cooldown = enforceTrainingCooldown(`${auth.orgId}:${auth.userId}:${id.data}`);
+        if (!cooldown.ok) {
+          res.status(429).json({ error: "cooldown active", retryAfter: cooldown.retryAfter });
           return;
         }
 
@@ -479,10 +573,22 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           return;
         }
 
-        const lockFresh =
-          role.activeTrainerAt &&
-          role.activeTrainerAt.getTime() >= Date.now() - TRAINING_LOCK_STALE_MS;
-        if (role.activeTrainerId !== auth.userId || !lockFresh) {
+        const now = new Date();
+        const staleBefore = new Date(now.getTime() - TRAINING_LOCK_STALE_MS);
+        const lockConfirmed = await prisma.trainingRole.updateMany({
+          where: {
+            id: role.id,
+            orgId: auth.orgId,
+            isActive: true,
+            activeTrainerId: auth.userId,
+            activeTrainerAt: { gte: staleBefore },
+          },
+          data: {
+            activeTrainerAt: now,
+          },
+        });
+
+        if (lockConfirmed.count === 0) {
           res.status(423).json({ error: "training lock is not held by current admin" });
           return;
         }
@@ -522,13 +628,20 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         }
         selected.reverse();
 
-        const aiContent = await callOpenRouterText(
-          env,
-          "claude-sonnet-4-5",
-          buildTrainingSystemPrompt(role.name),
-          toAnthropicMessages(selected),
-          500,
-        );
+        let aiContent: string;
+        try {
+          aiContent = await callOpenRouterText(
+            env,
+            "claude-sonnet-4-5",
+            buildTrainingSystemPrompt(role.name),
+            toAnthropicMessages(selected),
+            500,
+          );
+        } catch (error) {
+          console.error("[training/messages] ai call failed", error);
+          aiContent =
+            "Saya belum bisa memproses itu sekarang. Coba jelaskan kembali SOP utamanya secara ringkas (langkah 1→N), lalu saya akan lanjutkan pertanyaan berikutnya.";
+        }
 
         const aiMessage = await prisma.trainingMessage.create({
           data: {
@@ -541,19 +654,32 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           select: { id: true, sender: true, content: true, createdAt: true },
         });
 
-        const now = new Date();
-        const updatedRole = await prisma.trainingRole.update({
-          where: { id: role.id },
+        const roleTouch = await prisma.trainingRole.updateMany({
+          where: { id: role.id, orgId: auth.orgId, isActive: true },
           data: {
             trainingMessageCount: { increment: 1 },
             activeTrainerAt: now,
           },
+        });
+
+        if (roleTouch.count === 0) {
+          res.status(409).json({ error: "role changed during update, retry request" });
+          return;
+        }
+
+        const updatedRole = await prisma.trainingRole.findFirst({
+          where: { id: role.id, orgId: auth.orgId, isActive: true },
           select: {
             status: true,
             completenessScore: true,
             trainingMessageCount: true,
           },
         });
+
+        if (!updatedRole) {
+          res.status(404).json({ error: "role not found" });
+          return;
+        }
 
         let finalStatus = updatedRole.status;
         let finalScore = updatedRole.completenessScore;
@@ -589,19 +715,27 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
               becameReady = true;
             }
 
-            const roleAfterScore = await prisma.trainingRole.update({
-              where: { id: role.id },
+            const scoreUpdated = await prisma.trainingRole.updateMany({
+              where: { id: role.id, orgId: auth.orgId, isActive: true },
               data: {
                 completenessScore: finalScore,
                 status: finalStatus,
               },
-              select: {
-                status: true,
-                completenessScore: true,
-              },
             });
-            finalStatus = roleAfterScore.status;
-            finalScore = roleAfterScore.completenessScore;
+
+            if (scoreUpdated.count > 0) {
+              const roleAfterScore = await prisma.trainingRole.findFirst({
+                where: { id: role.id, orgId: auth.orgId, isActive: true },
+                select: {
+                  status: true,
+                  completenessScore: true,
+                },
+              });
+              if (roleAfterScore) {
+                finalStatus = roleAfterScore.status;
+                finalScore = roleAfterScore.completenessScore;
+              }
+            }
           }
         }
 

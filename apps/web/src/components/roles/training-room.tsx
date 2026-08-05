@@ -87,15 +87,18 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
   const [isLocked, setIsLocked] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isReleasing, setIsReleasing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const pollRef = useRef<number | null>(null);
+  const tokenRef = useRef<string | null>(null);
+  const isMountedRef = useRef(true);
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
 
   const canSend = useMemo(
-    () => isLocked && !isSending && input.trim().length > 0,
-    [isLocked, isSending, input],
+    () => isLocked && !isSending && !isLoading && input.trim().length > 0,
+    [isLocked, isSending, isLoading, input],
   );
 
   async function withToken<T>(fn: (token: string) => Promise<T>): Promise<T> {
@@ -110,12 +113,13 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
     setLoadError(null);
     setIsLoading(true);
     try {
-      await withToken((token) =>
-        apiFetch(`/api/roles/${role.id}/training/lock`, {
+      await withToken(async (token) => {
+        tokenRef.current = token;
+        return apiFetch(`/api/roles/${role.id}/training/lock`, {
           method: "POST",
           token,
-        }),
-      );
+        });
+      });
       setIsLocked(true);
 
       const data = await withToken((token) =>
@@ -134,7 +138,19 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
     } catch (err) {
       if (err instanceof ApiError && err.status === 423) {
         setIsLocked(false);
-        setLoadError("Training Room sedang dipakai admin lain. Coba lagi nanti.");
+        const trainerName =
+          typeof err.body === "object" &&
+          err.body &&
+          "activeTrainerName" in err.body &&
+          typeof (err.body as { activeTrainerName?: unknown }).activeTrainerName ===
+            "string"
+            ? (err.body as { activeTrainerName: string }).activeTrainerName
+            : null;
+        setLoadError(
+          trainerName
+            ? `Training Room sedang dipakai ${trainerName}. Anda berada di observer mode.`
+            : "Training Room sedang dipakai admin lain. Anda berada di observer mode.",
+        );
         return;
       }
       if (err instanceof Error) {
@@ -144,6 +160,29 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
       }
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function releaseLock() {
+    if (!isLocked || isReleasing) return;
+    try {
+      setIsReleasing(true);
+      const token = tokenRef.current ?? (await getToken());
+      if (!token) return;
+
+      await apiFetch(`/api/roles/${role.id}/training/lock`, {
+        method: "DELETE",
+        token,
+      });
+      if (isMountedRef.current) {
+        setIsLocked(false);
+      }
+    } catch {
+      // best effort
+    } finally {
+      if (isMountedRef.current) {
+        setIsReleasing(false);
+      }
     }
   }
 
@@ -205,11 +244,14 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
   }
 
   useEffect(() => {
+    isMountedRef.current = true;
     void acquireLockAndLoad();
     return () => {
+      isMountedRef.current = false;
       if (pollRef.current) {
         window.clearInterval(pollRef.current);
       }
+      void releaseLock();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role.id]);
@@ -232,6 +274,24 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
     endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
 
+  useEffect(() => {
+    function onPageHide() {
+      void releaseLock();
+    }
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role.id, isLocked]);
+
+  function onTextareaKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canSend) {
+      e.preventDefault();
+      void submitMessage();
+    }
+  }
+
   return (
     <section className="flex min-h-[68vh] flex-col rounded-2xl border border-border bg-card">
       <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3 md:px-5">
@@ -250,9 +310,24 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
       </div>
 
       {loadError ? (
-        <p className="mx-4 mt-4 rounded-md border border-border bg-background p-3 text-sm text-accent md:mx-5">
+        <p className="mx-4 mt-4 rounded-md border border-border bg-background p-3 text-sm text-accent md:mx-5" role="status">
           {loadError}
         </p>
+      ) : null}
+
+      {!isLocked && !isLoading ? (
+        <div className="mx-4 mt-4 flex items-center justify-between gap-3 rounded-md border border-border bg-background p-3 text-sm md:mx-5">
+          <p className="text-muted-foreground">
+            Observer mode aktif. Anda dapat membaca percakapan tanpa mengedit.
+          </p>
+          <button
+            type="button"
+            onClick={() => void acquireLockAndLoad()}
+            className="shrink-0 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-muted"
+          >
+            Coba ambil lock
+          </button>
+        </div>
       ) : null}
 
       <div className="flex-1 overflow-y-auto px-4 py-4 md:px-5">
@@ -295,6 +370,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onTextareaKeyDown}
             rows={3}
             maxLength={4000}
             disabled={!isLocked || isSending}
@@ -311,7 +387,10 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
               Rate limit aktif. Coba lagi dalam ~{retryAfter} detik.
             </p>
           ) : null}
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs text-muted-foreground">
+              {input.length}/4000 • Kirim cepat: Ctrl/Cmd + Enter
+            </p>
             <button
               type="button"
               onClick={() => void submitMessage()}

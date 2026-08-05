@@ -383,9 +383,16 @@ GET  /api/admin/ping         # requireAdmin — 403 unless org:admin
 POST /api/roles              # body: { name, description? } → create DRAFT
 GET  /api/roles              # list active roles in org
 GET  /api/roles/:id          # single role (404 if wrong org / missing)
+
+# Section 4 — Training Room (requireAdmin; tenant-scoped + lock enforced)
+POST   /api/roles/:id/training/lock       # atomic lock acquire (423 if held by other admin)
+PATCH  /api/roles/:id/training/heartbeat  # refresh lock heartbeat (every 60s)
+DELETE /api/roles/:id/training/lock       # explicit lock release on room close/unload
+GET    /api/roles/:id/training/messages   # load transcript + role status
+POST   /api/roles/:id/training/messages   # send admin message, get AI reply, score every 5 admin msgs
 ```
 
-Training Room lock/heartbeat/messages sudah tersedia di Section 4 (awal). Guide generation, assignments, employee modules, dan chat tutor tetap di Section berikutnya.
+Training Room lock/heartbeat/messages sudah tersedia di Section 4, termasuk observer mode saat lock dipakai admin lain, server cooldown 2 detik, dan rate limit per user. Guide generation, assignments, employee modules, dan chat tutor tetap di Section berikutnya.
 
 ### Example Request
 
@@ -429,7 +436,7 @@ curl http://localhost:3000/nonexistent           # expected 404
 ### Test Coverage
 
 Belum ada suite unit/integration/e2e terpisah pada tahap ini. Validasi saat ini
-berbasis lint/typecheck/build + smoke test endpoint/routing sesuai Section 0–3.
+berbasis lint/typecheck/build + smoke test endpoint/routing sesuai Section 0–4.
 
 ---
 

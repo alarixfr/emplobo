@@ -12,6 +12,8 @@
   "dependencies": {
     "@clerk/backend": "^3.15.0",
     "@emplobo/db": "workspace:*",
+    "@upstash/ratelimit": "^2.0.7",
+    "@upstash/redis": "^1.35.6",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
