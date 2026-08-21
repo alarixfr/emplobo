@@ -52,14 +52,22 @@ export default async function AppHomePage() {
         <div className="rounded-lg border border-border bg-card p-4">
           <p className="font-medium text-foreground">Langkah berikutnya</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Buat role kerja (Kasir, Barista, …) lalu lanjut ke Training Room.
+            Buat role kerja (Kasir, Barista, …) lalu latih AI di Training Room untuk menghasilkan panduan SOP.
           </p>
-          <Link
-            href="/app/roles"
-            className="mt-3 inline-flex rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90"
-          >
-            Kelola Roles
-          </Link>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              href="/app/roles"
+              className="inline-flex rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90"
+            >
+              Kelola Roles
+            </Link>
+            <Link
+              href="/app/training"
+              className="inline-flex rounded-md border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted"
+            >
+              Buka Training Room
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="rounded-lg border border-border bg-card p-4">

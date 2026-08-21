@@ -37,12 +37,20 @@ export default async function AppLayout({
             Dashboard
           </Link>
           {isAdmin ? (
-            <Link
-              href="/app/roles"
-              className="rounded-md px-3 py-2 font-medium text-foreground transition hover:bg-muted"
-            >
-              Roles
-            </Link>
+            <>
+              <Link
+                href="/app/roles"
+                className="rounded-md px-3 py-2 font-medium text-foreground transition hover:bg-muted"
+              >
+                Roles
+              </Link>
+              <Link
+                href="/app/training"
+                className="rounded-md px-3 py-2 font-medium text-foreground transition hover:bg-muted"
+              >
+                Training Room
+              </Link>
+            </>
           ) : (
             <Link
               href="/app/my/modules"
@@ -51,19 +59,6 @@ export default async function AppLayout({
               Modul Saya
             </Link>
           )}
-          {isAdmin ? (
-            <>
-              <p className="mt-4 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Segera
-              </p>
-              <Link
-                href="/app/training"
-                className="rounded-md px-3 py-2 font-medium text-foreground transition hover:bg-muted"
-              >
-                Training Room
-              </Link>
-            </>
-          ) : null}
         </nav>
       </aside>
 

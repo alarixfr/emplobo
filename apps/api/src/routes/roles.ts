@@ -65,6 +65,7 @@ const GUIDE_GEN_COOLDOWN_MS = 10_000;
 
 const trainingRateState = new Map<string, number[]>();
 const trainingCooldownState = new Map<string, number>();
+const trainingHeartbeatState = new Map<string, number>();
 const guideGenerationRateState = new Map<string, number[]>();
 const guideGenerationCooldownState = new Map<string, number>();
 
@@ -94,9 +95,23 @@ function sanitizeAiOutput(raw: string): string {
     .trim();
 }
 
-function computeDraftProgress(messageCount: number, currentScore: number): number {
-  const baseline = Math.min(74, messageCount * 8);
-  return Math.max(currentScore, baseline);
+function computeRealtimeProgress(
+  status: "DRAFT" | "READY" | "PUBLISHED",
+  messageCount: number,
+  currentScore: number,
+): number {
+  if (status === "PUBLISHED") {
+    return currentScore;
+  }
+
+  if (status === "DRAFT") {
+    const baseline = Math.min(74, messageCount * 8);
+    return Math.max(currentScore, baseline);
+  }
+
+  // READY roles can continue improving depth while waiting for periodic re-score.
+  const baseline = Math.min(95, Math.max(75, currentScore + 1));
+  return baseline;
 }
 
 function enforceTrainingRateLimit(userId: string): { ok: true } | { ok: false; retryAfter: number } {
@@ -128,6 +143,18 @@ function enforceTrainingCooldown(key: string): { ok: true } | { ok: false; retry
 
   trainingCooldownState.set(key, now + TRAINING_COOLDOWN_MS);
   return { ok: true };
+}
+
+function shouldWriteHeartbeat(key: string): boolean {
+  const now = Date.now();
+  const nextAllowedAt = trainingHeartbeatState.get(key) ?? 0;
+  if (now < nextAllowedAt) {
+    return false;
+  }
+
+  // Allow at most one DB heartbeat write per 45s per user-role lock owner.
+  trainingHeartbeatState.set(key, now + 45_000);
+  return true;
 }
 
 function enforceGuideGenerationRateLimit(
@@ -581,6 +608,12 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           return;
         }
 
+        const heartbeatKey = `${auth.orgId}:${auth.userId}:${id.data}`;
+        if (!shouldWriteHeartbeat(heartbeatKey)) {
+          res.json({ ok: true, skipped: true });
+          return;
+        }
+
         const now = new Date();
         const updated = await prisma.trainingRole.updateMany({
           where: {
@@ -931,10 +964,11 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         }
 
         let finalStatus = updatedRole.status;
-        let finalScore =
-          updatedRole.status === "DRAFT"
-            ? computeDraftProgress(updatedRole.trainingMessageCount, updatedRole.completenessScore)
-            : updatedRole.completenessScore;
+        let finalScore = computeRealtimeProgress(
+          updatedRole.status,
+          updatedRole.trainingMessageCount,
+          updatedRole.completenessScore,
+        );
         let becameReady = false;
 
         if (finalScore !== updatedRole.completenessScore) {

@@ -6,7 +6,8 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
-import type { ModuleChapter, ModuleGuide } from "@/lib/modules";
+import type { ModuleChapter, ModuleGuide, QuizSubmitResponse } from "@/lib/modules";
+import { ModuleQuizCard } from "./module-quiz";
 
 type ModuleReaderProps = {
   roleId: string;
@@ -141,8 +142,15 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
                   }`}
                 >
                   <span className="block truncate">{chapter.order}. {chapter.title}</span>
-                  <span className="mt-0.5 block text-xs text-muted-foreground">
-                    {chapter.completedAt ? "Selesai" : "Belum selesai"}
+                  <span className="mt-0.5 flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{chapter.completedAt ? "Selesai" : "Belum selesai"}</span>
+                    {chapter.quiz ? (
+                      <span className="font-medium text-foreground">
+                        {chapter.quiz.bestScore !== null
+                          ? `${chapter.quiz.bestScore}%`
+                          : "Kuis"}
+                      </span>
+                    ) : null}
                   </span>
                 </button>
               </li>
@@ -151,32 +159,109 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
         </ul>
       </aside>
 
-      <section className="rounded-lg border border-border bg-card p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Chapter {activeChapter.order}
-        </p>
-        <h3 className="mt-1 text-lg font-semibold text-foreground">{activeChapter.title}</h3>
+      <section className="space-y-6">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Chapter {activeChapter.order}
+          </p>
+          <h3 className="mt-1 text-lg font-semibold text-foreground">{activeChapter.title}</h3>
 
-        <div className="prose prose-sm mt-4 max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-li:text-foreground prose-strong:text-foreground prose-code:text-foreground">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
-            {activeChapter.content}
-          </ReactMarkdown>
+          <div className="prose prose-sm mt-4 max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-li:text-foreground prose-strong:text-foreground prose-code:text-foreground">
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+              {activeChapter.content}
+            </ReactMarkdown>
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void markComplete(activeChapter.id)}
+                disabled={isSaving}
+                className="inline-flex items-center rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-60"
+              >
+                {isSaving
+                  ? "Menyimpan..."
+                  : activeChapter.completedAt
+                    ? "Tandai ulang selesai"
+                    : "Tandai selesai"}
+              </button>
+              {activeChapter.completedAt ? (
+                <span className="inline-flex items-center rounded-full bg-brand-muted px-2.5 py-1 text-xs font-medium text-foreground">
+                  ✓ Selesai dibaca
+                </span>
+              ) : null}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {chapters.findIndex((c) => c.id === activeChapter.id) > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currIdx = chapters.findIndex((c) => c.id === activeChapter.id);
+                    if (currIdx > 0) {
+                      setActiveChapterId(chapters[currIdx - 1].id);
+                    }
+                  }}
+                  className="inline-flex items-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
+                >
+                  ← Sebelumnya
+                </button>
+              ) : null}
+
+              {chapters.findIndex((c) => c.id === activeChapter.id) < chapters.length - 1 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currIdx = chapters.findIndex((c) => c.id === activeChapter.id);
+                    if (currIdx < chapters.length - 1) {
+                      setActiveChapterId(chapters[currIdx + 1].id);
+                    }
+                  }}
+                  className="inline-flex items-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
+                >
+                  Berikutnya →
+                </button>
+              ) : null}
+            </div>
+          </div>
         </div>
 
-        <div className="mt-5 border-t border-border pt-4">
-          <button
-            type="button"
-            onClick={() => void markComplete(activeChapter.id)}
-            disabled={isSaving}
-            className="inline-flex rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-60"
-          >
-            {isSaving
-              ? "Menyimpan..."
-              : activeChapter.completedAt
-                ? "Tandai ulang selesai"
-                : "Tandai selesai"}
-          </button>
-        </div>
+        {activeChapter.quiz ? (
+          <ModuleQuizCard
+            key={activeChapter.id}
+            chapterId={activeChapter.id}
+            quiz={activeChapter.quiz}
+            onQuizCompleted={(res: QuizSubmitResponse) => {
+              if (res.chapterCompleted) {
+                setChapters((prev) =>
+                  prev.map((c) =>
+                    c.id === activeChapter.id
+                      ? {
+                          ...c,
+                          completedAt: c.completedAt ?? new Date().toISOString(),
+                          quiz: c.quiz
+                            ? {
+                                ...c.quiz,
+                                bestScore: Math.max(c.quiz.bestScore ?? 0, res.score),
+                                attempts: [
+                                  {
+                                    id: res.attempt.id,
+                                    score: res.attempt.score,
+                                    createdAt: res.attempt.createdAt,
+                                  },
+                                  ...c.quiz.attempts,
+                                ],
+                              }
+                            : null,
+                        }
+                      : c,
+                  ),
+                );
+              }
+            }}
+          />
+        ) : null}
       </section>
     </div>
   );
