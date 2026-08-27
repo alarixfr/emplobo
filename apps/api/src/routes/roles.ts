@@ -1,4 +1,4 @@
-import { prisma } from "@emplobo/db";
+import { prisma, type RoleStatus } from "@emplobo/db";
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
 import { createCache } from "../lib/cache.js";
@@ -349,6 +349,21 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         if (!role) {
           res.status(404).json({ error: "role not found" });
           return;
+        }
+
+        // Section 6 — role status is polled for the "Generate Guide" CTA.
+        // Try the 30s cache first; on a hit, overlay the cached status fields
+        // onto the fresh DB row (id/name/description etc. still come from
+        // Postgres — never cache lock state, it changes with heartbeats).
+        const cachedStatus = await cache.getRoleStatus<{
+          status: RoleStatus;
+          completenessScore: number;
+          trainingMessageCount: number;
+        }>(id.data);
+        if (cachedStatus) {
+          role.status = cachedStatus.status;
+          role.completenessScore = cachedStatus.completenessScore;
+          role.trainingMessageCount = cachedStatus.trainingMessageCount;
         }
 
         res.json({ role });
