@@ -173,15 +173,49 @@ Redis        : Upstash
 ### System Architecture
 
 ```mermaid
-flowchart LR
-  Browser --> Web["apps/web<br/>Next.js 15"]
-  Web -->|Clerk session JWT| API["apps/api<br/>Express"]
-  Web --> Clerk["Clerk B2B"]
-  API --> Clerk
-  API --> DB["Neon PostgreSQL<br/>via packages/db"]
-  API --> Redis["Upstash Redis"]
-  API --> Anthropic["Anthropic Claude"]
+flowchart TB
+  subgraph Browser["Browser"]
+    W["apps/web — Next.js 15<br/>(landing, dashboard, training room,<br/>module reader, quiz, AI chat)"]
+  end
+
+  subgraph Clerk["Clerk B2B"]
+    CL["Auth / Organizations<br/>org:admin · org:member"]
+  end
+
+  subgraph API["apps/api — Express + TypeScript"]
+    A["Auth middleware<br/>(JWT verify)"]
+    RL["Rate limit & cooldown<br/>(Upstash / in-memory)"]
+    TR["Training Room<br/>(lock · heartbeat · AI scoring)"]
+    GG["Guide Generation<br/>(structured JSON · Zod)"]
+    EMP["Employee Learning<br/>(chapters · quiz grading)"]
+    CH["AI Tutor Chat<br/>(grounded on SOP)"]
+    DBX["Dashboard summary<br/>(cache 60s)"]
+  end
+
+  subgraph Data["Data & AI"]
+    DB[("Neon PostgreSQL<br/>via packages/db (Prisma)")]
+    RC[("Upstash Redis<br/>guide 10m · role-status 30s")]
+    AI["Anthropic Claude<br/>sonnet: training/guide · haiku: chat"]
+  end
+
+  W -->|Clerk session JWT| A
+  W --> CL
+  CL --> W
+  A --> RL
+  RL --> TR & GG & EMP & CH
+  TR --> AI
+  GG --> AI
+  CH --> AI
+  TR & GG & CH --> DBX
+  TR & GG & EMP & CH --> DB
+  GG & TR --> RC
+  DBX --> RC
 ```
+
+**Alur inti (AI-trains-AI):** admin melatih AI per role di Training Room → AI
+menilai completeness (≥75 → READY) → guide di-generate terstruktur + kuis →
+employee membaca chapter, mengerjakan kuis, dan bertanya ke AI tutor yang
+hanya menjawab dari materi yang diajarkan admin.
 
 ### Database Schema
 
