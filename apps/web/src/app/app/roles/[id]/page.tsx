@@ -70,14 +70,15 @@ export default async function RoleDetailPage({ params }: PageProps) {
 
       <div className="rounded-xl border border-border bg-card p-4">
         <p className="text-sm text-muted-foreground">
-          Training dipindahkan ke halaman terpusat dengan tampilan chat AI.
+          Latih AI dengan SOP dan know-how untuk role ini. Semakin lengkap
+          materinya, semakin tinggi skor kesiapan hingga panduan siap dibuat.
         </p>
         <div className="mt-3">
           <Link
             href={`/app/training/${role.id}`}
             className="inline-flex items-center justify-center rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90"
           >
-            Train role ini
+            Buka Training Room
           </Link>
         </div>
       </div>
@@ -119,11 +120,11 @@ export default async function RoleDetailPage({ params }: PageProps) {
       </dl>
 
       <div className="rounded-lg border border-dashed border-border bg-brand-muted/40 p-4 text-sm text-foreground">
-        <p className="font-medium">Training Room — Section 4</p>
+        <p className="font-medium">Cara kerja training</p>
         <p className="mt-1 text-muted-foreground">
-          Setelah Role dibuat (status DRAFT), admin melatih AI di halaman
-          Training Room terpusat sampai completeness naik. Tiap 5 pesan admin,
-          AI akan mengevaluasi skor kelengkapan dan status bisa berubah ke READY.
+          Admin melatih AI di halaman Training Room sampai materi dirasa cukup.
+          AI mengevaluasi skor kelengkapan (0–100) dan menyarankan kapan
+          panduan siap dibuat — mulai 75% status berubah menjadi READY.
         </p>
       </div>
     </div>

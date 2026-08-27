@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
+import { MessageCircleIcon, SendIcon } from "@/components/icons";
 import type { ChatMessageItem, ChatSessionSummary } from "@/lib/chat";
 
 type EmployeeChatTutorProps = {
@@ -281,7 +282,9 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
             <p className="text-center text-xs text-muted-foreground">Memuat riwayat chat...</p>
           ) : messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
-              <div className="rounded-full bg-brand-muted p-3 text-brand">💬</div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-muted text-xl text-brand">
+                <MessageCircleIcon className="h-5 w-5" />
+              </div>
               <h4 className="mt-2 text-sm font-semibold text-foreground">
                 Tanya Apapun Seputar Peran Ini
               </h4>
@@ -364,8 +367,9 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
             <button
               type="submit"
               disabled={!inputText.trim() || isSending || cooldownRemaining > 0}
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-brand px-4 text-xs font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-50"
+              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-brand px-4 text-xs font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-50"
             >
+              <SendIcon className="h-3.5 w-3.5" />
               {cooldownRemaining > 0
                 ? `${cooldownRemaining}s`
                 : isSending

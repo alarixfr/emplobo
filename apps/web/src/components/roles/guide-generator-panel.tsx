@@ -85,10 +85,10 @@ export function GuideGeneratorPanel({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-display text-lg font-semibold text-foreground">
-            Guide Generation
+            Panduan (Guide)
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Generate panduan onboarding terstruktur dari training role {roleName}.
+            Hasilkan panduan onboarding terstruktur dari hasil training role {roleName}.
           </p>
         </div>
 
@@ -98,13 +98,18 @@ export function GuideGeneratorPanel({
           disabled={!canGenerate}
           className="inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-60"
         >
-          {isGenerating ? "Generating..." : guide ? "Regenerate Guide" : "Generate Guide"}
+          {isGenerating
+            ? "Membuat panduan..."
+            : guide
+              ? "Perbarui Panduan"
+              : "Hasilkan Panduan"}
         </button>
       </div>
 
       {status === "DRAFT" ? (
         <p className="mt-3 rounded-md border border-border bg-background p-3 text-sm text-muted-foreground">
-          Role masih DRAFT. Lanjutkan training sampai status READY untuk mengaktifkan generate.
+          Role masih DRAFT. Lanjutkan training sampai status READY untuk
+          mengaktifkan pembuatan panduan.
         </p>
       ) : null}
 
@@ -119,13 +124,13 @@ export function GuideGeneratorPanel({
         <div className="mt-5 space-y-4">
           <div className="rounded-lg border border-border bg-background p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Guide v{guide.version}
+              Panduan v{guide.version}
             </p>
             <h4 className="mt-1 text-base font-semibold text-foreground">{guide.title}</h4>
             <p className="mt-1 text-xs text-muted-foreground">
               {guide.publishedAt
-                ? `Published: ${new Date(guide.publishedAt).toLocaleString()}`
-                : `Updated: ${new Date(guide.updatedAt).toLocaleString()}`}
+                ? `Terbit: ${new Date(guide.publishedAt).toLocaleString("id-ID")}`
+                : `Diperbarui: ${new Date(guide.updatedAt).toLocaleString("id-ID")}`}
             </p>
           </div>
 
@@ -133,7 +138,7 @@ export function GuideGeneratorPanel({
             {guide.chapters.map((chapter) => (
               <article key={chapter.id} className="rounded-lg border border-border bg-background p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Chapter {chapter.order}
+                  Bab {chapter.order}
                 </p>
                 <h5 className="mt-1 text-sm font-semibold text-foreground">{chapter.title}</h5>
 
@@ -146,7 +151,7 @@ export function GuideGeneratorPanel({
                 {chapter.quiz ? (
                   <div className="mt-3 rounded-md border border-border bg-card p-3">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Quiz ({chapter.quiz.questions.length} soal)
+                      Kuis ({chapter.quiz.questions.length} soal)
                     </p>
                     <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-foreground">
                       {chapter.quiz.questions.map((q) => (

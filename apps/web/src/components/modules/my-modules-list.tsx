@@ -50,7 +50,7 @@ export function MyModulesList() {
   if (modules.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">
-        Belum ada modul ter-assign.
+        Belum ada modul yang ditugaskan ke akun Anda.
       </p>
     );
   }

@@ -2,6 +2,8 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { ActivityIcon } from "@/components/icons";
 import { ApiError, apiFetch } from "@/lib/api";
 
 type DashboardSummary = {
@@ -45,14 +47,17 @@ function StatCard({
   label,
   value,
   hint,
+  icon,
 }: {
   label: string;
   value: string | number;
   hint?: string;
+  icon?: ReactNode;
 }) {
   return (
     <div className="rounded-xl border border-border bg-card p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {icon}
         {label}
       </p>
       <p className="mt-1 font-display text-3xl font-semibold text-foreground">{value}</p>
@@ -126,7 +131,7 @@ export function AdminDashboard() {
     <div className="space-y-6">
       {/* ── Stat cards ─────────────────────────────────────────────── */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Total Roles" value={summary.roles.total} />
+        <StatCard label="Total Role" value={summary.roles.total} />
         <StatCard
           label="Guide Dipublikasikan"
           value={summary.roles.published}
@@ -140,7 +145,7 @@ export function AdminDashboard() {
         />
         <StatCard
           label="Rata-rata Nilai Kuis"
-          value={summary.quiz.avgBestScore !== null ? `${summary.quiz.avgBestScore}` : "—"}
+          value={summary.quiz.avgBestScore !== null ? `${summary.quiz.avgBestScore}%` : "—"}
           hint={
             summary.quiz.attempts > 0
               ? `${summary.quiz.attempts} percobaan kuis`
@@ -151,6 +156,7 @@ export function AdminDashboard() {
           label="Pemakaian AI (30 hari)"
           value={formatTokens(summary.aiUsage30d.tokensIn + summary.aiUsage30d.tokensOut)}
           hint={`${summary.aiUsage30d.training} training · ${summary.aiUsage30d.chat} chat · ${summary.aiUsage30d.guideGen} guide`}
+          icon={<ActivityIcon className="h-3.5 w-3.5 text-brand" />}
         />
       </div>
 
@@ -187,7 +193,7 @@ export function AdminDashboard() {
                     <span className="text-muted-foreground">
                       Quiz:{" "}
                       <span className="font-semibold text-foreground">
-                        {role.avgQuizBestScore !== null ? `${role.avgQuizBestScore}` : "—"}
+                        {role.avgQuizBestScore !== null ? `${role.avgQuizBestScore}%` : "—"}
                       </span>
                     </span>
                     <span className="font-display text-2xl font-semibold text-brand">

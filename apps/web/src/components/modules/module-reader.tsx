@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
+import { CheckIcon } from "@/components/icons";
 import type { ModuleChapter, ModuleGuide, QuizSubmitResponse } from "@/lib/modules";
 import { ModuleQuizCard } from "./module-quiz";
 
@@ -187,8 +188,9 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
                     : "Tandai selesai"}
               </button>
               {activeChapter.completedAt ? (
-                <span className="inline-flex items-center rounded-full bg-brand-muted px-2.5 py-1 text-xs font-medium text-foreground">
-                  ✓ Selesai dibaca
+                <span className="inline-flex items-center gap-1 rounded-full bg-brand-muted px-2.5 py-1 text-xs font-medium text-foreground">
+                  <CheckIcon className="h-3 w-3" />
+                  Selesai dibaca
                 </span>
               ) : null}
             </div>

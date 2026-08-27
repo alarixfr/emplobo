@@ -77,6 +77,7 @@ Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = sat
 - **Training lock** - Mencegah dua admin train Role yang sama secara bersamaan
 - **Rate limit & cooldown** - Proteksi biaya AI (Upstash Redis) di setiap endpoint AI (training, guide gen, chat message, chat session)
 - **Dashboard admin** - Statistik lengkap: completion %, skor kuis, per-role progress, pemakaian AI 30 hari
+- **UI/UX polish** - Design tokens konsisten di seluruh layar (landing, dashboard, training, modul, kuis, chat), ikon SVG custom, landing page marketing responsif, seluruh copy produk dalam Bahasa Indonesia
 
 ---
 
@@ -112,7 +113,8 @@ Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = sat
 #### Frontend
 ```
 Framework    : Next.js 15 (App Router) + TypeScript
-UI Library   : Tailwind CSS + shadcn/ui
+UI Library   : Tailwind CSS v4 + design tokens (teal/orange, DM Sans + Fraunces)
+Icons        : Set ikon SVG custom (apps/web/src/components/icons.tsx)
 Auth UI      : Clerk B2B (Organizations)
 Validation   : Zod + React Hook Form
 Markdown     : react-markdown + remark-gfm + rehype-sanitize
@@ -350,7 +352,7 @@ pnpm lint
 
 1. **Dashboard**: `/app` menampilkan org aktif dan peran `ADMIN`, plus ringkasan statistik: total role, guide terpublikasi, jumlah karyawan, rata-rata nilai kuis, pemakaian AI 30 hari, dan progress per role (bar completion % + skor kuis).
 2. **Roles**: buka `/app/roles` → buat role (nama + deskripsi opsional) → lihat detail di `/app/roles/[id]`.
-3. **Training Room**: Buka detail role di `/app/roles/[id]`, sistem akan mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin.
+3. **Training Room**: Buka `/app/training` (halaman terpusat, bisa pilih role) atau `/app/training/[id]` untuk langsung ke role tertentu — sistem mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin. Dari halaman detail role, tombol **Buka Training Room** mengarah ke sini.
 4. **Generate Guide**: saat status role `READY` (completeness ≥ 75), klik **Generate Guide** → AI menyusun panduan berstruktur (chapter markdown + kuis) dari seluruh transcript training, divalidasi Zod, lalu ditulis atomik ke DB; status berubah jadi `PUBLISHED`. Maksimal 3 generasi per jam per role.
 5. **Assign Karyawan**: setelah `PUBLISHED`, pilih karyawan (`org:member`) dari panel assignment di halaman detail role untuk memberi akses modul.
 
@@ -476,8 +478,9 @@ curl http://localhost:3000/nonexistent           # expected 404
 
 Belum ada suite unit/integration/e2e terpisah pada tahap ini. Validasi saat ini
 berbasis lint/typecheck/build + smoke test endpoint/routing. Verifikasi fungsional
-per Section tersedia di bagian [User Guide](#-penggunaan) (Step 1–8 sudah aktif,
-termasuk AI Tutor grounded di Step 8).
+per Section tersedia di bagian [User Guide](#-penggunaan) (Step 1–10 sudah aktif:
+seluruh fitur inti sampai AI Tutor grounded, plus polish UI/UX — design tokens
+konsisten, ikon SVG custom, landing page responsif).
 
 ---
 

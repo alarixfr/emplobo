@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BookOpenIcon, BotIcon } from "@/components/icons";
 import { EmployeeChatTutor } from "./employee-chat-tutor";
 import { ModuleReader } from "./module-reader";
 
@@ -24,7 +25,7 @@ export function ModuleLearningView({ roleId }: ModuleLearningViewProps) {
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
-          <span>📖</span>
+          <BookOpenIcon className="h-4 w-4" />
           <span>Panduan SOP & Kuis</span>
         </button>
 
@@ -37,7 +38,7 @@ export function ModuleLearningView({ roleId }: ModuleLearningViewProps) {
               : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
         >
-          <span>🤖</span>
+          <BotIcon className="h-4 w-4" />
           <span>Tanya AI Tutor (24/7)</span>
         </button>
       </div>

@@ -45,7 +45,8 @@ export default async function RolesPage() {
           Roles
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Buat peran kerja, lalu latih AI per role di Training Room (Section 4).
+          Buat peran kerja (Kasir, Barista, …) lalu latih AI per role di Training
+          Room untuk menghasilkan panduan SOP.
         </p>
       </div>
 

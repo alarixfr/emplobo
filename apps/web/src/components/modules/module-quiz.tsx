@@ -3,6 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { CheckIcon, SparklesIcon, XIcon } from "@/components/icons";
 import type {
   ModuleQuiz,
   QuizAttemptSummary,
@@ -98,7 +99,7 @@ export function ModuleQuizCard({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
         <div>
           <h4 className="font-display text-lg font-semibold text-foreground">
-            Kuis Pemahaman Chapter
+            Kuis Pemahaman Bab
           </h4>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {questions.length} pertanyaan pilihan ganda · Nilai kelulusan minimum: 70%
@@ -136,16 +137,19 @@ export function ModuleQuizCard({
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-base font-semibold">
+                <p className="flex items-center gap-2 text-base font-semibold">
+                  {result.passed ? (
+                    <SparklesIcon className="h-4 w-4 text-brand" />
+                  ) : null}
                   {result.passed
-                    ? "🎉 Selamat! Anda Lulus Kuis Chapter Ini"
+                    ? "Selamat! Anda Lulus Kuis Bab Ini"
                     : "Belum Mencapai Nilai Kelulusan"}
                 </p>
                 <p className="mt-0.5 text-sm text-muted-foreground">
                   Skor: <span className="font-bold text-foreground">{result.score}%</span> (
                   {result.correctCount} dari {result.totalQuestions} soal benar)
                   {result.passed
-                    ? " · Chapter otomatis ditandai selesai."
+                    ? " · Bab otomatis ditandai selesai."
                     : " · Anda dapat mengulang kuis untuk memperbaiki nilai."}
                 </p>
               </div>
@@ -180,13 +184,18 @@ export function ModuleQuizCard({
                       {qIdx + 1}. {q.question}
                     </p>
                     <span
-                      className={`shrink-0 rounded px-2 py-0.5 text-xs font-semibold ${
+                      className={`inline-flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold ${
                         isCorrect
                           ? "bg-brand-muted text-foreground"
                           : "bg-accent/20 text-accent"
                       }`}
                     >
-                      {isCorrect ? "✓ Benar" : "✗ Salah"}
+                      {isCorrect ? (
+                        <CheckIcon className="h-3 w-3" />
+                      ) : (
+                        <XIcon className="h-3 w-3" />
+                      )}
+                      {isCorrect ? "Benar" : "Salah"}
                     </span>
                   </div>
 

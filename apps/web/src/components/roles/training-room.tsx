@@ -18,7 +18,7 @@ type TrainingRoomProps = {
 };
 
 const STATUS_LABEL: Record<RoleStatus, string> = {
-  DRAFT: "Draft",
+  DRAFT: "Draf",
   READY: "Siap",
   PUBLISHED: "Dipublikasikan",
 };
