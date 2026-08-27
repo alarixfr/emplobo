@@ -2,9 +2,6 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useEffect, useMemo, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
-import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
 import type { RoleStatus, TrainingRoleSummary } from "@/lib/roles";
 
@@ -27,47 +24,19 @@ const STATUS_LABEL: Record<RoleStatus, string> = {
 };
 
 export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
-  const [rolesState, setRolesState] = useState<TrainingRoleSummary[]>(roles);
-
-  useEffect(() => {
-    setRolesState(roles);
-  }, [roles]);
-
   const initialSelectedRoleId =
-    initialRoleId && rolesState.some((role) => role.id === initialRoleId)
+    initialRoleId && roles.some((role) => role.id === initialRoleId)
       ? initialRoleId
-      : rolesState[0]?.id;
+      : roles[0]?.id;
 
   const [selectedRoleId, setSelectedRoleId] = useState<string | undefined>(
     initialSelectedRoleId,
   );
 
   const selectedRole = useMemo(
-    () => rolesState.find((role) => role.id === selectedRoleId) ?? null,
-    [rolesState, selectedRoleId],
+    () => roles.find((role) => role.id === selectedRoleId) ?? null,
+    [roles, selectedRoleId],
   );
-
-  function handleRoleRuntimeUpdate(patch: {
-    roleId: string;
-    status: RoleStatus;
-    completenessScore: number;
-    trainingMessageCount?: number;
-  }) {
-    setRolesState((prev) =>
-      prev.map((role) => {
-        if (role.id !== patch.roleId) {
-          return role;
-        }
-        return {
-          ...role,
-          status: patch.status,
-          completenessScore: patch.completenessScore,
-          trainingMessageCount:
-            patch.trainingMessageCount ?? role.trainingMessageCount,
-        };
-      }),
-    );
-  }
 
   if (!selectedRole) {
     return (
@@ -92,7 +61,7 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
           onChange={(e) => setSelectedRoleId(e.target.value)}
           className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-ring focus:ring-2"
         >
-          {rolesState.map((role) => (
+          {roles.map((role) => (
             <option key={role.id} value={role.id}>
               {role.name} — {STATUS_LABEL[role.status]} ({role.completenessScore}%)
             </option>
@@ -100,26 +69,16 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
         </select>
       </div>
 
-      <RoleTrainingChat
-        key={selectedRole.id}
-        role={selectedRole}
-        onRoleRuntimeUpdate={handleRoleRuntimeUpdate}
-      />
+      <RoleTrainingChat key={selectedRole.id} role={selectedRole} />
     </section>
   );
 }
 
 type RoleTrainingChatProps = {
   role: TrainingRoleSummary;
-  onRoleRuntimeUpdate: (patch: {
-    roleId: string;
-    status: RoleStatus;
-    completenessScore: number;
-    trainingMessageCount?: number;
-  }) => void;
 };
 
-function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) {
+function RoleTrainingChat({ role }: RoleTrainingChatProps) {
   const { getToken } = useAuth();
   const [messages, setMessages] = useState<TrainingMessage[]>([]);
   const [input, setInput] = useState("");
@@ -128,20 +87,15 @@ function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) 
   const [isLocked, setIsLocked] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isReleasing, setIsReleasing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const pollRef = useRef<number | null>(null);
-  const tokenRef = useRef<string | null>(null);
-  const isMountedRef = useRef(true);
-  const messagesViewportRef = useRef<HTMLDivElement | null>(null);
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
-  const forceScrollToBottomRef = useRef(false);
 
   const canSend = useMemo(
-    () => isLocked && !isSending && !isLoading && input.trim().length > 0,
-    [isLocked, isSending, isLoading, input],
+    () => isLocked && !isSending && input.trim().length > 0,
+    [isLocked, isSending, input],
   );
 
   async function withToken<T>(fn: (token: string) => Promise<T>): Promise<T> {
@@ -156,13 +110,12 @@ function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) 
     setLoadError(null);
     setIsLoading(true);
     try {
-      await withToken(async (token) => {
-        tokenRef.current = token;
-        return apiFetch(`/api/roles/${role.id}/training/lock`, {
+      await withToken((token) =>
+        apiFetch(`/api/roles/${role.id}/training/lock`, {
           method: "POST",
           token,
-        });
-      });
+        }),
+      );
       setIsLocked(true);
 
       const data = await withToken((token) =>
@@ -170,7 +123,6 @@ function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) 
           role: {
             status: RoleStatus;
             completenessScore: number;
-            trainingMessageCount: number;
           };
           messages: TrainingMessage[];
         }>(`/api/roles/${role.id}/training/messages`, { token }),
@@ -179,29 +131,10 @@ function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) 
       setStatus(data.role.status);
       setCompleteness(data.role.completenessScore);
       setMessages(data.messages);
-      forceScrollToBottomRef.current = true;
-      onRoleRuntimeUpdate({
-        roleId: role.id,
-        status: data.role.status,
-        completenessScore: data.role.completenessScore,
-        trainingMessageCount: data.role.trainingMessageCount,
-      });
     } catch (err) {
       if (err instanceof ApiError && err.status === 423) {
         setIsLocked(false);
-        const trainerName =
-          typeof err.body === "object" &&
-          err.body &&
-          "activeTrainerName" in err.body &&
-          typeof (err.body as { activeTrainerName?: unknown }).activeTrainerName ===
-            "string"
-            ? (err.body as { activeTrainerName: string }).activeTrainerName
-            : null;
-        setLoadError(
-          trainerName
-            ? `Training Room sedang dipakai ${trainerName}. Anda berada di observer mode.`
-            : "Training Room sedang dipakai admin lain. Anda berada di observer mode.",
-        );
+        setLoadError("Training Room sedang dipakai admin lain. Coba lagi nanti.");
         return;
       }
       if (err instanceof Error) {
@@ -211,29 +144,6 @@ function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) 
       }
     } finally {
       setIsLoading(false);
-    }
-  }
-
-  async function releaseLock() {
-    if (!isLocked || isReleasing) return;
-    try {
-      setIsReleasing(true);
-      const token = tokenRef.current ?? (await getToken());
-      if (!token) return;
-
-      await apiFetch(`/api/roles/${role.id}/training/lock`, {
-        method: "DELETE",
-        token,
-      });
-      if (isMountedRef.current) {
-        setIsLocked(false);
-      }
-    } catch {
-      // best effort
-    } finally {
-      if (isMountedRef.current) {
-        setIsReleasing(false);
-      }
     }
   }
 
@@ -264,7 +174,6 @@ function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) 
           role: {
             status: RoleStatus;
             completenessScore: number;
-            trainingMessageCount: number;
           };
           becameReady: boolean;
         }>(`/api/roles/${role.id}/training/messages`, {
@@ -278,13 +187,6 @@ function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) 
       setMessages((prev) => [...prev, data.adminMessage, data.aiMessage]);
       setStatus(data.role.status);
       setCompleteness(data.role.completenessScore);
-      forceScrollToBottomRef.current = true;
-      onRoleRuntimeUpdate({
-        roleId: role.id,
-        status: data.role.status,
-        completenessScore: data.role.completenessScore,
-        trainingMessageCount: data.role.trainingMessageCount,
-      });
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
         const retry =
@@ -303,14 +205,18 @@ function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) 
   }
 
   useEffect(() => {
-    isMountedRef.current = true;
     void acquireLockAndLoad();
     return () => {
-      isMountedRef.current = false;
       if (pollRef.current) {
         window.clearInterval(pollRef.current);
       }
-      void releaseLock();
+      // Explicit lock release on room close (Section 5.2) — best-effort.
+      void withToken((token) =>
+        apiFetch(`/api/roles/${role.id}/training/lock`, {
+          method: "DELETE",
+          token,
+        }).catch(() => undefined),
+      );
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role.id]);
@@ -330,37 +236,11 @@ function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) 
   }, [isLocked, role.id]);
 
   useEffect(() => {
-    const viewport = messagesViewportRef.current;
-    if (!viewport) return;
-
-    const distanceFromBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
-    const nearBottom = distanceFromBottom < 140;
-    if (nearBottom || forceScrollToBottomRef.current) {
-      endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-      forceScrollToBottomRef.current = false;
-    }
+    endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
 
-  useEffect(() => {
-    function onPageHide() {
-      void releaseLock();
-    }
-    window.addEventListener("pagehide", onPageHide);
-    return () => {
-      window.removeEventListener("pagehide", onPageHide);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role.id, isLocked]);
-
-  function onTextareaKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey && canSend) {
-      e.preventDefault();
-      void submitMessage();
-    }
-  }
-
   return (
-    <section className="flex h-[68vh] min-h-[68vh] max-h-[68vh] flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <section className="flex min-h-[68vh] flex-col rounded-2xl border border-border bg-card">
       <div className="flex items-start justify-between gap-3 border-b border-border px-4 py-3 md:px-5">
         <div>
           <h2 className="font-display text-lg font-semibold text-foreground">
@@ -373,38 +253,16 @@ function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) 
         <div className="rounded-lg border border-border px-3 py-2 text-right text-xs">
           <p className="font-semibold text-foreground">{STATUS_LABEL[status]}</p>
           <p className="text-muted-foreground">{completeness}% lengkap</p>
-          <div className="mt-2 h-2 w-28 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-brand transition-all"
-              style={{ width: `${Math.max(0, Math.min(100, completeness))}%` }}
-              aria-hidden="true"
-            />
-          </div>
         </div>
       </div>
 
       {loadError ? (
-        <p className="mx-4 mt-4 rounded-md border border-border bg-background p-3 text-sm text-accent md:mx-5" role="status">
+        <p className="mx-4 mt-4 rounded-md border border-border bg-background p-3 text-sm text-accent md:mx-5">
           {loadError}
         </p>
       ) : null}
 
-      {!isLocked && !isLoading ? (
-        <div className="mx-4 mt-4 flex items-center justify-between gap-3 rounded-md border border-border bg-background p-3 text-sm md:mx-5">
-          <p className="text-muted-foreground">
-            Observer mode aktif. Anda dapat membaca percakapan tanpa mengedit.
-          </p>
-          <button
-            type="button"
-            onClick={() => void acquireLockAndLoad()}
-            className="shrink-0 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-muted"
-          >
-            Coba ambil lock
-          </button>
-        </div>
-      ) : null}
-
-      <div ref={messagesViewportRef} className="flex-1 overflow-y-auto px-4 py-4 md:px-5">
+      <div className="flex-1 overflow-y-auto px-4 py-4 md:px-5">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Memuat percakapan...</p>
         ) : messages.length === 0 ? (
@@ -430,18 +288,7 @@ function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) 
                   <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide opacity-75">
                     {message.sender === "admin" ? "Anda" : "AI"}
                   </p>
-                  {message.sender === "ai" ? (
-                    <div className="prose prose-sm max-w-none whitespace-normal text-current prose-headings:mb-2 prose-headings:mt-3 prose-p:my-1 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-strong:text-current prose-code:text-current">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeSanitize]}
-                      >
-                        {message.content}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
-                  )}
+                  <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
                 </div>
               </div>
             ))}
@@ -450,12 +297,11 @@ function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) 
         )}
       </div>
 
-      <div className="shrink-0 border-t border-border bg-background/70 p-4 md:p-5">
+      <div className="border-t border-border bg-background/70 p-4 md:p-5">
         <div className="space-y-2">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onTextareaKeyDown}
             rows={3}
             maxLength={4000}
             disabled={!isLocked || isSending}
@@ -472,10 +318,7 @@ function RoleTrainingChat({ role, onRoleRuntimeUpdate }: RoleTrainingChatProps) 
               Rate limit aktif. Coba lagi dalam ~{retryAfter} detik.
             </p>
           ) : null}
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">
-              {input.length}/4000 • Enter: kirim • Shift+Enter: baris baru
-            </p>
+          <div className="flex justify-end">
             <button
               type="button"
               onClick={() => void submitMessage()}

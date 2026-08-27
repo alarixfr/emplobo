@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { ModuleReader } from "@/components/modules/module-reader";
+import { ModuleLearningView } from "@/components/modules/module-learning-view";
 
 type PageProps = {
   params: Promise<{ roleId: string }>;
@@ -21,10 +21,12 @@ export default async function MyModuleRolePage({ params }: PageProps) {
         <Link href="/app/my/modules" className="text-sm font-medium text-brand hover:underline">
           ← Semua modul saya
         </Link>
-        <h1 className="mt-2 font-display text-3xl font-semibold text-foreground">Reader Modul</h1>
+        <h1 className="mt-2 font-display text-3xl font-semibold text-foreground">
+          Modul Pembelajaran & AI Tutor
+        </h1>
       </div>
 
-      <ModuleReader roleId={roleId} />
+      <ModuleLearningView roleId={roleId} />
     </div>
   );
 }

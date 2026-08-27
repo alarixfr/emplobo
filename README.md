@@ -17,6 +17,7 @@
 
 ## 📋 Daftar Isi
 
+- [Tim Developer](#-tim-pengembang)
 - [Tentang Proyek](#-tentang-proyek)
 - [Fitur Unggulan](#-fitur-unggulan)
 - [Demo & Screenshot](#-demo--screenshot)
@@ -26,7 +27,6 @@
 - [Penggunaan](#-penggunaan)
 - [API Documentation](#-api-documentation)
 - [Testing](#-testing)
-- [Tim Developer](#-tim-pengembang)
 - [Lisensi](#-lisensi)
 
 ---
@@ -39,7 +39,6 @@
 | **[Nama Lengkap 2]** | Frontend Developer | [GitHub](https://github.com/[username2]) |
 | **[Nama Lengkap 3]** | Backend Developer | [GitHub](https://github.com/[username3]) |
 | **[Nama Lengkap 4]** | UI/UX Designer | [GitHub](https://github.com/[username4]) |
-| **[Nama Lengkap 4]** | UI/UX Designer | [@username4](https://github.com/[username4]) |
 
 ---
 
@@ -76,8 +75,8 @@ Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = sat
 
 - **Multi-tenant Clerk B2B** - Satu org Clerk = satu UMKM; role `org:admin` / `org:member`
 - **Training lock** - Mencegah dua admin train Role yang sama secara bersamaan
-- **Rate limit & cooldown** - Proteksi biaya AI (Upstash Redis) di setiap endpoint AI
-- **Dashboard admin** - Ringkasan completion % dan skor kuis (Section berikutnya)
+- **Rate limit & cooldown** - Proteksi biaya AI (Upstash Redis) di setiap endpoint AI (training, guide gen, chat message, chat session)
+- **Dashboard admin** - Statistik lengkap: completion %, skor kuis, per-role progress, pemakaian AI 30 hari
 
 ---
 
@@ -349,15 +348,18 @@ pnpm lint
 
 #### Untuk Admin (`org:admin`)
 
-1. **Dashboard**: `/app` menampilkan org aktif dan peran `ADMIN`.
+1. **Dashboard**: `/app` menampilkan org aktif dan peran `ADMIN`, plus ringkasan statistik: total role, guide terpublikasi, jumlah karyawan, rata-rata nilai kuis, pemakaian AI 30 hari, dan progress per role (bar completion % + skor kuis).
 2. **Roles**: buka `/app/roles` → buat role (nama + deskripsi opsional) → lihat detail di `/app/roles/[id]`.
 3. **Training Room**: Buka detail role di `/app/roles/[id]`, sistem akan mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin.
+4. **Generate Guide**: saat status role `READY` (completeness ≥ 75), klik **Generate Guide** → AI menyusun panduan berstruktur (chapter markdown + kuis) dari seluruh transcript training, divalidasi Zod, lalu ditulis atomik ke DB; status berubah jadi `PUBLISHED`. Maksimal 3 generasi per jam per role.
+5. **Assign Karyawan**: setelah `PUBLISHED`, pilih karyawan (`org:member`) dari panel assignment di halaman detail role untuk memberi akses modul.
 
 #### Untuk Karyawan (`org:member`)
 
 1. **Dashboard Karyawan**: `/app` menampilkan org aktif dan peran `EMPLOYEE`.
 2. **Modul Saya**: Buka `/app/my/modules` untuk melihat daftar peran kerja dan panduan SOP yang di-assign oleh Admin.
 3. **Membaca Modul & Kuis**: Klik "Buka Modul" → baca materi tiap chapter dengan sanitasi markdown aman (`rehype-sanitize`), kerjakan kuis pemahaman chapter (evaluasi nilai server-side), dan tandai selesai atau lulus kuis untuk mencatat progres pembelajaran.
+4. **Chat AI Tutor (24/7)**: Pindah ke tab "Tanya AI Tutor" pada modul terkait untuk bertanya langsung ke AI tutor yang di-grounded ketat pada SOP/panduan peran tersebut (tidak mengarang prosedur yang belum diajarkan).
 
 ---
 
@@ -403,9 +405,30 @@ GET    /api/my/modules                    # employee list of assigned modules
 GET    /api/my/modules/:roleId/chapters   # employee chapter reader payload + sanitized quizzes + attempts
 POST   /api/my/chapters/:id/complete      # employee mark chapter complete (upsert)
 POST   /api/my/chapters/:id/quiz/submit   # employee submit quiz answers, server-side grading (no leak)
+
+# Section 8 — Employee AI Chat Tutor (requireAuth; rate-limited + anti-IDOR)
+POST   /api/my/chat/sessions              # create chat session (rate-limited; auto-caps at 10 sessions atomically)
+GET    /api/my/chat/sessions              # list chat sessions for assigned role
+GET    /api/my/chat/sessions/:id/messages # fetch session transcript (ownership verified)
+POST   /api/my/chat/sessions/:id/messages # send question, get grounded AI tutor answer (cooldown 2s, rate-limited)
+
+# Section 9 — Admin Dashboard (requireAdmin; cached 60s)
+GET    /api/dashboard/summary             # counts, avg quiz score, per-role completion, AI usage 30d
 ```
 
-Training Room lock/heartbeat/messages sudah tersedia di Section 4, termasuk observer mode saat lock dipakai admin lain, server cooldown 2 detik, dan rate limit per user. Step 5 (Guide Generation) sudah aktif dengan validasi JSON ketat, retry sekali untuk output model invalid, rate limit, cooldown, dan penulisan DB atomik via transaction. Step 6 & 7 juga aktif: admin bisa assign employee dari role detail page, employee bisa membuka modul sendiri, membaca chapter, mengerjakan kuis dengan grading server-side tanpa kebocoran kunci jawaban, dan menyimpan progress.
+> **Caching (Section 6)**: guide & role-status di-cache di Upstash Redis
+> (guide 10 menit, status role 30 detik, dashboard 60 detik). Cache
+> di-invalidate otomatis saat guide di-generate ulang atau skor berubah.
+> Semua data per-user (chat sessions, quiz attempts, progress) **tidak
+> pernah** masuk cache ini.
+>
+> **AI Usage (AiUsageLog)**: setiap panggilan AI (training, guide
+> generation, chat tutor) dicatat ke tabel `AiUsageLog` (org, user, kind,
+> token in/out) — basis data untuk tampilan "Pemakaian AI" di dashboard
+> admin. Rate limit tetap ditegakkan oleh Redis; tabel ini murni untuk
+> audit/statistik dan tidak pernah dipakai untuk enforcement.
+
+Training Room lock/heartbeat/messages sudah tersedia di Section 4, termasuk observer mode saat lock dipakai admin lain, server cooldown 2 detik, dan rate limit per user. Step 5 (Guide Generation) sudah aktif dengan validasi JSON ketat, retry sekali untuk output model invalid, rate limit, cooldown, dan penulisan DB atomik via transaction. Step 6, 7, dan 8 juga aktif: admin bisa assign employee dari role detail page, employee bisa membuka modul sendiri, membaca chapter, mengerjakan kuis dengan grading server-side tanpa kebocoran kunci jawaban, serta berdialog langsung dengan AI Tutor 24/7 yang di-grounded pada SOP bisnis.
 
 ### Example Request
 
@@ -433,6 +456,9 @@ const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roles`, {
 # Type-check API
 pnpm --filter @emplobo/api lint
 
+# Type-check packages/db
+pnpm --filter @emplobo/db exec tsc --noEmit
+
 # Lint web
 pnpm --filter @emplobo/web lint
 
@@ -449,7 +475,9 @@ curl http://localhost:3000/nonexistent           # expected 404
 ### Test Coverage
 
 Belum ada suite unit/integration/e2e terpisah pada tahap ini. Validasi saat ini
-berbasis lint/typecheck/build + smoke test endpoint/routing sesuai Section 0–4.
+berbasis lint/typecheck/build + smoke test endpoint/routing. Verifikasi fungsional
+per Section tersedia di bagian [User Guide](#-penggunaan) (Step 1–8 sudah aktif,
+termasuk AI Tutor grounded di Step 8).
 
 ---
 

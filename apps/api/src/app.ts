@@ -6,6 +6,8 @@ import type { Env } from "./env.js";
 import { createAuthMiddleware } from "./middleware/auth.js";
 import { errorHandler, notFound } from "./middleware/error.js";
 import { healthRouter } from "./routes/health.js";
+import { createChatRouter } from "./routes/chat.js";
+import { createDashboardRouter } from "./routes/dashboard.js";
 import { createMyRouter } from "./routes/my.js";
 import { createRolesRouter } from "./routes/roles.js";
 import { createClerkWebhookRouter } from "./routes/webhooks/clerk.js";
@@ -91,7 +93,14 @@ export function createApp(env: Env): Express {
   // Section 3 — Admin Role CRUD
   app.use("/api/roles", createRolesRouter(requireAdmin, env));
 
+  // Section 9 — Admin usage dashboard (counts, quiz scores, per-role completion)
+  app.use("/api/dashboard", createDashboardRouter(requireAdmin, env));
+
   // Section 6 — Employee modules + chapters
+  // NOTE: mounted AFTER /api/my/chat so Express matches the more specific
+  // prefix first and /api/my/chat/* never falls through to the generic
+  // /api/my router.
+  app.use("/api/my/chat", createChatRouter(requireAuth, env));
   app.use("/api/my", createMyRouter(requireAuth));
 
   app.use(notFound);
