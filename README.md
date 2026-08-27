@@ -25,6 +25,7 @@
 - [Arsitektur Sistem](#-arsitektur-sistem)
 - [Instalasi & Setup](#-instalasi--setup)
 - [Penggunaan](#-penggunaan)
+- [Deployment](#-deployment)
 - [API Documentation](#-api-documentation)
 - [Testing](#-testing)
 - [Lisensi](#-lisensi)
@@ -358,6 +359,82 @@ pnpm build
 # Linting
 pnpm lint
 ```
+
+---
+
+## 🚀 Deployment
+
+Arsitektur produksi: **apps/web → Vercel**, **apps/api → Railway/Render**,
+**PostgreSQL → Neon (pooled)**, **Clerk B2B production instance**, **Upstash
+Redis** (rate limit + cache). Checklist berikut adalah jalur deploy resmi
+(Section 13).
+
+### 1️⃣ Deploy `apps/api` ke Railway/Render
+
+Set env vars berikut (nilai production, bukan dev):
+
+```env
+DATABASE_URL="postgresql://user:pass@ep-xxx-pooler.neon.tech/emplobo?sslmode=require"  # pooled
+DIRECT_URL="postgresql://user:pass@ep-xxx.neon.tech/emplobo?sslmode=require"           # direct
+CLERK_SECRET_KEY="sk_live_xxx"
+CLERK_PUBLISHABLE_KEY="pk_live_xxx"
+CLERK_WEBHOOK_SECRET="whsec_xxx"
+ANTHROPIC_API_KEY="sk-ant-xxx"
+UPSTASH_REDIS_REST_URL="https://xxx.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="xxx"
+WEB_APP_ORIGIN="https://<web-domain>"   # harus persis origin web yang ter-deploy
+PORT="4000"
+NODE_ENV="production"
+```
+
+> ⚠️ `WEB_APP_ORIGIN` adalah satu-satunya origin yang diizinkan CORS — tidak
+> ada wildcard. Pastikan nilainya persis domain web ter-deploy.
+
+### 2️⃣ Deploy `apps/web` ke Vercel
+
+Env vars di Vercel (Production):
+
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_live_xxx"
+CLERK_SECRET_KEY="sk_live_xxx"
+NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
+NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/app"
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/onboarding"
+NEXT_PUBLIC_API_URL="https://<api-domain>"
+```
+
+> CORS di `apps/web/next.config.ts` otomatis memakai `NEXT_PUBLIC_API_URL`
+> untuk `connect-src` CSP — pastikan tidak ada origin lain yang diblokir.
+
+### 3️⃣ Migrasi Database (Neon)
+
+```bash
+pnpm db:migrate:deploy   # prisma migrate deploy — bukan migrate dev
+```
+
+### 4️⃣ Clerk Dashboard (production)
+
+1. Buat **production instance** baru (jangan pakai dev keys)
+2. Aktifkan **Organizations** + roles `org:admin` / `org:member`
+3. **Redirect URLs** → domain deploy web (mis. `https://<web-domain>/*`)
+4. **Webhooks** → endpoint `https://<api-domain>/webhooks/clerk`, events:
+   `user.created`, `user.updated`, `organizationMembership.created`,
+   `organizationMembership.updated`, `organizationMembership.deleted`
+5. Paste **Signing Secret** ke `CLERK_WEBHOOK_SECRET` di apps/api
+
+### 5️⃣ Verifikasi Keamanan (post-deploy)
+
+```bash
+curl -I https://<web-domain>        # cek CSP, X-Frame-Options, X-Content-Type-Options
+curl -I https://<api-domain>/health # cek header helmet + CORS hanya untuk web origin
+```
+
+Headers yang harus ada di respons API: `Content-Security-Policy`,
+`X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
+`Strict-Transport-Security`, dan `Access-Control-Allow-Origin` hanya untuk
+origin web Anda. Terakhir, jalankan **full demo path** (User Guide Step 14)
+sekali penuh terhadap deployment live sebelum submit.
 
 ### User Guide
 
