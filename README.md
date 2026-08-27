@@ -512,9 +512,16 @@ curl http://localhost:3000/nonexistent           # expected 404
 
 Belum ada suite unit/integration/e2e terpisah pada tahap ini. Validasi saat ini
 berbasis lint/typecheck/build + smoke test endpoint/routing. Verifikasi fungsional
-per Section tersedia di bagian [User Guide](#-penggunaan) (Step 1–10 sudah aktif:
-seluruh fitur inti sampai AI Tutor grounded, plus polish UI/UX — design tokens
-konsisten, ikon SVG custom, landing page responsif).
+per Section tersedia di bagian [User Guide](#-penggunaan) (Step 1–12 sudah aktif:
+seluruh fitur inti sampai AI Tutor grounded, polish UI/UX — design tokens
+konsisten, ikon SVG custom, landing page responsif — serta checklist keamanan
+Section 8 terverifikasi: tenant scoping (orgId di semua query), scoping employee
+per userId, ownership ChatSession dicek ulang tiap pesan (anti-IDOR),
+correctIndex tidak pernah bocor ke payload employee, sanitasi input
+`<business_data>` + strip tag penutup, rate limit & cooldown di semua endpoint
+AI, CORS allowlist tanpa wildcard, helmet + CSP ketat, verifikasi webhook svix,
+Zod `.strict()` di semua request body, lock training atomik via `updateMany`,
+guide generation dalam `$transaction`, dan rehype-sanitize tanpa rehype-raw).
 
 ---
 
