@@ -44,13 +44,14 @@ export default async function TrainingRolePage({ params }: PageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto h-full w-full max-w-container space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-semibold text-foreground">
+        <h1 className="font-headline-md text-headline-md text-on-surface">
           Training Room
         </h1>
-        <p className="mt-1 text-muted-foreground">
-          Role sudah dipilih otomatis. Ganti role dari sidebar jika diperlukan.
+        <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
+          Role sudah dipilih otomatis. Ganti role dari rail kiri jika
+          diperlukan.
         </p>
       </div>
 

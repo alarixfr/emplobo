@@ -2,9 +2,9 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useEffect, useMemo, useState } from "react";
-import { UsersIcon } from "@/components/icons";
 import { ApiError, apiFetch } from "@/lib/api";
 import type { RoleStatus } from "@/lib/roles";
+import { initialsOf } from "@/components/shell/app-sidebar";
 
 type AssignableUser = {
   id: string;
@@ -123,15 +123,15 @@ export function AssignmentPanel({ roleId, roleStatus }: AssignmentPanelProps) {
   }, [roleStatus]);
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4">
+    <section className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="flex items-center gap-2 font-display text-lg font-semibold text-foreground">
-            <UsersIcon className="h-5 w-5 text-brand" />
+          <h3 className="font-headline-sm text-headline-sm text-on-surface">
             Tugaskan Karyawan
           </h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Tugaskan role ini ke karyawan agar modul pembelajaran muncul di akun mereka.
+          <p className="mt-1 font-body-sm text-body-sm text-secondary">
+            Tugaskan role ini ke karyawan agar modul pembelajaran muncul di
+            akun mereka.
           </p>
         </div>
 
@@ -139,30 +139,39 @@ export function AssignmentPanel({ roleId, roleStatus }: AssignmentPanelProps) {
           type="button"
           onClick={() => void assignUsers()}
           disabled={!canAssign}
-          className="inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:opacity-50"
         >
-          {isAssigning ? "Menyimpan..." : `Tugaskan (${selected.size})`}
+          <span className="material-symbols-outlined text-[18px]">
+            assignment_ind
+          </span>
+          {isAssigning ? "MENYIMPAN…" : `TUGASKAN (${selected.size})`}
         </button>
       </div>
 
       {status !== "PUBLISHED" ? (
-        <p className="mt-3 rounded-md border border-border bg-background p-3 text-sm text-muted-foreground">
-          Role belum dipublikasikan. Hasilkan panduan dulu agar penugasan aktif.
+        <p className="mt-3 rounded-lg border border-status-locked border-l-4 bg-surface-bright p-3 font-body-sm text-body-sm text-on-surface-variant">
+          Role belum dipublikasikan. Hasilkan panduan dulu agar penugasan
+          aktif.
         </p>
       ) : null}
 
-      {error ? <p className="mt-3 text-sm text-accent">{error}</p> : null}
-      {result ? <p className="mt-3 text-sm text-foreground">{result}</p> : null}
+      {error ? <p className="mt-3 font-body-sm text-body-sm text-error">{error}</p> : null}
+      {result ? (
+        <p className="mt-3 font-body-sm text-body-sm text-on-surface">{result}</p>
+      ) : null}
 
-      <div className="mt-4 rounded-lg border border-border bg-background">
+      <div className="mt-4 rounded-lg border border-outline-variant bg-surface-bright">
         {isLoading ? (
-          <p className="p-4 text-sm text-muted-foreground">Memuat karyawan...</p>
+          <p className="p-4 font-body-sm text-body-sm text-secondary">
+            Memuat karyawan...
+          </p>
         ) : users.length === 0 ? (
-          <p className="p-4 text-sm text-muted-foreground">
-            Belum ada karyawan di organisasi ini.
+          <p className="p-4 font-body-sm text-body-sm text-secondary">
+            Belum ada karyawan di organisasi ini. Undang lewat Clerk di menu
+            organisasi.
           </p>
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-outline-variant">
             {users.map((user) => {
               const checked = selected.has(user.id);
               const disabled = user.isAssigned;
@@ -175,30 +184,30 @@ export function AssignmentPanel({ roleId, roleStatus }: AssignmentPanelProps) {
                       checked={checked}
                       disabled={disabled || status !== "PUBLISHED"}
                       onChange={() => toggleUser(user.id)}
-                      className="h-4 w-4 rounded border-border"
+                      className="h-4 w-4 rounded border-outline-variant accent-[#144225]"
                     />
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-fixed font-label-caps text-[10px] text-on-primary-fixed-variant">
+                      {initialsOf(user.name)}
+                    </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-foreground">
+                      <span className="block truncate font-body-md text-body-md font-medium text-on-surface">
                         {user.name}
                       </span>
-                      <span className="block truncate text-xs text-muted-foreground">
+                      <span className="block truncate text-[12px] text-secondary">
                         {user.email}
                       </span>
                     </span>
                   </label>
 
-                  <div className="text-right text-xs">
+                  <div className="text-right">
                     {user.isAssigned ? (
-                      <>
-                        <p className="font-semibold text-foreground">Ditugaskan</p>
-                        <p className="text-muted-foreground">
-                          {user.assignedAt
-                            ? new Date(user.assignedAt).toLocaleDateString("id-ID")
-                            : "—"}
-                        </p>
-                      </>
+                      <span className="rounded-full bg-primary-fixed px-2.5 py-1 font-label-caps text-[10px] text-on-primary-fixed-variant">
+                        DITUGASKAN
+                      </span>
                     ) : (
-                      <p className="text-muted-foreground">Belum ditugaskan</p>
+                      <span className="rounded-full bg-surface-variant px-2.5 py-1 font-label-caps text-[10px] text-secondary">
+                        BELUM
+                      </span>
                     )}
                   </div>
                 </li>

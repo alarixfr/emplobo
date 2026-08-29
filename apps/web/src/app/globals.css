@@ -1,46 +1,392 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap");
 @import "tailwindcss";
 
-:root {
-  --font-dm-sans: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-fraunces: 'Fraunces', Georgia, Cambria, 'Times New Roman', Times, serif;
+/*
+ * ── Institutional Intelligence design system ──────────────────────────────
+ * Ported 1:1 from uireference/institutional_intelligence (DESIGN.md).
+ * Forest Green primary · Enterprise Slate · Indigo AI distinction ·
+ * Hanken Grotesk headlines / Inter body / JetBrains Mono labels.
+ * Fonts are loaded via next/font in src/app/layout.tsx as CSS variables.
+ */
 
-  /* Brand — teal primary (single theme token, not scattered hex) */
-  --brand: #0d9488;
-  --brand-foreground: #ffffff;
-  --brand-muted: #ccfbf1;
-  --accent: #ea580c;
-  --accent-foreground: #ffffff;
+@theme {
+  /* ── Surfaces ─────────────────────────────────────────────────────── */
+  --color-surface: #f9faf5;
+  --color-surface-dim: #d9dad6;
+  --color-surface-bright: #f9faf5;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f3f4ef;
+  --color-surface-container: #edeee9;
+  --color-surface-container-high: #e7e9e4;
+  --color-surface-container-highest: #e2e3de;
+  --color-surface-variant: #e2e3de;
+  --color-surface-muted: #f8fafc;
 
-  --background: #f8faf9;
-  --foreground: #0f1f1c;
-  --muted: #e7eeec;
-  --muted-foreground: #4a635e;
-  --border: #d0ddd9;
-  --card: #ffffff;
-  --ring: #0d9488;
-}
+  /* ── On-surface / outline ─────────────────────────────────────────── */
+  --color-on-surface: #1a1c19;
+  --color-on-surface-variant: #414941;
+  --color-inverse-surface: #2e312e;
+  --color-inverse-on-surface: #f0f1ec;
+  --color-outline: #717971;
+  --color-outline-variant: #c1c9bf;
+  --color-surface-tint: #3b6847;
 
-@theme inline {
-  --color-brand: var(--brand);
-  --color-brand-foreground: var(--brand-foreground);
-  --color-brand-muted: var(--brand-muted);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
-  --color-card: var(--card);
-  --color-ring: var(--ring);
-  --font-sans: var(--font-dm-sans);
-  --font-display: var(--font-fraunces);
+  /* ── Primary: Forest Green ────────────────────────────────────────── */
+  --color-primary: #144225;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #2d5a3a;
+  --color-on-primary-container: #9ed0a7;
+  --color-primary-fixed: #bcefc4;
+  --color-primary-fixed-dim: #a1d2aa;
+  --color-on-primary-fixed: #00210d;
+  --color-on-primary-fixed-variant: #225031;
+  --color-inverse-primary: #a1d2aa;
+
+  /* ── Secondary: Enterprise Slate ──────────────────────────────────── */
+  --color-secondary: #565e74;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #dae2fd;
+  --color-on-secondary-container: #5c647a;
+  --color-secondary-fixed: #dae2fd;
+  --color-secondary-fixed-dim: #bec6e0;
+  --color-on-secondary-fixed: #131b2e;
+  --color-on-secondary-fixed-variant: #3f465c;
+
+  /* ── Tertiary: Wine ───────────────────────────────────────────────── */
+  --color-tertiary: #5d2a36;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #78404c;
+  --color-on-tertiary-container: #fab0bd;
+  --color-tertiary-fixed: #ffd9df;
+  --color-tertiary-fixed-dim: #fdb2c0;
+  --color-on-tertiary-fixed: #370b18;
+  --color-on-tertiary-fixed-variant: #6c3642;
+
+  /* ── Error ────────────────────────────────────────────────────────── */
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* ── AI distinction (indigo tint) ─────────────────────────────────── */
+  --color-ai-accent: #eef2ff;
+  --color-ai-border: #c7d2fe;
+
+  /* ── Status semantics ─────────────────────────────────────────────── */
+  --color-status-ready: #3b82f6;
+  --color-status-locked: #f59e0b;
+
+  --color-background: #f9faf5;
+  --color-on-background: #1a1c19;
+
+  /* ── Fonts (loaded via Google Fonts stylesheet above) ─────────────── */
+  --font-headline-lg: "Hanken Grotesk", system-ui, sans-serif;
+  --font-headline-md: "Hanken Grotesk", system-ui, sans-serif;
+  --font-headline-sm: "Hanken Grotesk", system-ui, sans-serif;
+  --font-body-lg: "Inter", system-ui, sans-serif;
+  --font-body-md: "Inter", system-ui, sans-serif;
+  --font-body-sm: "Inter", system-ui, sans-serif;
+  --font-label-caps: "JetBrains Mono", ui-monospace, monospace;
+  --font-data-point: "JetBrains Mono", ui-monospace, monospace;
+
+  /* ── Type scale (size + weight/line-height/letter-spacing modifiers) ── */
+  --text-headline-lg: 3rem;
+  --text-headline-lg--line-height: 3.5rem;
+  --text-headline-lg--font-weight: 700;
+  --text-headline-lg--letter-spacing: -0.02em;
+
+  --text-headline-lg-mobile: 2rem;
+  --text-headline-lg-mobile--line-height: 2.5rem;
+  --text-headline-lg-mobile--font-weight: 700;
+  --text-headline-lg-mobile--letter-spacing: -0.01em;
+
+  --text-headline-md: 1.875rem;
+  --text-headline-md--line-height: 2.375rem;
+  --text-headline-md--font-weight: 600;
+
+  --text-headline-sm: 1.5rem;
+  --text-headline-sm--line-height: 2rem;
+  --text-headline-sm--font-weight: 600;
+
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 1.75rem;
+  --text-body-lg--font-weight: 400;
+
+  --text-body-md: 1rem;
+  --text-body-md--line-height: 1.5rem;
+  --text-body-md--font-weight: 400;
+
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.25rem;
+  --text-body-sm--font-weight: 400;
+
+  --text-label-caps: 0.75rem;
+  --text-label-caps--line-height: 1rem;
+  --text-label-caps--font-weight: 600;
+  --text-label-caps--letter-spacing: 0.05em;
+
+  --text-data-point: 0.875rem;
+  --text-data-point--line-height: 1.25rem;
+  --text-data-point--font-weight: 500;
+
+  /* ── Soft institutional roundedness (DESIGN.md §Shapes) ───────────── */
+  --radius-sm: 0.125rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.5rem;
+
+  /* ── Layout spacing tokens ────────────────────────────────────────── */
+  --container-container: 1280px;
+  --spacing-margin-mobile: 1rem;
+  --spacing-margin-desktop: 2.5rem;
+  --spacing-gutter: 1.5rem;
+  --spacing-section-gap: 4rem;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
+  background-color: var(--color-surface-muted);
+  color: var(--color-on-surface);
+  font-family: var(--font-body-md);
 }
 
+/* ── Material Symbols Outlined (loaded via <link> in layout.tsx) ──────── */
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.ms-fill {
+  font-variation-settings:
+    "FILL" 1,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+}
+
+/* ── AI / user chat bubbles ────────────────────────────────────────────── */
+.ai-bubble {
+  border: 1px solid var(--color-ai-border);
+  background-color: var(--color-ai-accent);
+}
+
+.user-bubble {
+  border: 1px solid var(--color-slate-200, #e2e8f0);
+  background-color: var(--color-surface-container-lowest);
+}
+
+/* Green user bubble — used by the employee AI tutor screen (reference). */
+.user-bubble-green {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* ── Guide article typography (720px reading column) ──────────────────── */
+.guide-content {
+  color: var(--color-on-surface-variant);
+  font-family: var(--font-body-lg);
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.guide-content h1,
+.guide-content h2,
+.guide-content h3,
+.guide-content h4 {
+  color: var(--color-on-surface);
+  font-family: var(--font-headline-sm);
+  font-weight: 600;
+  line-height: 2rem;
+  font-size: 1.5rem;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.guide-content h3,
+.guide-content h4 {
+  font-size: 1.25rem;
+}
+
+.guide-content p {
+  margin-bottom: 1rem;
+}
+
+.guide-content strong {
+  color: var(--color-on-surface);
+  font-weight: 600;
+}
+
+.guide-content a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.guide-content ul,
+.guide-content ol {
+  margin: 0 0 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.guide-content ul {
+  list-style: disc;
+}
+
+.guide-content ol {
+  list-style: decimal;
+}
+
+.guide-content code {
+  font-family: var(--font-data-point);
+  font-size: 0.875rem;
+  background: var(--color-surface-container-low);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.35rem;
+}
+
+.guide-content pre {
+  background: var(--color-surface-container-low);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.guide-content pre code {
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.guide-content blockquote {
+  border-left: 4px solid var(--color-primary-fixed-dim);
+  padding-left: 1rem;
+  color: var(--color-on-surface-variant);
+  margin-bottom: 1rem;
+}
+
+/* Compact markdown for AI tutor chat bubbles (stays at body-md, 16px). */
+.chat-markdown {
+  color: var(--color-on-surface);
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.chat-markdown p {
+  margin-bottom: 0.5rem;
+}
+
+.chat-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-markdown ul,
+.chat-markdown ol {
+  margin: 0 0 0.5rem 1.1rem;
+}
+
+.chat-markdown ul {
+  list-style: disc;
+}
+
+.chat-markdown ol {
+  list-style: decimal;
+}
+
+.chat-markdown strong {
+  color: var(--color-on-surface);
+  font-weight: 600;
+}
+
+.chat-markdown code {
+  font-family: var(--font-data-point);
+  font-size: 0.8rem;
+  background: var(--color-surface-container-low);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 0.25rem;
+  padding: 0.05rem 0.3rem;
+}
+
+.guide-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.guide-content th,
+.guide-content td {
+  border: 1px solid var(--color-outline-variant);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.guide-content th {
+  background: var(--color-surface-container-low);
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
+/* ── Typing cursor (AI tutor thinking state) ──────────────────────────── */
+.typing-cursor::after {
+  content: "▍";
+  animation: typing-blink 1s steps(1) infinite;
+  color: var(--color-primary);
+}
+
+@keyframes typing-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── Slim scrollbar for chat histories (reference aesthetic) ──────────── */
+.scroll-slim {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-outline-variant) transparent;
+}
+
+.scroll-slim::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+  border-radius: 9999px;
+}
+
+.scroll-slim::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Dark scrollbar variant for the developer docs code pane. */
+.scroll-slim-dark {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 transparent;
+}
+
+.scroll-slim-dark::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-slim-dark::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 9999px;
+}

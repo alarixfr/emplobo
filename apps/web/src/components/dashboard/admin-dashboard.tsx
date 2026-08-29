@@ -2,9 +2,19 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
-import { ActivityIcon } from "@/components/icons";
 import { ApiError, apiFetch } from "@/lib/api";
+import { ProgressBar } from "@/components/ui/progress-bar";
+import { StatusBadge } from "@/components/ui/status-badge";
+import type { RoleStatus } from "@/lib/roles";
+
+type ActivityItem = {
+  id: string;
+  kind: "quiz" | "assignment" | "guide";
+  userName: string | null;
+  roleName: string | null;
+  detail: string;
+  createdAt: string;
+};
 
 type DashboardSummary = {
   roles: {
@@ -35,6 +45,7 @@ type DashboardSummary = {
     avgCompletionPct: number;
     avgQuizBestScore: number | null;
   }>;
+  recentActivity: ActivityItem[];
 };
 
 function formatTokens(n: number): string {
@@ -43,27 +54,86 @@ function formatTokens(n: number): string {
   return String(n);
 }
 
+/** Material icon heuristic per role name (reference table rows). */
+function roleIcon(name: string): string {
+  const n = name.toLowerCase();
+  if (/(barista|kopi|coffee|cafe)/.test(n)) return "local_cafe";
+  if (/(kasir|cashier)/.test(n)) return "point_of_sale";
+  if (/(waiter|pelayan|server)/.test(n)) return "restaurant";
+  if (/(koki|dapur|chef|cook|dapur)/.test(n)) return "skillet";
+  if (/(gudang|warehouse|stock|stok)/.test(n)) return "warehouse";
+  if (/(admin|hr)/.test(n)) return "admin_panel_settings";
+  if (/(marketing|sales|penjualan)/.test(n)) return "campaign";
+  return "work";
+}
+
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "baru saja";
+  if (mins < 60) return `${mins} menit lalu`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} jam lalu`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} hari lalu`;
+  return new Date(iso).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+const ACTIVITY_ICONS: Record<ActivityItem["kind"], string> = {
+  quiz: "quiz",
+  assignment: "assignment_ind",
+  guide: "auto_stories",
+};
+
+const ACTIVITY_ICON_BG: Record<ActivityItem["kind"], string> = {
+  quiz: "bg-ai-accent text-primary",
+  assignment: "bg-primary-fixed text-on-primary-fixed-variant",
+  guide: "bg-tertiary-fixed text-on-tertiary-fixed-variant",
+};
+
 function StatCard({
   label,
   value,
   hint,
   icon,
+  iconClass,
 }: {
   label: string;
-  value: string | number;
+  value: string;
   hint?: string;
-  icon?: ReactNode;
+  icon: string;
+  iconClass: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {icon}
-        {label}
+    <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
+      <div className="flex items-start justify-between">
+        <p className="font-label-caps text-label-caps text-secondary">
+          {label}
+        </p>
+        <div
+          className={`flex h-10 w-10 items-center justify-center rounded-full ${iconClass}`}
+        >
+          <span className="material-symbols-outlined text-[20px]">{icon}</span>
+        </div>
+      </div>
+      <p className="mt-2 font-headline-md text-[32px] leading-10 text-on-surface">
+        {value}
       </p>
-      <p className="mt-1 font-display text-3xl font-semibold text-foreground">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+      {hint ? (
+        <p className="mt-1 font-body-sm text-body-sm text-secondary">{hint}</p>
+      ) : null}
     </div>
   );
+}
+
+function statusFill(status: RoleStatus, pct: number): string {
+  if (status === "PUBLISHED") return "bg-primary";
+  if (status === "READY") return "bg-status-ready";
+  if (pct >= 50) return "bg-status-locked";
+  return "bg-secondary";
 }
 
 export function AdminDashboard() {
@@ -81,9 +151,10 @@ export function AdminDashboard() {
         setError("Sesi tidak valid. Silakan login ulang.");
         return;
       }
-      const data = await apiFetch<{ summary: DashboardSummary }>("/api/dashboard/summary", {
-        token,
-      });
+      const data = await apiFetch<{ summary: DashboardSummary }>(
+        "/api/dashboard/summary",
+        { token },
+      );
       setSummary(data.summary);
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
@@ -104,22 +175,22 @@ export function AdminDashboard() {
   if (isLoading && !summary) {
     return (
       <div className="space-y-4">
-        <div className="h-24 animate-pulse rounded-xl bg-muted" />
-        <div className="h-40 animate-pulse rounded-xl bg-muted" />
+        <div className="h-28 animate-pulse rounded-xl bg-surface-container-low" />
+        <div className="h-56 animate-pulse rounded-xl bg-surface-container-low" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-xl border border-border bg-card p-6">
-        <p className="text-sm text-accent">{error}</p>
+      <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-6 shadow-sm">
+        <p className="font-body-sm text-body-sm text-error">{error}</p>
         <button
           type="button"
           onClick={() => void load()}
-          className="mt-3 inline-flex rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90"
+          className="mt-3 inline-flex items-center rounded-lg bg-primary px-4 py-2 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
         >
-          Muat Ulang
+          MUAT ULANG
         </button>
       </div>
     );
@@ -128,91 +199,199 @@ export function AdminDashboard() {
   if (!summary) return null;
 
   return (
-    <div className="space-y-6">
-      {/* ── Stat cards ─────────────────────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Total Role" value={summary.roles.total} />
+    <div className="space-y-8">
+      {/* ── Metrics bento grid ───────────────────────────────────────── */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Guide Dipublikasikan"
-          value={summary.roles.published}
-          hint={`${summary.roles.draft} draft · ${summary.roles.ready} siap`}
-        />
-        <StatCard label="Karyawan" value={summary.employees} />
-        <StatCard
-          label="Penugasan Modul"
-          value={summary.assignments}
-          hint="Total assignment karyawan ke role"
+          label="TOTAL ROLE"
+          value={String(summary.roles.total)}
+          hint={`${summary.roles.draft} draft · ${summary.roles.ready} siap · ${summary.roles.published} published`}
+          icon="menu_book"
+          iconClass="bg-ai-accent text-primary"
         />
         <StatCard
-          label="Rata-rata Nilai Kuis"
-          value={summary.quiz.avgBestScore !== null ? `${summary.quiz.avgBestScore}%` : "—"}
+          label="KARYAWAN"
+          value={String(summary.employees)}
+          hint={`${summary.assignments} penugasan modul aktif`}
+          icon="group"
+          iconClass="bg-surface-container-low text-secondary"
+        />
+        <StatCard
+          label="RATA-RATA NILAI KUIS"
+          value={
+            summary.quiz.avgBestScore !== null
+              ? `${summary.quiz.avgBestScore}%`
+              : "—"
+          }
           hint={
             summary.quiz.attempts > 0
               ? `${summary.quiz.attempts} percobaan kuis`
               : "Belum ada percobaan kuis"
           }
+          icon="workspace_premium"
+          iconClass="bg-tertiary-fixed text-on-tertiary-fixed-variant"
         />
         <StatCard
-          label="Pemakaian AI (30 hari)"
-          value={formatTokens(summary.aiUsage30d.tokensIn + summary.aiUsage30d.tokensOut)}
+          label="AI USAGE (30 HARI)"
+          value={formatTokens(
+            summary.aiUsage30d.tokensIn + summary.aiUsage30d.tokensOut,
+          )}
           hint={`${summary.aiUsage30d.training} training · ${summary.aiUsage30d.chat} chat · ${summary.aiUsage30d.guideGen} guide`}
-          icon={<ActivityIcon className="h-3.5 w-3.5 text-brand" />}
+          icon="bolt"
+          iconClass="bg-primary-fixed text-on-primary-fixed-variant"
         />
       </div>
 
-      {/* ── Per-role progress ──────────────────────────────────────── */}
-      <section className="rounded-xl border border-border bg-card p-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-display text-lg font-semibold text-foreground">
-              Progress per Role
+      {/* ── Brain Readiness table + Recent Activity ──────────────────── */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <section className="rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm lg:col-span-2">
+          <div className="border-b border-slate-200 p-5">
+            <h2 className="font-headline-sm text-[20px] text-on-surface">
+              Brain Readiness
             </h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              Rata-rata penyelesaian chapter dan nilai kuis karyawan.
+            <p className="mt-0.5 font-body-sm text-body-sm text-secondary">
+              Status kelengkapan pengetahuan AI per role.
             </p>
           </div>
-        </div>
 
-        {summary.perRole.length === 0 ? (
-          <p className="mt-4 rounded-lg border border-border bg-background p-4 text-sm text-muted-foreground">
-            Belum ada guide yang dipublikasikan. Buat role, latih AI sampai READY, lalu generate
-            guide untuk melihat progress di sini.
-          </p>
-        ) : (
-          <ul className="mt-4 space-y-4">
-            {summary.perRole.map((role) => (
-              <li key={role.roleId} className="rounded-lg border border-border bg-background p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="font-medium text-foreground">{role.roleName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {role.assignedEmployees} karyawan · {role.totalChapters} chapter
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="text-muted-foreground">
-                      Quiz:{" "}
-                      <span className="font-semibold text-foreground">
-                        {role.avgQuizBestScore !== null ? `${role.avgQuizBestScore}%` : "—"}
+          {summary.perRole.length === 0 ? (
+            <p className="p-6 font-body-md text-body-md text-on-surface-variant">
+              Belum ada guide yang dipublikasikan. Buat role, latih AI sampai
+              SIAP, lalu generate guide untuk melihat progress di sini.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px] text-left">
+                <thead>
+                  <tr className="border-b border-slate-200">
+                    <th className="px-5 py-3 font-label-caps text-label-caps text-secondary">
+                      ROLE / BRAIN
+                    </th>
+                    <th className="px-5 py-3 font-label-caps text-label-caps text-secondary">
+                      STATUS
+                    </th>
+                    <th className="px-5 py-3 font-label-caps text-label-caps text-secondary">
+                      KNOWLEDGE COMPLETENESS
+                    </th>
+                    <th className="px-5 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.perRole.map((role) => {
+                    const status = role.status as RoleStatus;
+                    return (
+                      <tr
+                        key={role.roleId}
+                        className="border-b border-slate-100 transition-colors last:border-0 hover:bg-surface-bright"
+                      >
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-fixed">
+                              <span className="material-symbols-outlined text-[18px] text-on-primary-fixed-variant">
+                                {roleIcon(role.roleName)}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="font-data-point text-data-point font-bold text-on-surface">
+                                {role.roleName}
+                              </p>
+                              <p className="text-[12px] text-secondary">
+                                {role.assignedEmployees} karyawan ·{" "}
+                                {role.totalChapters} chapter
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <StatusBadge status={status} />
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="flex items-center gap-3">
+                            <ProgressBar
+                              percent={role.avgCompletionPct}
+                              fillClass={statusFill(
+                                status,
+                                role.avgCompletionPct,
+                              )}
+                              className="w-28"
+                            />
+                            <span className="font-data-point text-data-point text-on-surface">
+                              {role.avgCompletionPct}%
+                            </span>
+                          </div>
+                          <p className="mt-1 text-[12px] text-secondary">
+                            Quiz:{" "}
+                            {role.avgQuizBestScore !== null
+                              ? `${role.avgQuizBestScore}/100`
+                              : "—"}
+                          </p>
+                        </td>
+                        <td className="px-5 py-4 text-right">
+                          <a
+                            href={`/app/roles/${role.roleId}`}
+                            className="inline-flex text-secondary transition-colors hover:text-primary"
+                            aria-label={`Kelola ${role.roleName}`}
+                          >
+                            <span className="material-symbols-outlined">
+                              edit
+                            </span>
+                          </a>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        {/* Recent activity timeline */}
+        <section className="rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm">
+          <div className="border-b border-slate-200 p-5">
+            <h2 className="font-headline-sm text-[20px] text-on-surface">
+              Recent Activity
+            </h2>
+          </div>
+          <div className="relative p-5">
+            {summary.recentActivity.length === 0 ? (
+              <p className="font-body-sm text-body-sm text-secondary">
+                Belum ada aktivitas. Aktivitas muncul saat karyawan mengerjakan
+                kuis atau admin menugaskan modul.
+              </p>
+            ) : (
+              <ul className="relative space-y-6">
+                <div
+                  aria-hidden
+                  className="absolute bottom-2 left-[15px] top-2 w-0.5 bg-gradient-to-b from-outline-variant to-transparent"
+                />
+                {summary.recentActivity.map((item) => (
+                  <li key={item.id} className="relative flex gap-4">
+                    <div
+                      className={`z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-4 ring-surface-container-lowest ${ACTIVITY_ICON_BG[item.kind]}`}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">
+                        {ACTIVITY_ICONS[item.kind]}
                       </span>
-                    </span>
-                    <span className="font-display text-2xl font-semibold text-brand">
-                      {role.avgCompletionPct}%
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-brand transition-all"
-                    style={{ width: `${Math.min(100, role.avgCompletionPct)}%` }}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                    </div>
+                    <div className="min-w-0 pt-1">
+                      <p className="font-body-sm text-body-sm text-on-surface">
+                        <span className="font-semibold">
+                          {item.userName ?? item.roleName ?? "Sistem"}
+                        </span>{" "}
+                        {item.detail}
+                      </p>
+                      <p className="mt-1 font-label-caps text-[10px] uppercase text-outline">
+                        {relativeTime(item.createdAt)}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

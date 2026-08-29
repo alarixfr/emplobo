@@ -13,6 +13,12 @@ export type EmployeeModuleSummary = {
       publishedAt: string | null;
     } | null;
   };
+  progress: {
+    totalChapters: number;
+    completedChapters: number;
+    completionPct: number;
+    avgBestScore: number | null;
+  };
 };
 
 export type ModuleGuide = {

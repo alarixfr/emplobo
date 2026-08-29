@@ -47,12 +47,13 @@ export function GuideGeneratorPanel({
         return;
       }
 
-      const data = await apiFetch<{
-        role: { id: string; status: RoleStatus };
-      }>(`/api/roles/${roleId}/guide/generate`, {
-        method: "POST",
-        token,
-      });
+      const data = await apiFetch<{ role: { id: string; status: RoleStatus } }>(
+        `/api/roles/${roleId}/guide/generate`,
+        {
+          method: "POST",
+          token,
+        },
+      );
 
       // Generation already succeeded and consumed a rate-limit slot — retry
       // the guide fetch once so a network blip doesn't force a re-generate.
@@ -88,14 +89,15 @@ export function GuideGeneratorPanel({
   }
 
   return (
-    <section className="rounded-xl border border-border bg-card p-4">
+    <section className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="font-display text-lg font-semibold text-foreground">
+          <h3 className="font-headline-sm text-headline-sm text-on-surface">
             Panduan (Guide)
           </h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Hasilkan panduan onboarding terstruktur dari hasil training role {roleName}.
+          <p className="mt-1 font-body-sm text-body-sm text-secondary">
+            Hasilkan panduan onboarding terstruktur dari hasil training role{" "}
+            {roleName}.
           </p>
         </div>
 
@@ -103,38 +105,47 @@ export function GuideGeneratorPanel({
           type="button"
           onClick={() => void generateGuide()}
           disabled={!canGenerate}
-          className="inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-60"
+          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 font-label-caps text-label-caps transition-colors ${
+            canGenerate
+              ? "bg-status-ready text-white hover:brightness-95"
+              : "cursor-not-allowed border border-slate-300 bg-slate-200 text-slate-400"
+          }`}
         >
+          <span className="material-symbols-outlined text-[18px]">
+            {isGenerating ? "progress_activity" : "auto_awesome"}
+          </span>
           {isGenerating
-            ? "Membuat panduan..."
+            ? "MEMBUAT…"
             : guide
-              ? "Perbarui Panduan"
-              : "Hasilkan Panduan"}
+              ? "PERBARUI PANDUAN"
+              : "HASILKAN PANDUAN"}
         </button>
       </div>
 
       {roleStatus === "DRAFT" ? (
-        <p className="mt-3 rounded-md border border-border bg-background p-3 text-sm text-muted-foreground">
-          Role masih DRAFT. Lanjutkan training sampai status READY untuk
+        <p className="mt-3 rounded-lg border border-status-locked border-l-4 bg-surface-bright p-3 font-body-sm text-body-sm text-on-surface-variant">
+          Role masih DRAFT. Lanjutkan training sampai status SIAP (≥ 75%) untuk
           mengaktifkan pembuatan panduan.
         </p>
       ) : null}
 
-      {error ? <p className="mt-3 text-sm text-accent">{error}</p> : null}
+      {error ? <p className="mt-3 font-body-sm text-body-sm text-error">{error}</p> : null}
       {retryAfter ? (
-        <p className="mt-2 text-xs text-muted-foreground">
+        <p className="mt-2 font-body-sm text-[12px] text-secondary">
           Rate limit aktif. Coba lagi dalam ~{retryAfter} detik.
         </p>
       ) : null}
 
       {guide ? (
         <div className="mt-5 space-y-4">
-          <div className="rounded-lg border border-border bg-background p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Panduan v{guide.version}
+          <div className="rounded-lg border border-outline-variant bg-surface-bright p-4">
+            <p className="font-label-caps text-label-caps text-secondary">
+              PANDUAN v{guide.version}
             </p>
-            <h4 className="mt-1 text-base font-semibold text-foreground">{guide.title}</h4>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <h4 className="mt-1 font-headline-sm text-[18px] text-on-surface">
+              {guide.title}
+            </h4>
+            <p className="mt-1 font-data-point text-data-point text-secondary">
               {guide.publishedAt
                 ? `Terbit: ${new Date(guide.publishedAt).toLocaleString("id-ID")}`
                 : `Diperbarui: ${new Date(guide.updatedAt).toLocaleString("id-ID")}`}
@@ -143,24 +154,29 @@ export function GuideGeneratorPanel({
 
           <div className="space-y-3">
             {guide.chapters.map((chapter) => (
-              <article key={chapter.id} className="rounded-lg border border-border bg-background p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Bab {chapter.order}
+              <article
+                key={chapter.id}
+                className="rounded-lg border border-slate-200 bg-surface-bright p-5"
+              >
+                <p className="font-label-caps text-label-caps text-secondary">
+                  BAB {chapter.order}
                 </p>
-                <h5 className="mt-1 text-sm font-semibold text-foreground">{chapter.title}</h5>
+                <h5 className="mt-1 font-headline-sm text-[18px] text-on-surface">
+                  {chapter.title}
+                </h5>
 
-                <div className="prose prose-sm mt-3 max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-li:text-foreground prose-strong:text-foreground prose-code:text-foreground">
+                <div className="guide-content mt-3">
                   <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
                     {chapter.content}
                   </ReactMarkdown>
                 </div>
 
                 {chapter.quiz ? (
-                  <div className="mt-3 rounded-md border border-border bg-card p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Kuis ({chapter.quiz.questions.length} soal)
+                  <div className="mt-3 rounded-lg border border-outline-variant bg-surface-container-lowest p-3">
+                    <p className="font-label-caps text-label-caps text-secondary">
+                      KUIS ({chapter.quiz.questions.length} SOAL)
                     </p>
-                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-foreground">
+                    <ul className="mt-2 list-disc space-y-1 pl-5 font-body-sm text-body-sm text-on-surface-variant">
                       {chapter.quiz.questions.map((q) => (
                         <li key={q.id}>{q.question}</li>
                       ))}
@@ -172,7 +188,7 @@ export function GuideGeneratorPanel({
           </div>
         </div>
       ) : (
-        <p className="mt-4 text-sm text-muted-foreground">
+        <p className="mt-4 font-body-md text-body-md text-on-surface-variant">
           Belum ada guide untuk role ini.
         </p>
       )}

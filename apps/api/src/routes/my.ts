@@ -60,7 +60,92 @@ export function createMyRouter(requireAuth: AuthMiddleware): Router {
         },
       });
 
-      res.json({ modules });
+      const roleIds = modules.map((m) => m.role.id);
+
+      // Progress for the Learning Center cards (completion % + best score).
+      const [chapters, quizzes] = await Promise.all([
+        prisma.chapter.findMany({
+          where: { orgId: auth.orgId, guide: { roleId: { in: roleIds } } },
+          select: { id: true, guide: { select: { roleId: true } } },
+        }),
+        prisma.quiz.findMany({
+          where: { orgId: auth.orgId, chapter: { guide: { roleId: { in: roleIds } } } },
+          select: { id: true, chapterId: true },
+        }),
+      ]);
+
+      const chapterIds = chapters.map((c) => c.id);
+      const quizIds = quizzes.map((q) => q.id);
+
+      const [progressRows, attempts] = await Promise.all([
+        chapterIds.length > 0
+          ? prisma.chapterProgress.findMany({
+              where: {
+                orgId: auth.orgId,
+                userId: auth.userId,
+                chapterId: { in: chapterIds },
+              },
+              select: { chapterId: true, completedAt: true },
+            })
+          : Promise.resolve([]),
+        quizIds.length > 0
+          ? prisma.quizAttempt.findMany({
+              where: {
+                orgId: auth.orgId,
+                userId: auth.userId,
+                quizId: { in: quizIds },
+              },
+              select: { quizId: true, score: true },
+            })
+          : Promise.resolve([]),
+      ]);
+
+      const chapterRole = new Map(chapters.map((c) => [c.id, c.guide.roleId]));
+      const totalByRole = new Map<string, number>();
+      for (const c of chapters) {
+        totalByRole.set(c.guide.roleId, (totalByRole.get(c.guide.roleId) ?? 0) + 1);
+      }
+
+      const completedByRole = new Map<string, number>();
+      for (const p of progressRows) {
+        if (!p.completedAt) continue;
+        const roleId = chapterRole.get(p.chapterId);
+        if (!roleId) continue;
+        completedByRole.set(roleId, (completedByRole.get(roleId) ?? 0) + 1);
+      }
+
+      const quizChapterRole = new Map<string, string | undefined>(
+        quizzes.map((q) => [q.id, chapterRole.get(q.chapterId)]),
+      );
+      const bestByRole = new Map<string, number[]>();
+      for (const a of attempts) {
+        const roleId = quizChapterRole.get(a.quizId);
+        if (!roleId) continue;
+        const list = bestByRole.get(roleId) ?? [];
+        list.push(a.score);
+        bestByRole.set(roleId, list);
+      }
+
+      const payload = modules.map((m) => {
+        const total = totalByRole.get(m.role.id) ?? 0;
+        const completed = completedByRole.get(m.role.id) ?? 0;
+        const scores = bestByRole.get(m.role.id) ?? [];
+        return {
+          ...m,
+          progress: {
+            totalChapters: total,
+            completedChapters: completed,
+            completionPct:
+              total > 0 ? Math.round((completed / total) * 100) : 0,
+            avgBestScore:
+              scores.length > 0
+                ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+                : null,
+          },
+        };
+      });
+
+      res.json({ modules: payload });
     } catch (err) {
       next(err);
     }

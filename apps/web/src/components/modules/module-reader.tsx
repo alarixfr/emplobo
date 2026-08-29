@@ -6,8 +6,12 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
-import { CheckIcon } from "@/components/icons";
-import type { ModuleChapter, ModuleGuide, QuizSubmitResponse } from "@/lib/modules";
+import { ProgressBar } from "@/components/ui/progress-bar";
+import type {
+  ModuleChapter,
+  ModuleGuide,
+  QuizSubmitResponse,
+} from "@/lib/modules";
 import { ModuleQuizCard } from "./module-quiz";
 
 type ModuleReaderProps = {
@@ -33,6 +37,11 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
     [chapters],
   );
 
+  const progressPercent =
+    chapters.length > 0
+      ? Math.round((completedCount / chapters.length) * 100)
+      : 0;
+
   async function load() {
     setIsLoading(true);
     setError(null);
@@ -44,10 +53,10 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
         return;
       }
 
-      const data = await apiFetch<{ guide: ModuleGuide; chapters: ModuleChapter[] }>(
-        `/api/my/modules/${roleId}/chapters`,
-        { token },
-      );
+      const data = await apiFetch<{
+        guide: ModuleGuide;
+        chapters: ModuleChapter[];
+      }>(`/api/my/modules/${roleId}/chapters`, { token });
 
       setGuide(data.guide);
       setChapters(data.chapters);
@@ -70,13 +79,12 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
         return;
       }
 
-      const data = await apiFetch<{ progress: { chapterId: string; completedAt: string | null } }>(
-        `/api/my/chapters/${chapterId}/complete`,
-        {
-          method: "POST",
-          token,
-        },
-      );
+      const data = await apiFetch<{
+        progress: { chapterId: string; completedAt: string | null };
+      }>(`/api/my/chapters/${chapterId}/complete`, {
+        method: "POST",
+        token,
+      });
 
       setChapters((prev) =>
         prev.map((chapter) =>
@@ -102,172 +110,257 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
   }, [roleId]);
 
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">Memuat modul...</p>;
+    return <div className="h-72 animate-pulse rounded-xl bg-surface-container-low" />;
   }
 
   if (error) {
-    return <p className="text-sm text-accent">{error}</p>;
+    return (
+      <div className="rounded-lg border border-error-container bg-error-container/40 p-6">
+        <p className="font-body-sm text-body-sm text-error">{error}</p>
+      </div>
+    );
   }
 
   if (!guide || chapters.length === 0 || !activeChapter) {
     return (
-      <p className="rounded-lg border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">
+      <p className="rounded-lg border border-dashed border-outline-variant bg-surface-container-lowest p-6 font-body-md text-body-md text-on-surface-variant">
         Modul belum tersedia.
       </p>
     );
   }
 
-  const progressPercent = Math.round((completedCount / chapters.length) * 100);
+  const activeIndex = chapters.findIndex((c) => c.id === activeChapter.id);
+  const hasPrev = activeIndex > 0;
+  const hasNext = activeIndex < chapters.length - 1;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-      <aside className="rounded-lg border border-border bg-card p-3">
-        <h2 className="text-sm font-semibold text-foreground">{guide.title}</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Progress: {completedCount}/{chapters.length} ({progressPercent}%)
-        </p>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-brand" style={{ width: `${progressPercent}%` }} />
-        </div>
+    <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
+      {/* ── Article column (720px) ────────────────────────────────────── */}
+      <div className="mx-auto w-full max-w-[720px]">
+        <article className="relative rounded-lg border border-slate-200 bg-surface-container-lowest p-6 shadow-sm md:p-10">
+          {/* Floating AI Verified badge */}
+          <div className="absolute -top-3 right-4 flex items-center gap-1.5 rounded-full border border-ai-border bg-ai-accent px-3 py-1 shadow-sm md:-right-3">
+            <span className="material-symbols-outlined ms-fill text-[16px] text-primary">
+              auto_awesome
+            </span>
+            <span className="font-label-caps text-[10px] text-primary">
+              AI VERIFIED
+            </span>
+          </div>
 
-        <ul className="mt-3 space-y-1">
-          {chapters.map((chapter) => {
-            const isActive = chapter.id === activeChapter.id;
-            return (
-              <li key={chapter.id}>
-                <button
-                  type="button"
-                  onClick={() => setActiveChapterId(chapter.id)}
-                  className={`w-full rounded-md px-2 py-2 text-left text-sm transition ${
-                    isActive ? "bg-brand-muted text-foreground" : "text-foreground hover:bg-muted"
-                  }`}
-                >
-                  <span className="block truncate">{chapter.order}. {chapter.title}</span>
-                  <span className="mt-0.5 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{chapter.completedAt ? "Selesai" : "Belum selesai"}</span>
-                    {chapter.quiz ? (
-                      <span className="font-medium text-foreground">
-                        {chapter.quiz.bestScore !== null
-                          ? `${chapter.quiz.bestScore}%`
-                          : "Kuis"}
-                      </span>
-                    ) : null}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </aside>
+          {/* Category chips */}
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-full border border-outline-variant px-3 py-1 font-label-caps text-[10px] text-secondary">
+              BAB {activeChapter.order}
+            </span>
+            <span className="rounded-full border border-outline-variant px-3 py-1 font-label-caps text-[10px] text-secondary">
+              {guide.title.toUpperCase()}
+            </span>
+          </div>
 
-      <section className="space-y-6">
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Chapter {activeChapter.order}
-          </p>
-          <h3 className="mt-1 text-lg font-semibold text-foreground">{activeChapter.title}</h3>
+          <h1 className="mt-4 font-headline-lg text-[28px] leading-9 text-primary">
+            {activeChapter.title}
+          </h1>
 
-          <div className="prose prose-sm mt-4 max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-li:text-foreground prose-strong:text-foreground prose-code:text-foreground">
+          {/* Meta row */}
+          <div className="mt-3 flex flex-wrap items-center gap-4 font-data-point text-data-point text-secondary">
+            <span className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[16px]">
+                schedule
+              </span>
+              Bab {activeIndex + 1} dari {chapters.length}
+            </span>
+            {activeChapter.completedAt ? (
+              <span className="flex items-center gap-1.5 text-primary">
+                <span className="material-symbols-outlined ms-fill text-[16px]">
+                  check_circle
+                </span>
+                Selesai dibaca
+              </span>
+            ) : null}
+          </div>
+
+          <hr className="my-6 border-outline-variant" />
+
+          {/* Chapter content */}
+          <div className="guide-content">
             <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
               {activeChapter.content}
             </ReactMarkdown>
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-            <div className="flex items-center gap-2">
+          {/* End-of-chapter CTA block */}
+          <div className="mt-10 rounded-lg border border-outline-variant bg-surface-bright p-6 text-center">
+            <h2 className="font-headline-sm text-[20px] text-on-surface">
+              Siap menguji pemahaman Anda?
+            </h2>
+            <p className="mt-1 font-body-sm text-body-sm text-secondary">
+              Kerjakan kuis bab ini untuk mengukur seberapa baik Anda menguasai
+              materinya.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={() => void markComplete(activeChapter.id)}
                 disabled={isSaving}
-                className="inline-flex items-center rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg border border-secondary px-4 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low disabled:opacity-60"
               >
-                {isSaving
-                  ? "Menyimpan..."
-                  : activeChapter.completedAt
-                    ? "Tandai ulang selesai"
-                    : "Tandai selesai"}
-              </button>
-              {activeChapter.completedAt ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-brand-muted px-2.5 py-1 text-xs font-medium text-foreground">
-                  <CheckIcon className="h-3 w-3" />
-                  Selesai dibaca
+                <span className="material-symbols-outlined text-[18px]">
+                  task_alt
                 </span>
-              ) : null}
-            </div>
-
-            <div className="flex items-center gap-2">
-              {chapters.findIndex((c) => c.id === activeChapter.id) > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const currIdx = chapters.findIndex((c) => c.id === activeChapter.id);
-                    if (currIdx > 0) {
-                      setActiveChapterId(chapters[currIdx - 1].id);
-                    }
-                  }}
-                  className="inline-flex items-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
+                {isSaving
+                  ? "MENYIMPAN…"
+                  : activeChapter.completedAt
+                    ? "TANDAI SELESAI"
+                    : "TANDAI SELESAI DIBACA"}
+              </button>
+              {activeChapter.quiz ? (
+                <a
+                  href="#chapter-quiz"
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
                 >
-                  ← Sebelumnya
-                </button>
-              ) : null}
-
-              {chapters.findIndex((c) => c.id === activeChapter.id) < chapters.length - 1 ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const currIdx = chapters.findIndex((c) => c.id === activeChapter.id);
-                    if (currIdx < chapters.length - 1) {
-                      setActiveChapterId(chapters[currIdx + 1].id);
-                    }
-                  }}
-                  className="inline-flex items-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
-                >
-                  Berikutnya →
-                </button>
+                  KERJAKAN KUIS BAB
+                  <span className="material-symbols-outlined text-[18px]">
+                    arrow_forward
+                  </span>
+                </a>
               ) : null}
             </div>
           </div>
-        </div>
 
+          {/* Prev / Next */}
+          <div className="mt-6 flex items-center justify-between">
+            {hasPrev ? (
+              <button
+                type="button"
+                onClick={() => setActiveChapterId(chapters[activeIndex - 1]!.id)}
+                className="inline-flex items-center gap-1 font-label-caps text-label-caps text-secondary transition-colors hover:text-primary"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  arrow_back
+                </span>
+                BAB SEBELUMNYA
+              </button>
+            ) : (
+              <span />
+            )}
+            {hasNext ? (
+              <button
+                type="button"
+                onClick={() => setActiveChapterId(chapters[activeIndex + 1]!.id)}
+                className="inline-flex items-center gap-1 font-label-caps text-label-caps text-secondary transition-colors hover:text-primary"
+              >
+                BAB BERIKUTNYA
+                <span className="material-symbols-outlined text-[18px]">
+                  arrow_forward
+                </span>
+              </button>
+            ) : null}
+          </div>
+        </article>
+
+        {/* Quiz */}
         {activeChapter.quiz ? (
-          <ModuleQuizCard
-            key={activeChapter.id}
-            chapterId={activeChapter.id}
-            quiz={activeChapter.quiz}
-            onQuizCompleted={(res: QuizSubmitResponse) => {
-              // Best score/attempts update on EVERY attempt (a failed attempt
-              // that improves the score must show); completion is gated.
-              setChapters((prev) =>
-                prev.map((c) =>
-                  c.id === activeChapter.id
-                    ? {
-                        ...c,
-                        completedAt:
-                          res.chapterCompleted && !c.completedAt
-                            ? new Date().toISOString()
-                            : c.completedAt,
-                        quiz: c.quiz
-                          ? {
-                              ...c.quiz,
-                              bestScore: Math.max(c.quiz.bestScore ?? 0, res.score),
-                              attempts: [
-                                {
-                                  id: res.attempt.id,
-                                  score: res.attempt.score,
-                                  createdAt: res.attempt.createdAt,
-                                },
-                                ...c.quiz.attempts,
-                              ],
-                            }
-                          : null,
-                      }
-                    : c,
-                ),
-              );
-            }}
-          />
+          <div id="chapter-quiz" className="mt-8 scroll-mt-24">
+            <ModuleQuizCard
+              key={activeChapter.id}
+              chapterId={activeChapter.id}
+              quiz={activeChapter.quiz}
+              onQuizCompleted={(res: QuizSubmitResponse) => {
+                // Best score/attempts update on EVERY attempt (a failed
+                // attempt that improves the score must show); completion is
+                // gated server-side.
+                setChapters((prev) =>
+                  prev.map((c) =>
+                    c.id === activeChapter.id
+                      ? {
+                          ...c,
+                          completedAt:
+                            res.chapterCompleted && !c.completedAt
+                              ? new Date().toISOString()
+                              : c.completedAt,
+                          quiz: c.quiz
+                            ? {
+                                ...c.quiz,
+                                bestScore: Math.max(
+                                  c.quiz.bestScore ?? 0,
+                                  res.score,
+                                ),
+                                attempts: [
+                                  {
+                                    id: res.attempt.id,
+                                    score: res.attempt.score,
+                                    createdAt: res.attempt.createdAt,
+                                  },
+                                  ...c.quiz.attempts,
+                                ],
+                              }
+                            : null,
+                        }
+                      : c,
+                  ),
+                );
+              }}
+            />
+          </div>
         ) : null}
-      </section>
+      </div>
+
+      {/* ── Sticky TOC sidebar ────────────────────────────────────────── */}
+      <aside className="hidden lg:block">
+        <div className="sticky top-24 space-y-8">
+          <nav>
+            <h2 className="font-label-caps text-label-caps text-secondary">
+              DI HALAMAN INI
+            </h2>
+            <ul className="mt-4 space-y-1">
+              {chapters.map((chapter) => {
+                const isActive = chapter.id === activeChapter.id;
+                return (
+                  <li key={chapter.id}>
+                    <button
+                      type="button"
+                      onClick={() => setActiveChapterId(chapter.id)}
+                      className={`block w-full border-l-4 py-2 pl-3 pr-2 text-left font-body-sm text-body-sm transition-colors ${
+                        isActive
+                          ? "border-primary font-medium text-primary"
+                          : "border-transparent text-secondary hover:border-outline-variant hover:text-on-surface"
+                      }`}
+                    >
+                      <span className="block truncate">
+                        {chapter.order}. {chapter.title}
+                      </span>
+                      {chapter.completedAt ? (
+                        <span className="mt-0.5 flex items-center gap-1 text-[11px] text-primary">
+                          <span className="material-symbols-outlined ms-fill text-[13px]">
+                            check_circle
+                          </span>
+                          Selesai
+                        </span>
+                      ) : null}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+
+          <div>
+            <div className="flex items-center justify-between">
+              <h2 className="font-label-caps text-label-caps text-secondary">
+                CHAPTER PROGRESS
+              </h2>
+              <span className="font-data-point text-data-point text-primary">
+                {progressPercent}%
+              </span>
+            </div>
+            <ProgressBar percent={progressPercent} className="mt-2 h-0.5" />
+            <p className="mt-2 font-body-sm text-[12px] text-secondary">
+              {completedCount} dari {chapters.length} bab selesai
+            </p>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }

@@ -2,14 +2,26 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { CreateRoleForm } from "@/components/roles/create-role-form";
+import { ProgressBar } from "@/components/ui/progress-bar";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { apiFetch } from "@/lib/api";
-import { STATUS_LABEL, type TrainingRoleSummary } from "@/lib/roles";
+import type { TrainingRoleSummary } from "@/lib/roles";
 
 async function fetchRoles(token: string): Promise<TrainingRoleSummary[]> {
   const data = await apiFetch<{ roles: TrainingRoleSummary[] }>("/api/roles", {
     token,
   });
   return data.roles;
+}
+
+function roleIcon(name: string): string {
+  const n = name.toLowerCase();
+  if (/(barista|kopi|coffee|cafe)/.test(n)) return "local_cafe";
+  if (/(kasir|cashier)/.test(n)) return "point_of_sale";
+  if (/(waiter|pelayan|server|resto)/.test(n)) return "restaurant";
+  if (/(koki|dapur|chef|cook)/.test(n)) return "skillet";
+  if (/(gudang|warehouse|stock|stok)/.test(n)) return "warehouse";
+  return "work";
 }
 
 export default async function RolesPage() {
@@ -39,68 +51,120 @@ export default async function RolesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
-      <div>
-        <h1 className="font-display text-3xl font-semibold text-foreground">
-          Roles
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          Buat peran kerja (Kasir, Barista, …) lalu latih AI per role di Training
-          Room untuk menghasilkan panduan SOP.
-        </p>
+    <div className="mx-auto w-full max-w-container space-y-8">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <h1 className="font-headline-md text-headline-md text-on-surface">
+            Roles &amp; Guides
+          </h1>
+          <p className="mt-1 max-w-2xl font-body-md text-body-md text-on-surface-variant">
+            Buat peran kerja (Kasir, Barista, …) lalu latih AI per role di
+            Training Room untuk menghasilkan panduan SOP.
+          </p>
+        </div>
       </div>
 
-      <CreateRoleForm />
+      <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+        {/* Role list */}
+        <section>
+          <h2 className="font-label-caps text-label-caps text-secondary">
+            DAFTAR ROLE
+          </h2>
 
-      <section className="space-y-3">
-        <h2 className="font-display text-lg font-semibold text-foreground">
-          Daftar role
-        </h2>
+          {loadError ? (
+            <p className="mt-4 rounded-lg border border-error-container bg-error-container/40 p-4 font-body-sm text-body-sm text-error">
+              {loadError}
+            </p>
+          ) : roles.length === 0 ? (
+            <p className="mt-4 rounded-lg border border-dashed border-outline-variant bg-surface-container-lowest p-6 font-body-md text-body-md text-on-surface-variant">
+              Belum ada role. Buat yang pertama lewat formulir di samping.
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {roles.map((role) => (
+                <li key={role.id}>
+                  <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-fixed">
+                          <span className="material-symbols-outlined text-[20px] text-on-primary-fixed-variant">
+                            {roleIcon(role.name)}
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <Link
+                            href={`/app/roles/${role.id}`}
+                            className="truncate font-data-point text-data-point font-bold text-on-surface hover:text-primary"
+                          >
+                            {role.name}
+                          </Link>
+                          {role.description ? (
+                            <p className="mt-0.5 truncate font-body-sm text-body-sm text-secondary">
+                              {role.description}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                      <StatusBadge status={role.status} />
+                    </div>
 
-        {loadError ? (
-          <p className="rounded-md border border-border bg-card p-4 text-sm text-accent">
-            {loadError}
-          </p>
-        ) : roles.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border bg-card p-6 text-sm text-muted-foreground">
-            Belum ada role. Buat yang pertama di atas.
-          </p>
-        ) : (
-          <ul className="divide-y divide-border rounded-lg border border-border bg-card">
-            {roles.map((role) => (
-              <li key={role.id}>
-                <Link
-                  href={`/app/roles/${role.id}`}
-                  className="flex items-start justify-between gap-4 px-4 py-3 transition hover:bg-muted/60"
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium text-foreground">{role.name}</p>
-                    {role.description ? (
-                      <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                        {role.description}
-                      </p>
-                    ) : null}
+                    <div className="mt-4 flex items-center gap-3">
+                      <ProgressBar
+                        percent={role.completenessScore}
+                        fillClass={
+                          role.status === "PUBLISHED"
+                            ? "bg-primary"
+                            : role.status === "READY"
+                              ? "bg-status-ready"
+                              : "bg-status-locked"
+                        }
+                        className="w-40"
+                      />
+                      <span className="font-data-point text-data-point text-on-surface">
+                        {role.completenessScore}%
+                      </span>
+                      <span className="font-body-sm text-[12px] text-secondary">
+                        {role.trainingMessageCount} pesan training
+                      </span>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Link
+                        href={`/app/training/${role.id}`}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">
+                          school
+                        </span>
+                        TRAIN
+                      </Link>
+                      <Link
+                        href={`/app/roles/${role.id}`}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-secondary px-3.5 py-2 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">
+                          visibility
+                        </span>
+                        DETAIL
+                      </Link>
+                    </div>
                   </div>
-                  <div className="shrink-0 text-right text-xs text-muted-foreground">
-                    <p className="font-semibold text-foreground">
-                      {STATUS_LABEL[role.status]}
-                    </p>
-                    <p className="mt-0.5">{role.completenessScore}% lengkap</p>
-                  </div>
-                </Link>
-                <div className="px-4 pb-3">
-                  <Link
-                    href={`/app/training/${role.id}`}
-                    className="inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-muted"
-                  >
-                    Train
-                  </Link>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Create role form */}
+        <aside>
+          <h2 className="font-label-caps text-label-caps text-secondary">
+            ROLE BARU
+          </h2>
+          <div className="mt-4">
+            <CreateRoleForm />
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

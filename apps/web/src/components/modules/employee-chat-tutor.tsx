@@ -6,13 +6,18 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
-import { MessageCircleIcon, SendIcon } from "@/components/icons";
 import type { ChatMessageItem, ChatSessionSummary } from "@/lib/chat";
 
 type EmployeeChatTutorProps = {
   roleId: string;
   roleName?: string;
 };
+
+const SUGGESTION_CHIPS = [
+  "Apa langkah pembukaan shift?",
+  "Bagaimana prosedur closing?",
+  "Apa yang dilakukan saat komplain pelanggan?",
+];
 
 export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) {
   const { getToken } = useAuth();
@@ -87,11 +92,14 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
         return;
       }
 
-      const data = await apiFetch<{ session: ChatSessionSummary }>("/api/my/chat/sessions", {
-        method: "POST",
-        token,
-        body: { roleId },
-      });
+      const data = await apiFetch<{ session: ChatSessionSummary }>(
+        "/api/my/chat/sessions",
+        {
+          method: "POST",
+          token,
+          body: { roleId },
+        },
+      );
 
       setSessions((prev) => [data.session, ...prev.slice(0, 9)]);
       setActiveSessionId(data.session.id);
@@ -114,10 +122,10 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
         return;
       }
 
-      const data = await apiFetch<{ session: ChatSessionSummary; messages: ChatMessageItem[] }>(
-        `/api/my/chat/sessions/${sessionId}/messages`,
-        { token },
-      );
+      const data = await apiFetch<{
+        session: ChatSessionSummary;
+        messages: ChatMessageItem[];
+      }>(`/api/my/chat/sessions/${sessionId}/messages`, { token });
 
       // Overlapping fetch guard: only render if this session is still active.
       if (activeSessionIdRef.current !== sessionId) return;
@@ -154,11 +162,14 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
           setError("Sesi tidak valid. Silakan login ulang.");
           return;
         }
-        const sData = await apiFetch<{ session: ChatSessionSummary }>("/api/my/chat/sessions", {
-          method: "POST",
-          token,
-          body: { roleId },
-        });
+        const sData = await apiFetch<{ session: ChatSessionSummary }>(
+          "/api/my/chat/sessions",
+          {
+            method: "POST",
+            token,
+            body: { roleId },
+          },
+        );
         setSessions([sData.session]);
         setActiveSessionId(sData.session.id);
         targetSessionId = sData.session.id;
@@ -204,7 +215,9 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
       });
 
       setMessages((prev) =>
-        prev.map((msg) => (msg.id === tempUserMsg.id ? data.userMessage : msg)).concat(data.aiMessage),
+        prev
+          .map((msg) => (msg.id === tempUserMsg.id ? data.userMessage : msg))
+          .concat(data.aiMessage),
       );
       startCooldown(2);
       setTimeout(scrollToBottom, 100);
@@ -221,7 +234,9 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
         startCooldown(retry);
         setError(`Rate limit aktif. Tunggu ${retry} detik sebelum mengirim lagi.`);
       } else {
-        setError(err instanceof Error ? err.message : "Gagal mengirim pesan ke AI tutor.");
+        setError(
+          err instanceof Error ? err.message : "Gagal mengirim pesan ke AI tutor.",
+        );
       }
     } finally {
       setIsSending(false);
@@ -249,28 +264,33 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
 
   return (
     <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
-      {/* Sessions Sidebar */}
-      <aside className="flex flex-col rounded-xl border border-border bg-card p-3">
-        <div className="flex items-center justify-between border-b border-border pb-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Riwayat Chat
+      {/* Sessions sidebar */}
+      <aside className="flex flex-col rounded-lg border border-slate-200 bg-surface-container-lowest p-3 shadow-sm">
+        <div className="flex items-center justify-between border-b border-outline-variant pb-3">
+          <p className="font-label-caps text-label-caps text-secondary">
+            RIWAYAT CHAT
           </p>
           <button
             type="button"
             onClick={() => void createNewSession()}
             disabled={isCreatingSession}
-            className="rounded-md bg-brand px-2 py-1 text-xs font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-60"
+            aria-label="Sesi baru"
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-on-primary transition-colors hover:bg-primary-container disabled:opacity-60"
           >
-            {isCreatingSession ? "Membuat..." : "+ Sesi Baru"}
+            <span className="material-symbols-outlined text-[16px]">add</span>
           </button>
         </div>
 
         {isLoadingSessions ? (
-          <p className="mt-3 text-xs text-muted-foreground">Memuat sesi...</p>
+          <p className="mt-3 font-body-sm text-[12px] text-secondary">
+            Memuat sesi...
+          </p>
         ) : sessions.length === 0 ? (
-          <p className="mt-3 text-xs text-muted-foreground">Belum ada sesi tanya jawab.</p>
+          <p className="mt-3 font-body-sm text-[12px] text-secondary">
+            Belum ada sesi tanya jawab.
+          </p>
         ) : (
-          <ul className="mt-3 space-y-1 overflow-y-auto">
+          <ul className="scroll-slim mt-3 max-h-64 space-y-1 overflow-y-auto lg:max-h-none">
             {sessions.map((session) => {
               const isActive = session.id === activeSessionId;
               return (
@@ -278,14 +298,14 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
                   <button
                     type="button"
                     onClick={() => setActiveSessionId(session.id)}
-                    className={`w-full rounded-md px-2.5 py-2 text-left text-xs transition ${
+                    className={`w-full rounded-lg px-2.5 py-2 text-left font-body-sm text-body-sm transition ${
                       isActive
-                        ? "bg-brand-muted font-medium text-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? "bg-primary-fixed-dim/50 font-medium text-on-surface"
+                        : "text-secondary hover:bg-surface-container-high hover:text-on-surface"
                     }`}
                   >
                     <span className="block truncate">{session.title}</span>
-                    <span className="mt-0.5 block text-[10px] text-muted-foreground">
+                    <span className="mt-0.5 block font-data-point text-[10px] text-outline">
                       {new Date(session.updatedAt).toLocaleDateString("id-ID", {
                         day: "numeric",
                         month: "short",
@@ -301,95 +321,147 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
         )}
       </aside>
 
-      {/* Main Chat Box */}
-      <section className="flex h-[70vh] max-h-[600px] min-h-[420px] flex-col rounded-xl border border-border bg-card">
-        {/* Chat Header */}
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <div>
-            <h3 className="font-display text-sm font-semibold text-foreground">
-              AI Tutor {roleName ? `· ${roleName}` : ""}
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Bertanya seputar SOP dan panduan kerja peran ini secara 24/7.
-            </p>
+      {/* Main chat column */}
+      <section className="flex h-[72vh] max-h-[680px] min-h-[440px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm">
+        {/* Chat header */}
+        <div className="flex items-center justify-between border-b border-outline-variant px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary-container">
+              <span className="material-symbols-outlined ms-fill text-on-primary-container">
+                psychology
+              </span>
+              <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-status-ready" />
+            </div>
+            <div>
+              <h3 className="font-headline-sm text-[18px] text-on-surface">
+                AI Tutor{roleName ? `: ${roleName}` : ""}
+              </h3>
+              <p className="font-body-sm text-[12px] text-secondary">
+                Online 24/7 · Berbasis SOP & guide yang disetujui
+              </p>
+            </div>
           </div>
-          <span className="inline-flex items-center rounded-full bg-brand-muted px-2.5 py-0.5 text-[11px] font-medium text-foreground">
-            Grounded AI
+          <span className="hidden items-center gap-1.5 rounded-full border border-ai-border bg-ai-accent px-3 py-1 font-label-caps text-[10px] text-primary sm:inline-flex">
+            <span className="material-symbols-outlined ms-fill text-[14px]">
+              verified_user
+            </span>
+            GROUNDED AI
           </span>
         </div>
 
-        {/* Message Thread */}
-        <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        {/* Message thread */}
+        <div className="scroll-slim flex-1 space-y-4 overflow-y-auto bg-surface-muted p-4">
           {isLoadingMessages ? (
-            <p className="text-center text-xs text-muted-foreground">Memuat riwayat chat...</p>
+            <p className="text-center font-body-sm text-[12px] text-secondary">
+              Memuat riwayat chat...
+            </p>
           ) : messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-muted text-xl text-brand">
-                <MessageCircleIcon className="h-5 w-5" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-container">
+                <span className="material-symbols-outlined ms-fill text-[28px] text-on-primary-container">
+                  psychology
+                </span>
               </div>
-              <h4 className="mt-2 text-sm font-semibold text-foreground">
-                Tanya Apapun Seputar Peran Ini
+              <h4 className="mt-4 font-headline-sm text-headline-sm text-on-surface">
+                Tanya apapun seputar peran ini
               </h4>
-              <p className="mt-1 max-w-sm text-xs text-muted-foreground">
-                AI Tutor ini dilatih khusus berdasarkan SOP dan Guide yang diajarkan oleh owner/HR Anda.
+              <p className="mt-1 max-w-sm font-body-sm text-body-sm text-secondary">
+                AI Tutor ini dilatih khusus berdasarkan SOP dan guide yang
+                diajarkan oleh owner/HR Anda.
               </p>
             </div>
           ) : (
-            messages.map((msg) => {
-              const isUser = msg.sender === "user";
-              return (
-                <div
-                  key={msg.id}
-                  className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}
-                >
-                  {!isUser ? (
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-brand-foreground">
-                      AI
-                    </div>
-                  ) : null}
+            <>
+              {/* Date separator pill */}
+              <div className="flex justify-center">
+                <span className="rounded-full bg-surface-container-high px-3 py-1 font-label-caps text-[10px] text-secondary">
+                  HARI INI
+                </span>
+              </div>
 
+              {messages.map((msg) => {
+                const isUser = msg.sender === "user";
+                return (
                   <div
-                    className={`max-w-[80%] rounded-xl px-4 py-2.5 text-xs leading-relaxed ${
-                      isUser
-                        ? "bg-brand text-brand-foreground"
-                        : "border border-border bg-background text-foreground"
+                    key={msg.id}
+                    className={`flex max-w-[85%] gap-3 ${
+                      isUser ? "flex-row-reverse self-end" : "self-start"
                     }`}
                   >
-                    {isUser ? (
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
-                    ) : (
-                      <div className="prose prose-xs max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-li:text-foreground prose-strong:text-foreground prose-code:text-foreground">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          rehypePlugins={[rehypeSanitize]}
-                        >
-                          {msg.content}
-                        </ReactMarkdown>
-                      </div>
-                    )}
+                    <div
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                        isUser
+                          ? "bg-slate-300 text-on-surface-variant"
+                          : "bg-ai-border text-primary"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {isUser ? "person" : "psychology"}
+                      </span>
+                    </div>
+
+                    <div
+                      className={`rounded-2xl px-4 py-2.5 font-body-md text-body-md shadow-sm ${
+                        isUser
+                          ? "user-bubble-green rounded-br-sm"
+                          : "ai-bubble rounded-bl-sm text-on-surface"
+                      }`}
+                    >
+                      {isUser ? (
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                      ) : (
+                        <div className="chat-markdown">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeSanitize]}
+                          >
+                            {msg.content}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })
+                );
+              })}
+            </>
           )}
 
           {isSending ? (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand text-[10px] font-bold text-brand-foreground">
-                AI
+            <div className="flex max-w-[85%] gap-3 self-start">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ai-border text-primary">
+                <span className="material-symbols-outlined text-sm">
+                  psychology
+                </span>
               </div>
-              <p className="animate-pulse">AI Tutor sedang berpikir...</p>
+              <div className="ai-bubble rounded-2xl rounded-bl-sm px-4 py-2.5 font-body-md text-body-md text-on-surface shadow-sm">
+                <span className="typing-cursor">AI Tutor sedang mengetik</span>
+              </div>
             </div>
           ) : null}
 
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Bar */}
-        <div className="border-t border-border p-3">
+        {/* Input zone */}
+        <div className="border-t border-outline-variant bg-white p-4">
           {error ? (
-            <p className="mb-2 text-xs text-accent">{error}</p>
+            <p className="mb-2 font-body-sm text-body-sm text-error">{error}</p>
           ) : null}
+
+          {/* Quick suggestion chips */}
+          <div className="mb-3 flex flex-wrap gap-2">
+            {SUGGESTION_CHIPS.map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                disabled={isSending || cooldownRemaining > 0}
+                onClick={() => setInputText(chip)}
+                className="rounded-full border border-outline-variant px-3.5 py-1.5 font-body-sm text-[12px] text-secondary transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
 
           <form onSubmit={(e) => void handleSendMessage(e)} className="flex items-end gap-2">
             <textarea
@@ -403,24 +475,25 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
               }}
               placeholder="Tanyakan SOP, aturan, atau cara kerja peran ini..."
               rows={2}
-              className="flex-1 resize-none rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+              maxLength={4000}
+              className="flex-1 resize-none rounded-lg border border-slate-300 bg-surface-muted px-4 py-3 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary"
             />
 
             <button
               type="submit"
               disabled={!inputText.trim() || isSending || cooldownRemaining > 0}
-              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-brand px-4 text-xs font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-50"
+              aria-label="Kirim pesan"
+              className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-lg bg-primary text-on-primary transition-colors hover:bg-primary-container disabled:opacity-50"
             >
-              <SendIcon className="h-3.5 w-3.5" />
-              {cooldownRemaining > 0
-                ? `${cooldownRemaining}s`
-                : isSending
-                  ? "Mengirim..."
-                  : "Kirim"}
+              <span className="material-symbols-outlined">
+                {cooldownRemaining > 0 ? "hourglass_top" : "send"}
+              </span>
             </button>
           </form>
-          <p className="mt-1 text-[10px] text-muted-foreground">
-            Tekan Enter untuk kirim, Shift+Enter untuk baris baru · Cooldown 2 detik
+          <p className="mt-2 text-center font-body-sm text-[11px] text-outline">
+            Jawaban AI Tutor berdasarkan SOP &amp; panduan resmi peran ini.
+            Selalu verifikasi prosedur kritis kepada atasan Anda. · Cooldown 2
+            detik antar pesan.
           </p>
         </div>
       </section>

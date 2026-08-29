@@ -78,7 +78,9 @@ Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = sat
 - **Training lock** - Mencegah dua admin train Role yang sama secara bersamaan
 - **Rate limit & cooldown** - Proteksi biaya AI (Upstash Redis) di setiap endpoint AI (training, guide gen, chat message, chat session)
 - **Dashboard admin** - Statistik lengkap: completion %, skor kuis, per-role progress, pemakaian AI 30 hari
-- **UI/UX polish** - Design tokens konsisten di seluruh layar (landing, dashboard, training, modul, kuis, chat), ikon SVG custom, landing page marketing responsif, seluruh copy produk dalam Bahasa Indonesia
+- **Employee Directory** - Halaman khusus admin untuk memantau progress tiap karyawan (search, filter role, AI insight)
+- **Developer Docs & Halaman Legal** - `/docs` (API reference 3-pane dengan dark code pane cURL/Node) dan `/privacy`, `/terms`
+- **UI/UX polish** - Design system **"Institutional Intelligence"** (Forest Green `#144225`, Enterprise Slate, indigo AI accent) dengan Hanken Grotesk / Inter / JetBrains Mono + Material Symbols; sidebar tonal, mobile bottom nav, readability ring, knowledge gaps, status badge label-caps di seluruh layar (landing, dashboard, training room, guide reader, quiz, chat tutor, learning center, docs, legal)
 
 ---
 
@@ -114,8 +116,10 @@ Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = sat
 #### Frontend
 ```
 Framework    : Next.js 15 (App Router) + TypeScript
-UI Library   : Tailwind CSS v4 + design tokens (teal/orange, DM Sans + Fraunces)
-Icons        : Set ikon SVG custom (apps/web/src/components/icons.tsx)
+UI Library   : Tailwind CSS v4 + design system "Institutional Intelligence"
+               (Forest Green #144225 · Enterprise Slate · indigo AI accent #EEF2FF)
+Typography   : Hanken Grotesk (headline) · Inter (body) · JetBrains Mono (label-caps/data)
+Icons        : Material Symbols Outlined (font, via Google Fonts)
 Auth UI      : Clerk B2B (Organizations)
 Validation   : Zod (client & server, .strict() di API)
 Markdown     : react-markdown + remark-gfm + rehype-sanitize
@@ -176,7 +180,7 @@ Redis        : Upstash
 ```mermaid
 flowchart TB
   subgraph Browser["Browser"]
-    W["apps/web — Next.js 15<br/>(landing, dashboard, training room,<br/>module reader, quiz, AI chat)"]
+    W["apps/web — Next.js 15<br/>(landing, dashboard, employee directory,<br/>training room, guide reader, quiz,<br/>AI tutor, learning center, docs, legal)"]
   end
 
   subgraph Clerk["Clerk B2B"]
@@ -463,18 +467,25 @@ sekali penuh terhadap deployment live sebelum submit.
 
 #### Untuk Admin (`org:admin`)
 
-1. **Dashboard**: `/app` menampilkan org aktif dan peran `ADMIN`, plus ringkasan statistik: total role, guide terpublikasi, jumlah karyawan, rata-rata nilai kuis, pemakaian AI 30 hari, dan progress per role (bar completion % + skor kuis).
-2. **Roles**: buka `/app/roles` → buat role (nama + deskripsi opsional) → lihat detail di `/app/roles/[id]`.
-3. **Training Room**: Buka `/app/training` (halaman terpusat, bisa pilih role) atau `/app/training/[id]` untuk langsung ke role tertentu — sistem mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin. Jika admin lain memegang kunci, room terbuka dalam **mode observer** (baca-saja dengan nama pemegang kunci, plus tombol ambil alih saat kunci bebas), dan badge status/completeness diperbarui otomatis tiap 30 detik via polling cache. Dari halaman detail role, tombol **Buka Training Room** mengarah ke sini.
-4. **Generate Guide**: saat status role `READY` (completeness ≥ 75), klik **Generate Guide** → AI menyusun panduan berstruktur (chapter markdown + kuis) dari seluruh transcript training, divalidasi Zod, lalu ditulis atomik ke DB; status berubah jadi `PUBLISHED`. Maksimal 3 generasi per jam per role.
-5. **Assign Karyawan**: setelah `PUBLISHED`, pilih karyawan (`org:member`) dari panel assignment di halaman detail role untuk memberi akses modul.
+1. **Dashboard**: `/app` menampilkan header sapaan + aksi cepat, bento grid metrik (total role, karyawan, rata-rata kuis, AI usage), tabel **Brain Readiness** (status badge, progress bar knowledge completeness, aksi edit per role) dan timeline **Recent Activity**.
+2. **Roles**: buka `/app/roles` → buat role (nama + deskripsi opsional) → lihat detail di `/app/roles/[id]` (right rail berisi ring readiness + knowledge gaps).
+3. **Employee Directory**: `/app/employees` — search, filter pill per role, metrik workforce/completion + kartu AI Insight, tabel progress per karyawan.
+4. **Training Room**: Buka `/app/training` (halaman terpusat, bisa pilih role) atau `/app/training/[id]` untuk langsung ke role tertentu — layout 3 kolom (Roles Context / chat dengan ai-bubble & user-bubble / right rail Brain Readiness ring + Knowledge Gaps + tombol Generate Guide). Sistem mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin. Jika admin lain memegang kunci, room terbuka dalam **mode observer** (baca-saja dengan nama pemegang kunci, plus tombol ambil alih saat kunci bebas), dan badge status/completeness diperbarui otomatis tiap 30 detik via polling cache.
+5. **Generate Guide**: saat status role `READY` (completeness ≥ 75), klik **Generate Guide** → AI menyusun panduan berstruktur (chapter markdown + kuis) dari seluruh transcript training, divalidasi Zod, lalu ditulis atomik ke DB; status berubah jadi `PUBLISHED`. Maksimal 3 generasi per jam per role.
+6. **Assign Karyawan**: setelah `PUBLISHED`, pilih karyawan (`org:member`) dari panel assignment di halaman detail role untuk memberi akses modul.
 
 #### Untuk Karyawan (`org:member`)
 
-1. **Dashboard Karyawan**: `/app` menampilkan org aktif dan peran `EMPLOYEE`.
-2. **Modul Saya**: Buka `/app/my/modules` untuk melihat daftar peran kerja dan panduan SOP yang di-assign oleh Admin.
-3. **Membaca Modul & Kuis**: Klik "Buka Modul" → baca materi tiap chapter dengan sanitasi markdown aman (`rehype-sanitize`), kerjakan kuis pemahaman chapter (evaluasi nilai server-side), dan tandai selesai atau lulus kuis untuk mencatat progres pembelajaran.
-4. **Chat AI Tutor (24/7)**: Pindah ke tab "Tanya AI Tutor" pada modul terkait untuk bertanya langsung ke AI tutor yang di-grounded ketat pada SOP/panduan peran tersebut (tidak mengarang prosedur yang belum diajarkan).
+1. **Dashboard Karyawan**: `/app` menampilkan kartu akses Learning Center.
+2. **Learning Center**: Buka `/app/my/modules` — kartu modul dengan ikon per role, status pill (BELUM MULAI / SEDANG BERLANGSUNG / SELESAI), progress bar + persentase, tombol Lanjutkan/Mulai, grid sertifikasi kompetensi, dan FAB **Tanya AI Tutor**.
+3. **Membaca Modul & Kuis**: Klik modul → guide reader (breadcrumb, badge "AI Verified", kategori, meta, TOC sticky + chapter progress, CTA "Kerjakan Kuis Bab") → kuis satu-soal-per-halaman ("Soal X dari Y", progress bar, Previous/Skip/Submit) dengan grading server-side, dan tandai selesai atau lulus kuis untuk mencatat progres pembelajaran.
+4. **Chat AI Tutor (24/7)**: Pindah ke tab "AI TUTOR (24/7)" pada modul terkait — header dengan avatar + indikator online, AI bubble indigo (`ai-bubble`), user bubble hijau, suggestion chips, typing indicator, dan disclaimer. AI tutor di-grounded ketat pada SOP/panduan peran tersebut (tidak mengarang prosedur yang belum diajarkan).
+
+#### Halaman Publik
+
+- **Landing**: `/` — marketing page (hero, keunggulan, cara kerja 3 langkah, CTA).
+- **Developer Docs**: `/docs` — API reference 3-pane (TOC, endpoint + param tables, dark code pane cURL/Node toggle).
+- **Legal**: `/privacy` (kebijakan privasi, AI grounded, isolasi tenant) & `/terms` (syarat & ketentuan) dengan sticky outline + scroll-spy.
 
 ---
 
@@ -500,7 +511,7 @@ GET  /api/admin/ping         # requireAdmin — 403 unless org:admin
 # Section 3 — Roles (requireAdmin; orgId dari token)
 POST /api/roles              # body: { name, description? } → create DRAFT
 GET  /api/roles              # list active roles in org
-GET  /api/roles/:id          # single role (404 if wrong org / missing)
+GET  /api/roles/:id          # single role (404 if wrong org / missing) + missingAreas (Knowledge Gaps, dari cache Redis)
 
 # Section 4 — Training Room (requireAdmin; tenant-scoped + lock enforced)
 POST   /api/roles/:id/training/lock       # atomic lock acquire (423 if held by other admin)
@@ -516,7 +527,7 @@ POST   /api/roles/:id/guide/generate      # generate/regenerate guide from full 
 # Section 6 & 7 — Assignment, Employee Learning & Quizzes
 GET    /api/roles/:id/assignable-users    # admin list employee candidates + assigned state
 POST   /api/roles/:id/assignments         # admin assign published role to employee(s), idempotent
-GET    /api/my/modules                    # employee list of assigned modules
+GET    /api/my/modules                    # employee list of assigned modules + per-module progress (chapters, completion %, best score)
 GET    /api/my/modules/:roleId/chapters   # employee chapter reader payload + sanitized quizzes + attempts
 POST   /api/my/chapters/:id/complete      # employee mark chapter complete (upsert)
 POST   /api/my/chapters/:id/quiz/submit   # employee submit quiz answers, server-side grading (no leak)
@@ -527,8 +538,9 @@ GET    /api/my/chat/sessions              # list chat sessions for assigned role
 GET    /api/my/chat/sessions/:id/messages # fetch session transcript (ownership verified)
 POST   /api/my/chat/sessions/:id/messages # send question, get grounded AI tutor answer (cooldown 2s, rate-limited)
 
-# Section 9 — Admin Dashboard (requireAdmin; cached 60s)
-GET    /api/dashboard/summary             # counts, avg quiz score, per-role completion, AI usage 30d
+# Section 9 — Admin Dashboard & Employee Directory (requireAdmin)
+GET    /api/dashboard/summary             # counts, avg quiz score, per-role completion, AI usage 30d, recentActivity timeline
+GET    /api/employees                     # per-employee aggregates (assignments, avg completion %, avg best quiz score) untuk Employee Directory
 ```
 
 > **Caching (Section 6)**: guide & role-status di-cache di Upstash Redis
@@ -592,11 +604,13 @@ curl http://localhost:3000/nonexistent           # expected 404
 Belum ada suite unit/integration/e2e terpisah pada tahap ini. Validasi saat ini
 berbasis lint/typecheck/build + smoke test endpoint/routing. Verifikasi fungsional
 per Section tersedia di bagian [User Guide](#-penggunaan) (Step 1–12 sudah aktif:
-seluruh fitur inti sampai AI Tutor grounded, polish UI/UX — design tokens
-konsisten, ikon SVG custom, landing page responsif — serta checklist keamanan
-Section 8 terverifikasi: tenant scoping (orgId di semua query), scoping employee
-per userId, ownership ChatSession dicek ulang tiap pesan (anti-IDOR),
-correctIndex tidak pernah bocor ke payload employee, sanitasi input
+seluruh fitur inti sampai AI Tutor grounded, polish UI/UX — design system
+"Institutional Intelligence" (Forest Green/Hanken/Inter/JetBrains Mono + Material
+Symbols) konsisten di landing, dashboard, employee directory, training room,
+guide reader, quiz, AI tutor, learning center, docs, dan halaman legal — serta
+checklist keamanan Section 8 terverifikasi: tenant scoping (orgId di semua query),
+scoping employee per userId, ownership ChatSession dicek ulang tiap pesan
+(anti-IDOR), correctIndex tidak pernah bocor ke payload employee, sanitasi input
 `<business_data>` + strip tag penutup, rate limit & cooldown di semua endpoint
 AI, CORS allowlist tanpa wildcard, helmet + CSP ketat, verifikasi webhook svix,
 Zod `.strict()` di semua request body, lock training atomik via `updateMany`,

@@ -28,27 +28,29 @@ export default async function TrainingIndexPage() {
       loadError =
         "Database sedang tidak tersedia. Coba refresh beberapa saat lagi atau periksa koneksi Neon.";
     } else {
-      loadError = "Gagal memuat role training. Pastikan API aktif dan sesi masih valid.";
+      loadError =
+        "Gagal memuat role training. Pastikan API aktif dan sesi masih valid.";
     }
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto h-full w-full max-w-container space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-semibold text-foreground">
+        <h1 className="font-headline-md text-headline-md text-on-surface">
           Training Room
         </h1>
-        <p className="mt-1 text-muted-foreground">
-          Halaman training terpusat. Pilih role di sisi kiri lalu latih AI dengan format chat.
+        <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
+          Halaman training terpusat. Pilih role di sisi kiri lalu latih AI
+          dengan format chat.
         </p>
       </div>
 
       {loadError ? (
-        <div className="rounded-lg border border-border bg-card p-6 text-sm text-accent">
+        <div className="rounded-lg border border-error-container bg-error-container/40 p-6 font-body-sm text-body-sm text-error">
           {loadError}
         </div>
       ) : roles.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-card p-6 text-sm text-muted-foreground">
+        <div className="rounded-lg border border-dashed border-outline-variant bg-surface-container-lowest p-6 font-body-md text-body-md text-on-surface-variant">
           Belum ada role. Buat role baru dulu di halaman Roles.
         </div>
       ) : (

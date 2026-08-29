@@ -1,13 +1,12 @@
-import Link from "next/link";
 import { auth, currentUser } from "@clerk/nextjs/server";
+import Link from "next/link";
 import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
 
 export default async function AppHomePage() {
-  const { orgId, orgRole, orgSlug } = await auth();
+  const { orgRole } = await auth();
   const user = await currentUser();
 
   const isAdmin = orgRole === "org:admin";
-  const appRole = isAdmin ? "ADMIN" : "EMPLOYEE";
   const displayName =
     user?.fullName ??
     user?.firstName ??
@@ -15,78 +14,71 @@ export default async function AppHomePage() {
     "Pengguna";
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold text-foreground">
-          Halo, {displayName}
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          {isAdmin
-            ? "Kelola roles dan latih AI bisnis Anda."
-            : "Modul pembelajaran Anda akan muncul di sini."}
-        </p>
+    <div className="mx-auto w-full max-w-container space-y-8">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <h1 className="font-headline-md text-headline-md text-on-surface">
+            Halo, {displayName.split(" ")[0]}
+          </h1>
+          <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
+            {isAdmin
+              ? "Pantau kesiapan AI business brain dan progress pelatihan tim Anda."
+              : "Modul pembelajaran Anda akan muncul di sini. Lanjutkan progress Anda."}
+          </p>
+        </div>
+
+        {isAdmin ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/app/employees"
+              className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-surface-container-lowest px-4 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                person_add
+              </span>
+              KARYAWAN
+            </Link>
+            <Link
+              href="/app/roles"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              ROLE BARU
+            </Link>
+          </div>
+        ) : null}
       </div>
 
-      <dl className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-border bg-card p-4">
-          <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Organisasi
-          </dt>
-          <dd className="mt-1 font-medium text-foreground">
-            {orgSlug ?? orgId ?? "—"}
-          </dd>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4">
-          <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Peran di app
-          </dt>
-          <dd className="mt-1 font-medium text-foreground">
-            {appRole}
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              ({orgRole})
-            </span>
-          </dd>
-        </div>
-      </dl>
-
       {isAdmin ? (
-        <>
-          <div className="rounded-lg border border-border bg-card p-4">
-            <p className="font-medium text-foreground">Langkah berikutnya</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Buat role kerja (Kasir, Barista, …) lalu latih AI di Training Room untuk menghasilkan panduan SOP.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-3">
+        <AdminDashboard />
+      ) : (
+        <section className="rounded-xl border border-slate-200 bg-surface-container-lowest p-6 shadow-sm md:p-8">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-fixed">
+              <span className="material-symbols-outlined ms-fill text-on-primary-fixed-variant">
+                school
+              </span>
+            </div>
+            <div>
+              <h2 className="font-headline-sm text-headline-sm text-on-surface">
+                Pembelajaran Anda
+              </h2>
+              <p className="mt-1 max-w-xl font-body-md text-body-md text-on-surface-variant">
+                Buka modul yang sudah ditugaskan admin, selesaikan chapter,
+                kerjakan kuis, dan tanya AI Tutor kapan saja.
+              </p>
               <Link
-                href="/app/roles"
-                className="inline-flex rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90"
+                href="/app/my/modules"
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
               >
-                Kelola Roles
-              </Link>
-              <Link
-                href="/app/training"
-                className="inline-flex rounded-md border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted"
-              >
-                Buka Training Room
+                BUKA LEARNING CENTER
+                <span className="material-symbols-outlined text-[18px]">
+                  arrow_forward
+                </span>
               </Link>
             </div>
           </div>
-
-          <AdminDashboard />
-        </>
-      ) : (
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="font-medium text-foreground">Pembelajaran Anda</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Buka modul yang sudah di-assign admin dan lanjutkan progress chapter.
-          </p>
-          <Link
-            href="/app/my/modules"
-            className="mt-3 inline-flex rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90"
-          >
-            Buka Modul Saya
-          </Link>
-        </div>
+        </section>
       )}
     </div>
   );

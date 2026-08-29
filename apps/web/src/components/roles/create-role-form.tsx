@@ -74,24 +74,31 @@ export function CreateRoleForm({ onCreated }: CreateRoleFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-lg border border-border bg-card p-4"
+      className="space-y-4 rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm"
     >
-      <div>
-        <h2 className="font-display text-lg font-semibold text-foreground">
-          Buat Role baru
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Contoh: Kasir, Barista, Waiter. AI akan dilatih khusus untuk peran
-          ini.
-        </p>
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-fixed">
+          <span className="material-symbols-outlined text-[20px] text-on-primary-fixed-variant">
+            add_circle
+          </span>
+        </div>
+        <div>
+          <h3 className="font-headline-sm text-[18px] text-on-surface">
+            Buat role baru
+          </h3>
+          <p className="mt-0.5 font-body-sm text-body-sm text-secondary">
+            Contoh: Kasir, Barista, Waiter. AI akan dilatih khusus untuk peran
+            ini.
+          </p>
+        </div>
       </div>
 
       <div className="space-y-1.5">
         <label
           htmlFor="role-name"
-          className="text-sm font-medium text-foreground"
+          className="font-label-caps text-label-caps text-secondary"
         >
-          Nama role
+          NAMA ROLE
         </label>
         <input
           id="role-name"
@@ -102,17 +109,16 @@ export function CreateRoleForm({ onCreated }: CreateRoleFormProps) {
           required
           disabled={isPending}
           placeholder="Kasir"
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-ring focus:ring-2 disabled:opacity-60"
+          className="w-full rounded-lg border border-slate-300 bg-surface-muted px-3 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:opacity-60"
         />
       </div>
 
       <div className="space-y-1.5">
         <label
           htmlFor="role-description"
-          className="text-sm font-medium text-foreground"
+          className="font-label-caps text-label-caps text-secondary"
         >
-          Deskripsi{" "}
-          <span className="font-normal text-muted-foreground">(opsional)</span>
+          DESKRIPSI (OPSIONAL)
         </label>
         <textarea
           id="role-description"
@@ -122,12 +128,12 @@ export function CreateRoleForm({ onCreated }: CreateRoleFormProps) {
           rows={3}
           disabled={isPending}
           placeholder="Melayani pembayaran, mengoperasikan POS, menangani refund…"
-          className="w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-ring focus:ring-2 disabled:opacity-60"
+          className="w-full resize-y rounded-lg border border-slate-300 bg-surface-muted px-3 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:opacity-60"
         />
       </div>
 
       {error ? (
-        <p className="text-sm text-accent" role="alert">
+        <p className="font-body-sm text-body-sm text-error" role="alert">
           {error}
         </p>
       ) : null}
@@ -135,9 +141,10 @@ export function CreateRoleForm({ onCreated }: CreateRoleFormProps) {
       <button
         type="submit"
         disabled={isPending}
-        className="inline-flex items-center justify-center rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-60"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:opacity-60"
       >
-        {isPending ? "Menyimpan…" : "Buat Role"}
+        <span className="material-symbols-outlined text-[18px]">add</span>
+        {isPending ? "MENYIMPAN…" : "BUAT ROLE"}
       </button>
     </form>
   );

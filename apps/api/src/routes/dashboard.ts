@@ -209,6 +209,106 @@ export function createDashboardRouter(requireAdmin: AuthMiddleware, env: Env): R
         };
       });
 
+      // ── Recent activity timeline (dashboard right rail) ──────────────────
+      const [recentQuiz, recentAssignments, recentGuides] = await Promise.all([
+        prisma.quizAttempt.findMany({
+          where: { orgId: auth.orgId },
+          orderBy: { createdAt: "desc" },
+          take: 6,
+          select: {
+            id: true,
+            quizId: true,
+            score: true,
+            createdAt: true,
+            user: { select: { name: true } },
+          },
+        }),
+        prisma.employeeModule.findMany({
+          where: { orgId: auth.orgId },
+          orderBy: { assignedAt: "desc" },
+          take: 4,
+          select: {
+            id: true,
+            assignedAt: true,
+            user: { select: { name: true } },
+            role: { select: { name: true } },
+          },
+        }),
+        prisma.guide.findMany({
+          where: { orgId: auth.orgId, publishedAt: { not: null } },
+          orderBy: { publishedAt: "desc" },
+          take: 3,
+          select: {
+            id: true,
+            title: true,
+            publishedAt: true,
+            updatedAt: true,
+            role: { select: { name: true } },
+          },
+        }),
+      ]);
+
+      // QuizAttempt has no direct quiz relation — resolve chapter/role names
+      // for the attempts above with one scoped batched query.
+      const activityQuizIds = [...new Set(recentQuiz.map((a) => a.quizId))];
+      const activityQuizzes =
+        activityQuizIds.length > 0
+          ? await prisma.quiz.findMany({
+              where: { orgId: auth.orgId, id: { in: activityQuizIds } },
+              select: {
+                id: true,
+                chapter: {
+                  select: {
+                    title: true,
+                    guide: { select: { role: { select: { name: true } } } },
+                  },
+                },
+              },
+            })
+          : [];
+      const activityQuizById = new Map(activityQuizzes.map((q) => [q.id, q]));
+
+      type ActivityItem = {
+        id: string;
+        kind: "quiz" | "assignment" | "guide";
+        userName: string | null;
+        roleName: string | null;
+        detail: string;
+        createdAt: string;
+      };
+
+      const recentActivity: ActivityItem[] = [
+        ...recentQuiz.map<ActivityItem>((a) => {
+          const chapter = activityQuizById.get(a.quizId)?.chapter;
+          return {
+            id: a.id,
+            kind: "quiz",
+            userName: a.user.name,
+            roleName: chapter?.guide.role.name ?? null,
+            detail: `menyelesaikan kuis "${chapter?.title ?? "-"}" dengan skor ${a.score}`,
+            createdAt: a.createdAt.toISOString(),
+          };
+        }),
+        ...recentAssignments.map<ActivityItem>((m) => ({
+          id: m.id,
+          kind: "assignment",
+          userName: m.user.name,
+          roleName: m.role.name,
+          detail: `ditugaskan ke role ${m.role.name}`,
+          createdAt: m.assignedAt.toISOString(),
+        })),
+        ...recentGuides.map<ActivityItem>((g) => ({
+          id: g.id,
+          kind: "guide",
+          userName: null,
+          roleName: g.role.name,
+          detail: `guide "${g.title}" dipublikasikan`,
+          createdAt: (g.publishedAt ?? g.updatedAt).toISOString(),
+        })),
+      ]
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        .slice(0, 8);
+
       const summary = {
         roles: {
           total: totalRoles,
@@ -231,6 +331,7 @@ export function createDashboardRouter(requireAdmin: AuthMiddleware, env: Env): R
             aiUsage.training.tokensOut + aiUsage.chat.tokensOut + aiUsage.guide_gen.tokensOut,
         },
         perRole,
+        recentActivity,
       };
 
       await cache.setJson(cacheKey, summary, DASHBOARD_CACHE_TTL_SECONDS);

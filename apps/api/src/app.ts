@@ -8,6 +8,7 @@ import { errorHandler, notFound } from "./middleware/error.js";
 import { healthRouter } from "./routes/health.js";
 import { createChatRouter } from "./routes/chat.js";
 import { createDashboardRouter } from "./routes/dashboard.js";
+import { createEmployeesRouter } from "./routes/employees.js";
 import { createMyRouter } from "./routes/my.js";
 import { createRolesRouter } from "./routes/roles.js";
 import { createClerkWebhookRouter } from "./routes/webhooks/clerk.js";
@@ -95,6 +96,9 @@ export function createApp(env: Env): Express {
 
   // Section 9 — Admin usage dashboard (counts, quiz scores, per-role completion)
   app.use("/api/dashboard", createDashboardRouter(requireAdmin, env));
+
+  // Employee Directory (admin) — per-employee training aggregates
+  app.use("/api/employees", createEmployeesRouter(requireAdmin, env));
 
   // Section 6 — Employee modules + chapters
   // NOTE: mounted AFTER /api/my/chat so Express matches the more specific

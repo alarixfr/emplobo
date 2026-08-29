@@ -3,7 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { useState } from "react";
 import { apiFetch } from "@/lib/api";
-import { CheckIcon, SparklesIcon, XIcon } from "@/components/icons";
+import { ProgressBar } from "@/components/ui/progress-bar";
 import type {
   ModuleQuiz,
   QuizAttemptSummary,
@@ -23,6 +23,7 @@ export function ModuleQuizCard({
 }: ModuleQuizProps) {
   const { getToken } = useAuth();
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<QuizSubmitResponse | null>(null);
@@ -33,12 +34,18 @@ export function ModuleQuizCard({
   const isAllAnswered =
     questions.length > 0 &&
     questions.every((_, idx) => selectedAnswers[idx] !== undefined);
+  const isLastQuestion = currentQuestion === questions.length - 1;
+  const currentQ = questions[currentQuestion];
+  const progressPct =
+    questions.length > 0
+      ? Math.round(((currentQuestion + 1) / questions.length) * 100)
+      : 0;
 
-  function handleSelectOption(questionIndex: number, optionIndex: number) {
+  function handleSelectOption(optionIndex: number) {
     if (result) return; // Locked while viewing results
     setSelectedAnswers((prev) => ({
       ...prev,
-      [questionIndex]: optionIndex,
+      [currentQuestion]: optionIndex,
     }));
   }
 
@@ -88,66 +95,69 @@ export function ModuleQuizCard({
     setSelectedAnswers({});
     setResult(null);
     setError(null);
+    setCurrentQuestion(0);
   }
 
-  if (questions.length === 0) {
+  if (questions.length === 0 || !currentQ) {
     return null;
   }
 
   return (
-    <div className="mt-8 rounded-xl border border-border bg-card p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-        <div>
-          <h4 className="font-display text-lg font-semibold text-foreground">
-            Kuis Pemahaman Bab
-          </h4>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {questions.length} pertanyaan pilihan ganda · Nilai kelulusan minimum: 70%
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 text-xs">
-          {bestScore !== null ? (
-            <span
-              className={`rounded-full px-2.5 py-1 font-semibold ${
-                bestScore >= 70
-                  ? "bg-brand-muted text-foreground"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              Skor Terbaik: {bestScore}%
-            </span>
-          ) : null}
-          {attempts.length > 0 ? (
-            <span className="text-muted-foreground">
-              ({attempts.length}x percobaan)
-            </span>
-          ) : null}
-        </div>
+    <section className="rounded-lg border border-slate-200 bg-surface-container-lowest p-6 shadow-sm md:p-10">
+      {/* Header: chapter title + question counter + progress */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-headline-sm text-[20px] text-on-surface">
+          Knowledge Check
+        </h2>
+        <span className="font-data-point text-data-point text-secondary">
+          Soal {currentQuestion + 1} dari {questions.length}
+        </span>
+      </div>
+      <ProgressBar percent={progressPct} className="mt-3" />
+      <div className="mt-3 flex flex-wrap items-center gap-3 font-data-point text-[12px] text-secondary">
+        {bestScore !== null ? (
+          <span
+            className={
+              bestScore >= 70 ? "font-bold text-primary" : "text-status-locked"
+            }
+          >
+            SKOR TERBAIK: {bestScore}
+          </span>
+        ) : null}
+        {attempts.length > 0 ? <span>{attempts.length}x PERCOBAAN</span> : null}
+        <span>MIN. LULUS: 70</span>
       </div>
 
       {result ? (
-        <div className="mt-5 space-y-4">
+        /* ── Result view ─────────────────────────────────────────────── */
+        <div className="mt-8 space-y-4">
           <div
-            className={`rounded-lg border p-4 ${
+            className={`rounded-lg border p-5 ${
               result.passed
-                ? "border-border bg-brand-muted/30 text-foreground"
-                : "border-border bg-accent/10 text-foreground"
+                ? "border-primary-fixed-dim bg-primary-fixed/30"
+                : "border-error-container bg-error-container/40"
             }`}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="flex items-center gap-2 text-base font-semibold">
-                  {result.passed ? (
-                    <SparklesIcon className="h-4 w-4 text-brand" />
-                  ) : null}
+                <p className="flex items-center gap-2 font-headline-sm text-[20px] text-on-surface">
+                  <span
+                    className={`material-symbols-outlined ms-fill ${
+                      result.passed ? "text-primary" : "text-error"
+                    }`}
+                  >
+                    {result.passed ? "verified" : "error"}
+                  </span>
                   {result.passed
-                    ? "Selamat! Anda Lulus Kuis Bab Ini"
-                    : "Belum Mencapai Nilai Kelulusan"}
+                    ? "Selamat, Anda lulus kuis bab ini!"
+                    : "Belum mencapai nilai kelulusan"}
                 </p>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  Skor: <span className="font-bold text-foreground">{result.score}%</span> (
-                  {result.correctCount} dari {result.totalQuestions} soal benar)
+                <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+                  Skor{" "}
+                  <span className="font-data-point font-bold text-primary">
+                    {result.score}%
+                  </span>{" "}
+                  ({result.correctCount} dari {result.totalQuestions} soal benar)
                   {result.passed
                     ? " · Bab otomatis ditandai selesai."
                     : " · Anda dapat mengulang kuis untuk memperbaiki nilai."}
@@ -156,9 +166,12 @@ export function ModuleQuizCard({
               <button
                 type="button"
                 onClick={handleRetry}
-                className="inline-flex rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-muted"
+                className="inline-flex items-center gap-2 rounded-lg border border-secondary px-4 py-2 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
               >
-                Ulangi Kuis
+                <span className="material-symbols-outlined text-[18px]">
+                  replay
+                </span>
+                ULANGI
               </button>
             </div>
           </div>
@@ -173,29 +186,23 @@ export function ModuleQuizCard({
               return (
                 <div
                   key={q.id}
-                  className={`rounded-lg border p-4 ${
-                    isCorrect
-                      ? "border-border bg-background"
-                      : "border-border bg-background"
-                  }`}
+                  className="rounded-lg border border-slate-200 bg-surface-bright p-5"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="font-body-md text-body-md font-medium text-on-surface">
                       {qIdx + 1}. {q.question}
                     </p>
                     <span
-                      className={`inline-flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-xs font-semibold ${
+                      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 font-label-caps text-[10px] ${
                         isCorrect
-                          ? "bg-brand-muted text-foreground"
-                          : "bg-accent/20 text-accent"
+                          ? "bg-primary-fixed text-on-primary-fixed-variant"
+                          : "bg-error-container text-on-error-container"
                       }`}
                     >
-                      {isCorrect ? (
-                        <CheckIcon className="h-3 w-3" />
-                      ) : (
-                        <XIcon className="h-3 w-3" />
-                      )}
-                      {isCorrect ? "Benar" : "Salah"}
+                      <span className="material-symbols-outlined text-[14px]">
+                        {isCorrect ? "check" : "close"}
+                      </span>
+                      {isCorrect ? "BENAR" : "SALAH"}
                     </span>
                   </div>
 
@@ -204,32 +211,36 @@ export function ModuleQuizCard({
                       const isSelected = selectedOptIdx === optIdx;
                       const isRevealedCorrect = revealedCorrectIdx === optIdx;
 
-                      let itemStyle = "border-border bg-card text-foreground";
+                      let itemStyle =
+                        "border-outline-variant bg-surface-container-lowest text-on-surface-variant";
                       if (isRevealedCorrect) {
-                        itemStyle = "border-brand bg-brand-muted/50 text-foreground font-medium";
+                        itemStyle =
+                          "border-primary border-2 bg-surface-bright font-medium text-on-surface";
                       } else if (isSelected && !isCorrect) {
-                        itemStyle = "border-accent bg-accent/10 text-foreground";
+                        itemStyle =
+                          "border-error border-2 bg-error-container/30 text-on-surface";
                       } else if (isSelected && isCorrect) {
-                        itemStyle = "border-brand bg-brand-muted text-foreground";
+                        itemStyle =
+                          "border-primary border-2 bg-surface-bright text-on-surface";
                       }
 
                       return (
                         <div
                           key={optIdx}
-                          className={`flex items-center gap-3 rounded-md border px-3 py-2 text-xs transition ${itemStyle}`}
+                          className={`flex items-center gap-3 rounded-lg border px-4 py-2.5 font-body-sm text-body-sm transition ${itemStyle}`}
                         >
-                          <span className="font-semibold text-muted-foreground">
+                          <span className="font-data-point text-data-point text-secondary">
                             {String.fromCharCode(65 + optIdx)}.
                           </span>
                           <span className="flex-1">{opt}</span>
-                          {isSelected ? (
-                            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                              (Jawaban Anda)
+                          {isSelected && !isRevealedCorrect ? (
+                            <span className="font-label-caps text-[10px] text-secondary">
+                              JAWABAN ANDA
                             </span>
                           ) : null}
                           {isRevealedCorrect ? (
-                            <span className="text-[10px] font-semibold text-brand">
-                              (Kunci Jawaban)
+                            <span className="font-label-caps text-[10px] text-primary">
+                              KUNCI JAWABAN
                             </span>
                           ) : null}
                         </div>
@@ -242,68 +253,94 @@ export function ModuleQuizCard({
           </div>
         </div>
       ) : (
-        <div className="mt-5 space-y-5">
+        /* ── Question pager ──────────────────────────────────────────── */
+        <div className="mt-8">
           {error ? (
-            <p className="rounded-md border border-accent/30 bg-accent/10 p-3 text-xs text-accent">
+            <p className="mb-4 rounded-lg border border-error-container bg-error-container/40 p-3 font-body-sm text-body-sm text-error">
               {error}
             </p>
           ) : null}
 
-          <div className="space-y-5">
-            {questions.map((q, qIdx) => (
-              <fieldset key={q.id} className="space-y-2">
-                <legend className="text-sm font-medium text-foreground">
-                  {qIdx + 1}. {q.question}
-                </legend>
+          <fieldset>
+            <legend className="font-headline-md text-[24px] leading-8 text-on-surface">
+              {currentQ.question}
+            </legend>
 
-                <div className="grid gap-2">
-                  {q.options.map((opt, optIdx) => {
-                    const isSelected = selectedAnswers[qIdx] === optIdx;
-                    return (
-                      <button
-                        key={optIdx}
-                        type="button"
-                        onClick={() => handleSelectOption(qIdx, optIdx)}
-                        className={`flex items-center gap-3 rounded-lg border px-3.5 py-2.5 text-left text-xs transition ${
-                          isSelected
-                            ? "border-brand bg-brand-muted text-foreground ring-1 ring-brand"
-                            : "border-border bg-background text-foreground hover:bg-muted"
-                        }`}
-                      >
-                        <span
-                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold ${
-                            isSelected
-                              ? "border-brand bg-brand text-brand-foreground"
-                              : "border-border bg-card text-muted-foreground"
-                          }`}
-                        >
-                          {String.fromCharCode(65 + optIdx)}
-                        </span>
-                        <span className="flex-1">{opt}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </fieldset>
-            ))}
+            <div className="mt-6 grid gap-3">
+              {currentQ.options.map((opt, optIdx) => {
+                const isSelected = selectedAnswers[currentQuestion] === optIdx;
+                return (
+                  <button
+                    key={optIdx}
+                    type="button"
+                    onClick={() => handleSelectOption(optIdx)}
+                    className={`flex items-center gap-3 rounded-lg border px-4 py-4 text-left font-body-md text-body-md transition ${
+                      isSelected
+                        ? "border-2 border-primary bg-surface-bright font-medium text-on-surface"
+                        : "border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:bg-surface-bright"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border font-data-point text-[11px] ${
+                        isSelected
+                          ? "border-primary bg-primary text-on-primary"
+                          : "border-outline-variant bg-surface-container-lowest text-secondary"
+                      }`}
+                    >
+                      {String.fromCharCode(65 + optIdx)}
+                    </span>
+                    <span className="flex-1">{opt}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <div className="mt-8 flex items-center justify-between border-t border-outline-variant pt-5">
+            {currentQuestion > 0 ? (
+              <button
+                type="button"
+                onClick={() => setCurrentQuestion((prev) => prev - 1)}
+                className="font-label-caps text-label-caps text-secondary transition-colors hover:text-primary"
+              >
+                SEBELUMNYA
+              </button>
+            ) : (
+              <span />
+            )}
+
+            <div className="flex items-center gap-3">
+              {!isLastQuestion ? (
+                <button
+                  type="button"
+                  onClick={() => setCurrentQuestion((prev) => prev + 1)}
+                  className="inline-flex items-center rounded-lg border border-secondary px-4 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
+                >
+                  LEWATI
+                </button>
+              ) : null}
+              {isLastQuestion ? (
+                <button
+                  type="button"
+                  onClick={() => void handleSubmit()}
+                  disabled={!isAllAnswered || isSubmitting}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:opacity-50"
+                >
+                  {isSubmitting ? "MEMERIKSA…" : "KIRIM JAWABAN"}
+                  <span className="material-symbols-outlined text-[18px]">
+                    arrow_forward
+                  </span>
+                </button>
+              ) : null}
+            </div>
           </div>
-
-          <div className="flex items-center justify-between border-t border-border pt-4">
-            <p className="text-xs text-muted-foreground">
-              {Object.keys(selectedAnswers).length} dari {questions.length} soal terjawab
+          {!isAllAnswered && isLastQuestion ? (
+            <p className="mt-3 text-right font-body-sm text-[12px] text-secondary">
+              Jawab semua soal untuk mengirim kuis.
             </p>
-
-            <button
-              type="button"
-              onClick={() => void handleSubmit()}
-              disabled={!isAllAnswered || isSubmitting}
-              className="inline-flex items-center justify-center rounded-md bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-50"
-            >
-              {isSubmitting ? "Memeriksa Jawaban..." : "Kirim Jawaban Kuis"}
-            </button>
-          </div>
+          ) : null}
         </div>
       )}
-    </div>
+    </section>
   );
 }

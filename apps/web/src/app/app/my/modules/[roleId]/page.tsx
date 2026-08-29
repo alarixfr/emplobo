@@ -16,15 +16,23 @@ export default async function MyModuleRolePage({ params }: PageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <div>
-        <Link href="/app/my/modules" className="text-sm font-medium text-brand hover:underline">
-          ← Semua modul saya
+    <div className="mx-auto h-full w-full max-w-container space-y-6">
+      {/* Breadcrumbs */}
+      <nav
+        aria-label="Breadcrumb"
+        className="flex items-center gap-2 font-label-caps text-label-caps text-secondary"
+      >
+        <Link
+          href="/app/my/modules"
+          className="transition-colors hover:text-primary"
+        >
+          LEARNING CENTER
         </Link>
-        <h1 className="mt-2 font-display text-3xl font-semibold text-foreground">
-          Modul Pembelajaran & AI Tutor
-        </h1>
-      </div>
+        <span className="material-symbols-outlined text-[14px]">
+          chevron_right
+        </span>
+        <span className="text-on-surface">MODUL</span>
+      </nav>
 
       <ModuleLearningView roleId={roleId} />
     </div>

@@ -15,29 +15,36 @@ export default function AppError({
   }, [error]);
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col items-center justify-center gap-4 py-20 text-center">
-      <h1 className="font-display text-2xl font-semibold text-foreground">
+    <div className="mx-auto flex max-w-2xl flex-col items-center justify-center gap-5 py-20 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-error-container">
+        <span className="material-symbols-outlined text-[28px] text-on-error-container">
+          error
+        </span>
+      </div>
+      <h1 className="font-headline-sm text-headline-sm text-on-surface">
         Terjadi kesalahan
       </h1>
-      <p className="max-w-md text-sm text-muted-foreground">
+      <p className="max-w-md font-body-md text-body-md text-on-surface-variant">
         Gagal memuat bagian aplikasi ini. Coba lagi, atau kembali ke dashboard.
       </p>
       {error.digest ? (
-        <p className="text-xs text-muted-foreground">Kode: {error.digest}</p>
+        <p className="font-data-point text-data-point text-secondary">
+          KODE: {error.digest}
+        </p>
       ) : null}
       <div className="flex gap-3">
         <button
           type="button"
           onClick={reset}
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground transition hover:opacity-90"
+          className="rounded-lg bg-primary px-5 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
         >
-          Coba lagi
+          COBA LAGI
         </button>
         <Link
           href="/app"
-          className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
+          className="rounded-lg border border-secondary px-5 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
         >
-          Dashboard
+          DASHBOARD
         </Link>
       </div>
     </div>

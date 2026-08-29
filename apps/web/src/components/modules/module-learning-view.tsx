@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpenIcon, BotIcon } from "@/components/icons";
 import { EmployeeChatTutor } from "./employee-chat-tutor";
 import { ModuleReader } from "./module-reader";
 
@@ -14,36 +13,39 @@ export function ModuleLearningView({ roleId }: ModuleLearningViewProps) {
 
   return (
     <div className="space-y-6">
-      {/* Navigation Tabs */}
-      <div className="flex border-b border-border">
+      {/* Tab bar — label-caps, active tab in bold primary with underline */}
+      <div className="flex gap-6 border-b border-outline-variant">
         <button
           type="button"
           onClick={() => setActiveTab("reader")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+          className={`flex items-center gap-2 border-b-2 pb-3 pt-2 font-label-caps text-label-caps transition-colors ${
             activeTab === "reader"
-              ? "border-brand text-brand"
-              : "border-transparent text-muted-foreground hover:text-foreground"
+              ? "border-primary font-bold text-primary"
+              : "border-transparent text-secondary hover:text-on-surface"
           }`}
         >
-          <BookOpenIcon className="h-4 w-4" />
-          <span>Panduan SOP & Kuis</span>
+          <span className="material-symbols-outlined text-[18px]">
+            menu_book
+          </span>
+          PANDUAN & KUIS
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("tutor")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+          className={`flex items-center gap-2 border-b-2 pb-3 pt-2 font-label-caps text-label-caps transition-colors ${
             activeTab === "tutor"
-              ? "border-brand text-brand"
-              : "border-transparent text-muted-foreground hover:text-foreground"
+              ? "border-primary font-bold text-primary"
+              : "border-transparent text-secondary hover:text-on-surface"
           }`}
         >
-          <BotIcon className="h-4 w-4" />
-          <span>Tanya AI Tutor (24/7)</span>
+          <span className="material-symbols-outlined text-[18px]">
+            psychology
+          </span>
+          AI TUTOR (24/7)
         </button>
       </div>
 
-      {/* Tab Content */}
       {activeTab === "reader" ? (
         <ModuleReader roleId={roleId} />
       ) : (

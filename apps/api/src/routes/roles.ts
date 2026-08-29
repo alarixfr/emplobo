@@ -357,7 +357,15 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           role.trainingMessageCount = cachedStatus.trainingMessageCount;
         }
 
-        res.json({ role });
+        const gaps = await cache.getJson<{
+          missingAreas: string[];
+          updatedAt: string;
+        }>(`role-gaps:${id.data}`);
+
+        res.json({
+          role,
+          missingAreas: gaps?.missingAreas ?? [],
+        });
       } catch (err) {
         next(err);
       }
@@ -730,6 +738,18 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           const parsedScore = parseScoringJson(scoringReply.text);
           if (parsedScore) {
             finalScore = parsedScore.score;
+
+            // Knowledge Gaps (Training Room right rail) — missingAreas is
+            // ephemeral model output, cached per-role (org-shared content)
+            // instead of adding a schema column. Overwritten every re-score.
+            await cache.setJson(
+              `role-gaps:${role.id}`,
+              {
+                missingAreas: parsedScore.missingAreas,
+                updatedAt: new Date().toISOString(),
+              },
+              30 * 24 * 60 * 60,
+            );
             if (parsedScore.score >= 75 && updatedRole.status === "DRAFT") {
               finalStatus = "READY";
               becameReady = true;
