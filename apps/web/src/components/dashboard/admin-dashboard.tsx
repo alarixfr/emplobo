@@ -40,6 +40,7 @@ type DashboardSummary = {
     roleId: string;
     roleName: string;
     status: string;
+    completenessScore: number;
     assignedEmployees: number;
     totalChapters: number;
     avgCompletionPct: number;
@@ -246,7 +247,7 @@ export function AdminDashboard() {
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm lg:col-span-2">
           <div className="border-b border-slate-200 p-5">
-            <h2 className="font-headline-sm text-[20px] text-on-surface">
+            <h2 className="font-headline-sm text-[18px] text-on-surface">
               Brain Readiness
             </h2>
             <p className="mt-0.5 font-body-sm text-body-sm text-secondary">
@@ -256,8 +257,8 @@ export function AdminDashboard() {
 
           {summary.perRole.length === 0 ? (
             <p className="p-6 font-body-md text-body-md text-on-surface-variant">
-              Belum ada guide yang dipublikasikan. Buat role, latih AI sampai
-              SIAP, lalu generate guide untuk melihat progress di sini.
+              Belum ada role. Buat role, latih AI sampai READY (≥75%), lalu
+              generate guide untuk melihat progress di sini.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -308,19 +309,19 @@ export function AdminDashboard() {
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
                             <ProgressBar
-                              percent={role.avgCompletionPct}
+                              percent={role.completenessScore}
                               fillClass={statusFill(
                                 status,
-                                role.avgCompletionPct,
+                                role.completenessScore,
                               )}
                               className="w-28"
                             />
                             <span className="font-data-point text-data-point text-on-surface">
-                              {role.avgCompletionPct}%
+                              {role.completenessScore}%
                             </span>
                           </div>
                           <p className="mt-1 text-[12px] text-secondary">
-                            Quiz:{" "}
+                            Tim {role.avgCompletionPct}% · Quiz{" "}
                             {role.avgQuizBestScore !== null
                               ? `${role.avgQuizBestScore}/100`
                               : "—"}
@@ -349,7 +350,7 @@ export function AdminDashboard() {
         {/* Recent activity timeline */}
         <section className="rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm">
           <div className="border-b border-slate-200 p-5">
-            <h2 className="font-headline-sm text-[20px] text-on-surface">
+            <h2 className="font-headline-sm text-[18px] text-on-surface">
               Recent Activity
             </h2>
           </div>
@@ -381,7 +382,7 @@ export function AdminDashboard() {
                         </span>{" "}
                         {item.detail}
                       </p>
-                      <p className="mt-1 font-label-caps text-[10px] uppercase text-outline">
+                      <p className="mt-1 font-label-caps text-[10px] uppercase text-secondary">
                         {relativeTime(item.createdAt)}
                       </p>
                     </div>

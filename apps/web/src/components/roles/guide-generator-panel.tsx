@@ -124,7 +124,7 @@ export function GuideGeneratorPanel({
 
       {roleStatus === "DRAFT" ? (
         <p className="mt-3 rounded-lg border border-status-locked border-l-4 bg-surface-bright p-3 font-body-sm text-body-sm text-on-surface-variant">
-          Role masih DRAFT. Lanjutkan training sampai status SIAP (≥ 75%) untuk
+          Role masih DRAFT. Lanjutkan training sampai status READY (≥ 75%) untuk
           mengaktifkan pembuatan panduan.
         </p>
       ) : null}

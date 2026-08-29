@@ -155,7 +155,7 @@ export function MyModulesList() {
                       <p className="mt-1.5 font-label-caps text-[10px] text-secondary">
                         {module.progress.completionPct}% SELESAI
                         {module.progress.avgBestScore !== null
-                          ? ` · NILAI KUIS ${module.progress.avgBestScore}`
+                          ? ` · NILAI ${module.progress.avgBestScore}`
                           : ""}
                       </p>
                     </div>

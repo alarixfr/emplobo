@@ -148,6 +148,17 @@ body {
   font-family: var(--font-body-md);
 }
 
+/* Visible keyboard focus on every interactive element (inputs already carry
+   Tailwind focus:ring styles; this covers links, buttons, and roles). */
+@layer base {
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 2px solid var(--color-primary-fixed-dim);
+    outline-offset: 2px;
+  }
+}
+
 /* ── Material Symbols Outlined (loaded via <link> in layout.tsx) ──────── */
 .material-symbols-outlined {
   font-family: "Material Symbols Outlined";

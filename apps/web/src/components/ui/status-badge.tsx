@@ -13,7 +13,7 @@ export function StatusBadge({ status }: { status: RoleStatus }) {
 
   const labels: Record<RoleStatus, string> = {
     DRAFT: "DRAFT",
-    READY: "SIAP",
+    READY: "READY",
     PUBLISHED: "PUBLISHED",
   };
 

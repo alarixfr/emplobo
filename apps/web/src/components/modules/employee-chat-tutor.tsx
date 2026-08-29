@@ -37,6 +37,10 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
   // Mirrors activeSessionId for in-flight fetch guards — stale responses for
   // a session the user already left must never render.
   const activeSessionIdRef = useRef<string | null>(null);
+  // Set while the FIRST message is in flight for an auto-created session:
+  // the activeSessionId effect must not fetch (an empty) history and clobber
+  // the optimistic user message before the POST persists it server-side.
+  const pendingFirstSendRef = useRef(false);
 
   function scrollToBottom() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -171,6 +175,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
           },
         );
         setSessions([sData.session]);
+        pendingFirstSendRef.current = true;
         setActiveSessionId(sData.session.id);
         targetSessionId = sData.session.id;
       } catch (err) {
@@ -239,6 +244,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
         );
       }
     } finally {
+      pendingFirstSendRef.current = false;
       setIsSending(false);
     }
   }
@@ -256,7 +262,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
   }, [activeSessionId]);
 
   useEffect(() => {
-    if (activeSessionId) {
+    if (activeSessionId && !pendingFirstSendRef.current) {
       void loadMessages(activeSessionId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -305,7 +311,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
                     }`}
                   >
                     <span className="block truncate">{session.title}</span>
-                    <span className="mt-0.5 block font-data-point text-[10px] text-outline">
+                    <span className="mt-0.5 block font-data-point text-[11px] text-secondary">
                       {new Date(session.updatedAt).toLocaleDateString("id-ID", {
                         day: "numeric",
                         month: "short",
@@ -490,7 +496,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
               </span>
             </button>
           </form>
-          <p className="mt-2 text-center font-body-sm text-[11px] text-outline">
+          <p className="mt-2 text-center font-body-sm text-[12px] text-secondary">
             Jawaban AI Tutor berdasarkan SOP &amp; panduan resmi peran ini.
             Selalu verifikasi prosedur kritis kepada atasan Anda. · Cooldown 2
             detik antar pesan.

@@ -191,7 +191,7 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
 
           {/* End-of-chapter CTA block */}
           <div className="mt-10 rounded-lg border border-outline-variant bg-surface-bright p-6 text-center">
-            <h2 className="font-headline-sm text-[20px] text-on-surface">
+            <h2 className="font-headline-sm text-[18px] text-on-surface">
               Siap menguji pemahaman Anda?
             </h2>
             <p className="mt-1 font-body-sm text-body-sm text-secondary">

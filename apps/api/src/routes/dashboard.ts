@@ -167,10 +167,17 @@ export function createDashboardRouter(requireAdmin: AuthMiddleware, env: Env): R
         (bestByRole[roleId] ??= []).push(score);
       }
 
-      // ── Assemble per-role rows for PUBLISHED roles with guides ───────────
+      // ── Assemble per-role rows for ALL active roles (reference Brain
+      // Readiness table shows DRAFT/READY/PUBLISHED roles with the brain's
+      // own completenessScore as the primary progress signal) ────────────
       const rolesWithGuides = await prisma.trainingRole.findMany({
-        where: { orgId: auth.orgId, isActive: true, status: "PUBLISHED" },
-        select: { id: true, name: true, status: true },
+        where: { orgId: auth.orgId, isActive: true },
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          completenessScore: true,
+        },
         orderBy: { name: "asc" },
       });
 
@@ -202,6 +209,7 @@ export function createDashboardRouter(requireAdmin: AuthMiddleware, env: Env): R
           roleId: role.id,
           roleName: role.name,
           status: role.status,
+          completenessScore: role.completenessScore,
           assignedEmployees: assigned,
           totalChapters,
           avgCompletionPct: completionPct,

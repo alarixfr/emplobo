@@ -84,7 +84,7 @@ export function AssignmentPanel({ roleId, roleStatus }: AssignmentPanelProps) {
       });
 
       setResult(
-        `Assigned ${data.createdCount} user(s). Skipped existing: ${data.skippedExisting}. Invalid: ${data.invalidUserIds.length}.`,
+        `Berhasil menugaskan ${data.createdCount} karyawan. Sudah ditugaskan sebelumnya: ${data.skippedExisting}. Tidak valid: ${data.invalidUserIds.length}.`,
       );
 
       await loadUsers();

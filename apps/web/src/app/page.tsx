@@ -83,7 +83,7 @@ export default function HomePage() {
                 href="/app"
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
               >
-                BUKA DASHBOARD
+                BUKA APP
                 <span className="material-symbols-outlined text-[18px]">
                   arrow_forward
                 </span>
@@ -117,7 +117,7 @@ export default function HomePage() {
                         {r}
                       </p>
                       <p className="mt-0.5 text-[12px] text-secondary">
-                        {i === 0 ? "In Progress" : "Draft"}
+                        {i === 0 ? "IN PROGRESS" : "DRAFT"}
                       </p>
                     </div>
                   ))}
@@ -197,8 +197,8 @@ export default function HomePage() {
               DIPERCAYA UNTUK PELATIHAN TIM UMKM
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 font-headline-sm text-lg font-semibold text-outline">
-              Kedai Kopi Nusantara · Warung Rasa · Toko Bangunan Jaya · Laundry
-              Kiloan Bersih · Bengkel Motor Aman
+              KOPI &amp; KEDAI · RESTORAN &amp; WARUNG · RITEL &amp; TOKO ·
+              LAUNDRY · BENGKEL · JASA LAYANAN
             </div>
           </div>
         </section>
@@ -305,7 +305,7 @@ export default function HomePage() {
                 href="/sign-up"
                 className="shrink-0 rounded-lg bg-on-primary px-6 py-3 font-label-caps text-label-caps text-primary transition-colors hover:bg-primary-fixed"
               >
-                COBA GRATIS
+                MULAI GRATIS
               </Link>
             </SignedOut>
             <SignedIn>

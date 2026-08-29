@@ -89,7 +89,7 @@ const { aiMessage, role } = await res.json();`,
       {
         method: "POST",
         path: "/api/roles/:id/guide/generate",
-        desc: "Membuat/memperbarui guide ber-bab + kuis. Hanya ketika status SIAP atau PUBLISHED.",
+        desc: "Membuat/memperbarui guide ber-bab + kuis. Hanya ketika status READY atau PUBLISHED.",
         params: [],
         response: 200,
         code: (lang: Lang) =>

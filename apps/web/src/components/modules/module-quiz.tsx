@@ -106,7 +106,7 @@ export function ModuleQuizCard({
     <section className="rounded-lg border border-slate-200 bg-surface-container-lowest p-6 shadow-sm md:p-10">
       {/* Header: chapter title + question counter + progress */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-headline-sm text-[20px] text-on-surface">
+        <h2 className="font-headline-sm text-[18px] text-on-surface">
           Knowledge Check
         </h2>
         <span className="font-data-point text-data-point text-secondary">
@@ -140,7 +140,7 @@ export function ModuleQuizCard({
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="flex items-center gap-2 font-headline-sm text-[20px] text-on-surface">
+                <p className="flex items-center gap-2 font-headline-sm text-[18px] text-on-surface">
                   <span
                     className={`material-symbols-outlined ms-fill ${
                       result.passed ? "text-primary" : "text-error"
@@ -262,7 +262,7 @@ export function ModuleQuizCard({
           ) : null}
 
           <fieldset>
-            <legend className="font-headline-md text-[24px] leading-8 text-on-surface">
+            <legend className="font-headline-md text-headline-md text-on-surface">
               {currentQ.question}
             </legend>
 

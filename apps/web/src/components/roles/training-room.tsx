@@ -95,12 +95,12 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
             const active = role.id === selectedRole.id;
             const statusLabel =
               role.status === "PUBLISHED"
-                ? "Published"
+                ? "PUBLISHED"
                 : role.status === "READY"
-                  ? "Ready"
+                  ? "READY"
                   : role.completenessScore > 0
-                    ? "In Progress"
-                    : "Draft";
+                    ? "IN PROGRESS"
+                    : "DRAFT";
             return (
               <button
                 key={role.id}
@@ -416,7 +416,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
         <div className="flex flex-col justify-between gap-4 border-b border-slate-200 bg-white p-6 sm:flex-row sm:items-center">
           <div>
             <div className="mb-1 flex items-center gap-3">
-              <h2 className="font-headline-md text-[24px] text-on-surface">
+              <h2 className="font-headline-md text-headline-md text-on-surface">
                 {role.name}
               </h2>
               <StatusBadge status={status} />
@@ -649,7 +649,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
               </button>
               {!canGenerate && !isGenerating ? (
                 <p className="mt-2 text-center text-[11px] uppercase tracking-wider text-slate-400">
-                  Butuh status SIAP (≥ 75% completeness)
+                  Butuh status READY (≥ 75% completeness)
                 </p>
               ) : null}
               {status === "PUBLISHED" ? (

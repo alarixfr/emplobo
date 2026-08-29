@@ -121,7 +121,7 @@ export default async function RoleDetailPage({ params }: PageProps) {
               <dt className="font-label-caps text-[10px] text-secondary">
                 PESAN TRAINING
               </dt>
-              <dd className="mt-1 font-headline-sm text-[24px] text-on-surface">
+              <dd className="mt-1 font-headline-sm text-headline-sm text-on-surface">
                 {role.trainingMessageCount}
               </dd>
             </div>
@@ -129,7 +129,7 @@ export default async function RoleDetailPage({ params }: PageProps) {
               <dt className="font-label-caps text-[10px] text-secondary">
                 CHAPTER GUIDE
               </dt>
-              <dd className="mt-1 font-headline-sm text-[24px] text-on-surface">
+              <dd className="mt-1 font-headline-sm text-headline-sm text-on-surface">
                 {guide ? guide.chapters.length : "—"}
               </dd>
             </div>
@@ -173,7 +173,7 @@ export default async function RoleDetailPage({ params }: PageProps) {
             <p className="mt-1 font-body-sm text-[12px] leading-5 text-secondary">
               Admin melatih AI di Training Room sampai materi dirasa cukup. AI
               mengevaluasi skor kelengkapan (0–100) dan menyarankan kapan
-              panduan siap dibuat — mulai 75% status berubah menjadi SIAP.
+              panduan siap dibuat — mulai 75% status berubah menjadi READY.
             </p>
           </div>
         </aside>
