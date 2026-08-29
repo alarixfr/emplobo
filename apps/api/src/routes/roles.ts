@@ -2,6 +2,7 @@ import { prisma, type RoleStatus } from "@emplobo/db";
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
 import { createCache } from "../lib/cache.js";
+import { createRateLimiter } from "../lib/rate-limit.js";
 import { logAiUsage } from "../lib/ai-usage.js";
 import type { Env } from "../env.js";
 import type { AuthContext } from "../types.js";
@@ -29,7 +30,7 @@ type OpenRouterMessage = {
   content: string;
 };
 
-const TRAINING_RATE_WINDOW_MS = 10 * 60 * 1000;
+const TRAINING_RATE_WINDOW_SECONDS = 10 * 60; // 10 minutes
 const TRAINING_RATE_LIMIT = 20;
 const TRAINING_LOCK_STALE_MS = 30 * 60 * 1000;
 const TRAINING_CONTEXT_TOKEN_BUDGET = 6000;
@@ -37,10 +38,7 @@ const TRAINING_CONTEXT_TOKEN_BUDGET = 6000;
 // Guide generation is the most expensive single AI call — 3/hour per Role
 // (Section 5.3). Protects against accidental double-clicks and cost blowups.
 const GUIDE_GEN_RATE_LIMIT = 3;
-const GUIDE_GEN_RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
-const guideGenRateState = new Map<string, number[]>();
-
-const trainingRateState = new Map<string, number[]>();
+const GUIDE_GEN_RATE_WINDOW_SECONDS = 60 * 60; // 1 hour
 
 const assignEmployeesSchema = z
   .object({
@@ -78,44 +76,6 @@ function cleanUserText(input: string): string {
   return input.replace(/<\/business_data>/gi, "").replace(/\0/g, "").trim();
 }
 
-function enforceTrainingRateLimit(userId: string): { ok: true } | { ok: false; retryAfter: number } {
-  const now = Date.now();
-  const start = now - TRAINING_RATE_WINDOW_MS;
-  const prev = trainingRateState.get(userId) ?? [];
-  const kept = prev.filter((ts) => ts >= start);
-
-  if (kept.length >= TRAINING_RATE_LIMIT) {
-    const oldest = kept[0] ?? now;
-    const retryAfter = Math.max(1, Math.ceil((oldest + TRAINING_RATE_WINDOW_MS - now) / 1000));
-    trainingRateState.set(userId, kept);
-    return { ok: false, retryAfter };
-  }
-
-  kept.push(now);
-  trainingRateState.set(userId, kept);
-  return { ok: true };
-}
-
-function enforceGuideGenRateLimit(
-  roleKey: string,
-): { ok: true } | { ok: false; retryAfter: number } {
-  const now = Date.now();
-  const start = now - GUIDE_GEN_RATE_WINDOW_MS;
-  const prev = guideGenRateState.get(roleKey) ?? [];
-  const kept = prev.filter((ts) => ts >= start);
-
-  if (kept.length >= GUIDE_GEN_RATE_LIMIT) {
-    const oldest = kept[0] ?? now;
-    const retryAfter = Math.max(1, Math.ceil((oldest + GUIDE_GEN_RATE_WINDOW_MS - now) / 1000));
-    guideGenRateState.set(roleKey, kept);
-    return { ok: false, retryAfter };
-  }
-
-  kept.push(now);
-  guideGenRateState.set(roleKey, kept);
-  return { ok: true };
-}
-
 function toOpenRouterModel(model: string): string {
   // Keep caller model names stable in code while routing through OpenRouter.
   if (model === "claude-sonnet-4-5") {
@@ -146,7 +106,7 @@ async function callOpenRouterText(
   messages: AnthropicMessage[],
   maxTokens: number,
 ): Promise<AiCallResult> {
-  const openRouterKey = env.ANTHROPIC_API_KEY?.trim();
+  const openRouterKey = env.OPENROUTER_API_KEY?.trim();
   if (!openRouterKey) {
     return {
       text: "Terima kasih. Untuk melengkapi SOP role ini, jelaskan langkah kerja utama dari awal sampai selesai secara berurutan.",
@@ -260,6 +220,18 @@ function requireAuthContext(req: Request): AuthContext {
 export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Router {
   const router = Router();
   const cache = createCache(env);
+
+  // Redis-backed sliding windows with in-memory fallback (lib/rate-limit.ts)
+  const trainingLimiter = createRateLimiter(env, {
+    limit: TRAINING_RATE_LIMIT,
+    windowSeconds: TRAINING_RATE_WINDOW_SECONDS,
+    prefix: "rl:training-messages",
+  });
+  const guideGenLimiter = createRateLimiter(env, {
+    limit: GUIDE_GEN_RATE_LIMIT,
+    windowSeconds: GUIDE_GEN_RATE_WINDOW_SECONDS,
+    prefix: "rl:guide-gen",
+  });
 
   // All role routes are admin-only (Section 9).
   router.use(requireAdmin);
@@ -595,7 +567,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           return;
         }
 
-        const limit = enforceTrainingRateLimit(auth.userId);
+        const limit = await trainingLimiter(auth.userId);
         if (!limit.ok) {
           res.status(429).json({ error: "rate limit exceeded", retryAfter: limit.retryAfter });
           return;
@@ -881,7 +853,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
 
         // Rate limit: max 3 generations/hour per Role (Section 5.3)
         const roleKey = `${auth.orgId}:${role.id}`;
-        const limit = enforceGuideGenRateLimit(roleKey);
+        const limit = await guideGenLimiter(roleKey);
         if (!limit.ok) {
           res.status(429).json({ error: "rate limit exceeded", retryAfter: limit.retryAfter });
           return;
