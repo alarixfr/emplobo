@@ -117,7 +117,7 @@ Framework    : Next.js 15 (App Router) + TypeScript
 UI Library   : Tailwind CSS v4 + design tokens (teal/orange, DM Sans + Fraunces)
 Icons        : Set ikon SVG custom (apps/web/src/components/icons.tsx)
 Auth UI      : Clerk B2B (Organizations)
-Validation   : Zod + React Hook Form
+Validation   : Zod (client & server, .strict() di API)
 Markdown     : react-markdown + remark-gfm + rehype-sanitize
 ```
 
@@ -128,7 +128,7 @@ Framework    : Express + TypeScript (apps/api — Section 2+)
 Database     : Neon PostgreSQL (pooled + direct URL)
 ORM          : Prisma 6 (packages/db)
 Auth         : Clerk B2B (JWT verify via @clerk/backend)
-AI           : Anthropic Claude (sonnet training/guide, haiku chat)
+AI           : Claude (sonnet training/guide, haiku chat) via OpenRouter API
 Cache/RL     : Upstash Redis
 ```
 
@@ -147,7 +147,7 @@ Redis        : Upstash
 | **Next.js 15 + Express split** | UI di Next; AI endpoints butuh rate-limit/cooldown/cache konsisten di proses Node panjang (Express) |
 | **Clerk B2B Organizations** | Multi-tenant org/role/invite/session tanpa custom auth — kurangi attack surface |
 | **Prisma + Neon** | Schema typed, migrasi jelas; Neon pooled untuk runtime, direct URL untuk migrate |
-| **Anthropic + Upstash** | Model sesuai beban (sonnet vs haiku); Redis untuk rate limit & cache guide |
+| **Claude via OpenRouter + Upstash** | Model sesuai beban (sonnet vs haiku), satu gateway API untuk akses model; Redis untuk rate limit & cache guide |
 
 ### Dependencies Utama
 
@@ -196,7 +196,7 @@ flowchart TB
   subgraph Data["Data & AI"]
     DB[("Neon PostgreSQL<br/>via packages/db (Prisma)")]
     RC[("Upstash Redis<br/>guide 10m · role-status 30s")]
-    AI["Anthropic Claude<br/>sonnet: training/guide · haiku: chat"]
+    AI["Claude via OpenRouter<br/>sonnet: training/guide · haiku: chat"]
   end
 
   W -->|Clerk session JWT| A
@@ -379,7 +379,7 @@ DIRECT_URL="postgresql://user:pass@ep-xxx.neon.tech/emplobo?sslmode=require"    
 CLERK_SECRET_KEY="sk_live_xxx"
 CLERK_PUBLISHABLE_KEY="pk_live_xxx"
 CLERK_WEBHOOK_SECRET="whsec_xxx"
-ANTHROPIC_API_KEY="sk-ant-xxx"
+OPENROUTER_API_KEY="sk-or-xxx"
 UPSTASH_REDIS_REST_URL="https://xxx.upstash.io"
 UPSTASH_REDIS_REST_TOKEN="xxx"
 WEB_APP_ORIGIN="https://<web-domain>"   # harus persis origin web yang ter-deploy
@@ -396,6 +396,8 @@ Env vars di Vercel (Production):
 
 ```env
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_live_xxx"
+# Server-side only — dipakai @clerk/nextjs untuk middleware + RSC auth.
+# JANGAN pernah diberi prefix NEXT_PUBLIC_ atau diimpor di client components.
 CLERK_SECRET_KEY="sk_live_xxx"
 NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
 NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
