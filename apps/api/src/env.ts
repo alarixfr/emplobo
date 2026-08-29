@@ -1,22 +1,37 @@
 import { z } from "zod";
 
-const envSchema = z.object({
-  NODE_ENV: z
-    .enum(["development", "test", "production"])
-    .default("development"),
-  PORT: z.coerce.number().int().positive().default(4000),
-  DATABASE_URL: z.string().min(1),
-  DIRECT_URL: z.string().min(1).optional(),
-  CLERK_SECRET_KEY: z.string().min(1),
-  // @clerk/backend's authenticateRequest parses the Clerk instance id from
-  // the publishable key — it throws "Publishable key is missing" without it.
-  CLERK_PUBLISHABLE_KEY: z.string().min(1),
-  CLERK_WEBHOOK_SECRET: z.string().min(1),
-  WEB_APP_ORIGIN: z.string().url(),
-  ANTHROPIC_API_KEY: z.string().optional(),
-  UPSTASH_REDIS_REST_URL: z.string().optional(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
-});
+const envSchema = z
+  .object({
+    NODE_ENV: z
+      .enum(["development", "test", "production"])
+      .default("development"),
+    PORT: z.coerce.number().int().positive().default(4000),
+    DATABASE_URL: z.string().min(1),
+    DIRECT_URL: z.string().min(1).optional(),
+    CLERK_SECRET_KEY: z.string().min(1),
+    // @clerk/backend's authenticateRequest parses the Clerk instance id from
+    // the publishable key — it throws "Publishable key is missing" without it.
+    CLERK_PUBLISHABLE_KEY: z.string().min(1),
+    CLERK_WEBHOOK_SECRET: z.string().min(1),
+    WEB_APP_ORIGIN: z.string().url(),
+    // Claude models are routed through OpenRouter (raw fetch), so this is an
+    // OpenRouter key despite the Claude model names used in code.
+    OPENROUTER_API_KEY: z.string().optional(),
+    UPSTASH_REDIS_REST_URL: z.string().optional(),
+    UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+  })
+  .superRefine((env, ctx) => {
+    // Fail loudly in production — the AI layer IS the product; silently
+    // serving canned replies to real users is worse than refusing to start.
+    // Dev without a key still works (canned fallback keeps local dev moving).
+    if (env.NODE_ENV === "production" && !env.OPENROUTER_API_KEY?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["OPENROUTER_API_KEY"],
+        message: "required when NODE_ENV=production",
+      });
+    }
+  });
 
 export type Env = z.infer<typeof envSchema>;
 
@@ -31,7 +46,7 @@ export function loadEnv(): Env {
     CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
     CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
     WEB_APP_ORIGIN: process.env.WEB_APP_ORIGIN,
-    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
   };
