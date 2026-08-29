@@ -660,13 +660,24 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         }
         selected.reverse();
 
-        const aiReply = await callOpenRouterText(
-          env,
-          "claude-sonnet-4-5",
-          buildTrainingSystemPrompt(role.name),
-          toAnthropicMessages(selected),
-          500,
-        );
+        // On AI failure, delete the just-saved admin message so the
+        // transcript never shows a question without a reply (the client
+        // keeps its UI consistent by not appending either message).
+        let aiReply: AiCallResult;
+        try {
+          aiReply = await callOpenRouterText(
+            env,
+            "claude-sonnet-4-5",
+            buildTrainingSystemPrompt(role.name),
+            toAnthropicMessages(selected),
+            500,
+          );
+        } catch (err) {
+          await prisma.trainingMessage
+            .delete({ where: { id: adminMessage.id } })
+            .catch(() => undefined);
+          throw err;
+        }
 
         await logAiUsage({
           orgId: auth.orgId,

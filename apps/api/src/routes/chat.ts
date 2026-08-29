@@ -1,4 +1,4 @@
-import { prisma } from "@emplobo/db";
+import { prisma, Prisma } from "@emplobo/db";
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
 import type { Env } from "../env.js";
@@ -81,6 +81,59 @@ function enforceChatCooldown(key: string): { ok: true } | { ok: false; retryAfte
   }
 
   return { ok: true };
+}
+
+type CapTx = Prisma.TransactionClient;
+
+/**
+ * Enforce the 10-session-per-role cap inside a single transaction: count
+ * existing sessions, evict the oldest if at/over the cap, then create. The
+ * eviction and creation share one transaction so a crash can never leave
+ * 11 sessions or delete the wrong one (Section 8 checklist).
+ */
+async function createSessionWithCap(
+  tx: CapTx,
+  auth: AuthContext,
+  roleId: string,
+  title: string,
+) {
+  const existingSessions = await tx.chatSession.findMany({
+    where: {
+      orgId: auth.orgId,
+      userId: auth.userId,
+      roleId,
+    },
+    orderBy: { updatedAt: "asc" },
+    select: { id: true },
+  });
+
+  if (existingSessions.length >= MAX_SESSIONS_PER_ROLE) {
+    const deleteCount = existingSessions.length - (MAX_SESSIONS_PER_ROLE - 1);
+    const idsToDelete = existingSessions.slice(0, deleteCount).map((s) => s.id);
+    await tx.chatSession.deleteMany({
+      where: {
+        id: { in: idsToDelete },
+        orgId: auth.orgId,
+        userId: auth.userId,
+      },
+    });
+  }
+
+  return tx.chatSession.create({
+    data: {
+      orgId: auth.orgId,
+      userId: auth.userId,
+      roleId,
+      title,
+    },
+    select: {
+      id: true,
+      roleId: true,
+      title: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
 }
 
 function toOpenRouterModel(model: string): string {
@@ -272,46 +325,29 @@ export function createChatRouter(requireAuth: AuthMiddleware, env: Env): Router 
 
       const defaultTitle = body.data.title?.trim() || `Tanya Jawab ${assignment.role.name}`;
 
-      // Enforce 10-session cap atomically in a transaction
-      const session = await prisma.$transaction(async (tx) => {
-        const existingSessions = await tx.chatSession.findMany({
-          where: {
-            orgId: auth.orgId,
-            userId: auth.userId,
-            roleId: body.data.roleId,
-          },
-          orderBy: { updatedAt: "asc" },
-          select: { id: true },
-        });
-
-        if (existingSessions.length >= MAX_SESSIONS_PER_ROLE) {
-          const deleteCount = existingSessions.length - (MAX_SESSIONS_PER_ROLE - 1);
-          const idsToDelete = existingSessions.slice(0, deleteCount).map((s) => s.id);
-          await tx.chatSession.deleteMany({
-            where: {
-              id: { in: idsToDelete },
-              orgId: auth.orgId,
-              userId: auth.userId,
-            },
-          });
+      // Enforce 10-session cap atomically in a transaction. Serializable
+      // isolation + P2034 retry closes the read-then-write race where two
+      // concurrent creations could both observe 9 sessions and exceed the cap.
+      const MAX_CAP_ATTEMPTS = 3;
+      let session: Awaited<ReturnType<typeof createSessionWithCap>> | null = null;
+      for (let attempt = 0; attempt < MAX_CAP_ATTEMPTS; attempt++) {
+        try {
+          session = await prisma.$transaction(
+            (tx) => createSessionWithCap(tx, auth, body.data.roleId, defaultTitle),
+            { isolationLevel: "Serializable" },
+          );
+          break;
+        } catch (err) {
+          if (
+            err instanceof Prisma.PrismaClientKnownRequestError &&
+            err.code === "P2034"
+          ) {
+            if (attempt === MAX_CAP_ATTEMPTS - 1) throw err;
+            continue;
+          }
+          throw err;
         }
-
-        return tx.chatSession.create({
-          data: {
-            orgId: auth.orgId,
-            userId: auth.userId,
-            roleId: body.data.roleId,
-            title: defaultTitle,
-          },
-          select: {
-            id: true,
-            roleId: true,
-            title: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        });
-      });
+      }
 
       res.status(201).json({ session });
     } catch (err) {
@@ -568,8 +604,18 @@ export function createChatRouter(requireAuth: AuthMiddleware, env: Env): Router 
         },
       });
 
-      // 8. Call AI
-      const aiReply = await callTutorAi(env, systemPrompt, history);
+      // 8. Call AI — on failure, remove the orphaned user message so the
+      // conversation never shows a saved question with no reply (the client
+      // already rolled the optimistic bubble back).
+      let aiReply: AiCallResult;
+      try {
+        aiReply = await callTutorAi(env, systemPrompt, history);
+      } catch (err) {
+        await prisma.chatMessage
+          .delete({ where: { id: userMessage.id } })
+          .catch(() => undefined);
+        throw err;
+      }
 
       // Log AI usage for the admin dashboard (fire-and-forget, never breaks the flow)
       await logAiUsage({
