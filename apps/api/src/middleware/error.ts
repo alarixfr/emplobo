@@ -16,6 +16,16 @@ export function errorHandler(
     return;
   }
 
+  // Malformed JSON request bodies — body-parser marks these 400, don't 500.
+  if (
+    err instanceof SyntaxError &&
+    "status" in err &&
+    (err as { status?: number }).status === 400
+  ) {
+    res.status(400).json({ error: "malformed JSON body" });
+    return;
+  }
+
   if (err instanceof Prisma.PrismaClientInitializationError) {
     res.status(503).json({ error: "database unavailable" });
     return;

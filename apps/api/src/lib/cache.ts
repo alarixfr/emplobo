@@ -28,9 +28,15 @@ export function createCache(env: Env) {
     async getJson<T>(key: string): Promise<T | null> {
       if (!redis) return null;
       try {
-        const raw = await redis.get<string>(key);
-        if (!raw) return null;
-        return JSON.parse(raw) as T;
+        // @upstash/redis has automaticDeserialization on by default, so get()
+        // already returns the parsed object for values stored via setJson —
+        // only JSON.parse raw strings (defensive for non-default clients).
+        const raw = await redis.get(key);
+        if (raw === null || raw === undefined) return null;
+        if (typeof raw === "string") {
+          return raw ? (JSON.parse(raw) as T) : null;
+        }
+        return raw as T;
       } catch (err) {
         console.warn(`[cache] get failed for ${key}`, err);
         return null;

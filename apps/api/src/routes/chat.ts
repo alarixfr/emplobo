@@ -64,14 +64,22 @@ function wrapBusinessData(content: string): string {
 
 function enforceChatCooldown(key: string): { ok: true } | { ok: false; retryAfter: number } {
   const now = Date.now();
-  const nextAllowedAt = chatCooldownState.get(key) ?? 0;
+  const nextAllowedAt = chatCooldownState.get(key);
 
-  if (now < nextAllowedAt) {
-    const retryAfter = Math.max(1, Math.ceil((nextAllowedAt - now) / 1000));
-    return { ok: false, retryAfter };
+  if (nextAllowedAt !== undefined && now < nextAllowedAt) {
+    return { ok: false, retryAfter: Math.max(1, Math.ceil((nextAllowedAt - now) / 1000)) };
   }
 
   chatCooldownState.set(key, now + CHAT_COOLDOWN_MS);
+
+  // Opportunistic sweep — the map is keyed by session and must not grow
+  // without bound across the process lifetime.
+  if (chatCooldownState.size > 5000) {
+    for (const [k, ts] of chatCooldownState) {
+      if (ts <= now) chatCooldownState.delete(k);
+    }
+  }
+
   return { ok: true };
 }
 
@@ -119,6 +127,9 @@ async function callTutorAi(
 
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
+    // Hard timeout — a hung upstream must not hold the request for undici's
+    // 300s default while the user message is already persisted.
+    signal: AbortSignal.timeout(30_000),
     headers: {
       Authorization: `Bearer ${openRouterKey}`,
       "X-API-Key": openRouterKey,
@@ -315,14 +326,19 @@ export function createChatRouter(requireAuth: AuthMiddleware, env: Env): Router 
       const roleIdQuery = req.query.roleId;
       const roleId =
         typeof roleIdQuery === "string" && roleIdQuery.trim()
-          ? z.string().cuid().safeParse(roleIdQuery).data
-          : undefined;
+          ? z.string().cuid().safeParse(roleIdQuery)
+          : null;
+      // A malformed filter must 400, not silently return ALL sessions.
+      if (roleId && !roleId.success) {
+        res.status(400).json({ error: "invalid roleId query" });
+        return;
+      }
 
       const sessions = await prisma.chatSession.findMany({
         where: {
           orgId: auth.orgId,
           userId: auth.userId,
-          ...(roleId ? { roleId } : {}),
+          ...(roleId?.success ? { roleId: roleId.data } : {}),
         },
         orderBy: { updatedAt: "desc" },
         select: {

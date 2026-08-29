@@ -49,6 +49,16 @@ function memoryLimit(key: string, config: LimiterConfig): RateLimitResult {
 
   kept.push(now);
   memoryState.set(mapKey, kept);
+
+  // Opportunistic sweep — keys for expired windows must not accumulate
+  // across the process lifetime.
+  if (memoryState.size > 5000) {
+    for (const [k, v] of memoryState) {
+      const latest = v[v.length - 1];
+      if (latest === undefined || latest < start) memoryState.delete(k);
+    }
+  }
+
   return { ok: true };
 }
 

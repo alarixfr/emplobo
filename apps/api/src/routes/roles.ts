@@ -42,7 +42,9 @@ const GUIDE_GEN_RATE_WINDOW_SECONDS = 60 * 60; // 1 hour
 
 const assignEmployeesSchema = z
   .object({
-    userIds: z.array(z.string().cuid()).min(1).max(100),
+    // User.id is a Clerk user id (user_…), NOT a Prisma cuid — validating
+    // with .cuid() here rejected every legitimate assignment request.
+    userIds: z.array(z.string().min(1).max(191)).min(1).max(100),
   })
   .strict();
 
@@ -73,7 +75,9 @@ function estimateTokens(text: string): number {
 }
 
 function cleanUserText(input: string): string {
-  return input.replace(/<\/business_data>/gi, "").replace(/\0/g, "").trim();
+  // Strip both open and close tags so admin text can't re-open an enclosure
+  // after the wrapper, mirroring chat.ts sanitizeUserText.
+  return input.replace(/<\/?business_data>/gi, "").replace(/\0/g, "").trim();
 }
 
 function toOpenRouterModel(model: string): string {
@@ -122,6 +126,9 @@ async function callOpenRouterText(
 
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
+    // Hard timeout — a hung upstream must not hold the request for undici's
+    // 300s default while the admin message is already persisted.
+    signal: AbortSignal.timeout(60_000),
     headers: {
       Authorization: `Bearer ${openRouterKey}`,
       "X-API-Key": openRouterKey,
@@ -189,12 +196,20 @@ function buildScoringPrompt(): string {
 
 function parseScoringJson(raw: string): { score: number; missingAreas: string[] } | null {
   const block = raw.match(/\{[\s\S]*\}/)?.[0] ?? raw;
+  // The regex only guarantees braces around the block, not valid JSON — a
+  // malformed model reply must keep the previous score, never 500 (7.2).
+  let json: unknown;
+  try {
+    json = JSON.parse(block);
+  } catch {
+    return null;
+  }
   const parsed = z
     .object({
       score: z.number().int().min(0).max(100),
       missingAreas: z.array(z.string().trim().min(1)).max(30),
     })
-    .safeParse(JSON.parse(block));
+    .safeParse(json);
   if (!parsed.success) {
     return null;
   }
@@ -232,6 +247,10 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
     windowSeconds: GUIDE_GEN_RATE_WINDOW_SECONDS,
     prefix: "rl:guide-gen",
   });
+  // Concurrency guard: the sliding-window limiter doesn't stop two
+  // simultaneous generations for the same role, whose interleaved
+  // transactions could duplicate chapters. One in-flight generation max.
+  const guideGenInFlight = new Set<string>();
 
   // All role routes are admin-only (Section 9).
   router.use(requireAdmin);
@@ -824,6 +843,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
   router.post(
     "/:id/guide/generate",
     async (req: Request, res: Response, next: NextFunction) => {
+      let guideGenKey: string | null = null;
       try {
         const auth = requireAuthContext(req);
         const id = z.string().cuid().safeParse(req.params.id);
@@ -858,6 +878,13 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           res.status(429).json({ error: "rate limit exceeded", retryAfter: limit.retryAfter });
           return;
         }
+
+        if (guideGenInFlight.has(roleKey)) {
+          res.status(409).json({ error: "guide generation already in progress for this role" });
+          return;
+        }
+        guideGenInFlight.add(roleKey);
+        guideGenKey = roleKey;
 
         // Build from ALL training messages, not the sliding window
         // (this is a one-shot batch job — generous token budget is fine).
@@ -1018,6 +1045,10 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         res.json({ role: { id: role.id, status: "PUBLISHED" } });
       } catch (err) {
         next(err);
+      } finally {
+        if (guideGenKey) {
+          guideGenInFlight.delete(guideGenKey);
+        }
       }
     },
   );
