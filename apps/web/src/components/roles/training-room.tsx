@@ -96,6 +96,9 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const pollRef = useRef<number | null>(null);
   const statusPollRef = useRef<number | null>(null);
+  // Tracks whether this client actually holds the lock — observers must not
+  // fire a doomed lock DELETE when closing the room.
+  const lockedRef = useRef(false);
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
 
   const canSend = useMemo(
@@ -124,6 +127,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
       setIsLocked(true);
       setObserverName(null);
       setLockFree(false);
+      lockedRef.current = true;
 
       const data = await withToken((token) =>
         apiFetch<{
@@ -141,6 +145,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
     } catch (err) {
       if (err instanceof ApiError && err.status === 423) {
         setIsLocked(false);
+        lockedRef.current = false;
         const body = err.body as { activeTrainerName?: string | null } | null;
         setObserverName(body?.activeTrainerName ?? "admin lain");
 
@@ -182,8 +187,15 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
           token,
         }),
       );
-    } catch {
-      // noop
+    } catch (err) {
+      // Lock stolen/expired (e.g. laptop slept past the stale window) — drop
+      // to observer mode instead of leaving a dead editor behind.
+      if (err instanceof ApiError && err.status === 423) {
+        setIsLocked(false);
+        lockedRef.current = false;
+        setObserverName("admin lain");
+        setLockFree(true);
+      }
     }
   }
 
@@ -204,9 +216,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
       );
       setStatus(data.role.status);
       setCompleteness(data.role.completenessScore);
-      if (data.role.activeTrainerId === null) {
-        setLockFree(true);
-      }
+      setLockFree(data.role.activeTrainerId === null);
     } catch {
       // Polling is best-effort — never surface transient errors here.
     }
@@ -244,7 +254,14 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
       setStatus(data.role.status);
       setCompleteness(data.role.completenessScore);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 429) {
+      if (err instanceof ApiError && err.status === 423) {
+        // Lock lost mid-session — fall back to observer mode.
+        setIsLocked(false);
+        lockedRef.current = false;
+        setObserverName("admin lain");
+        setLockFree(true);
+        setSendError("Kunci training hilang. Role ini sedang dilatih admin lain.");
+      } else if (err instanceof ApiError && err.status === 429) {
         const retry =
           typeof err.body === "object" &&
           err.body &&
@@ -253,8 +270,10 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
             ? (err.body as { retryAfter: number }).retryAfter
             : null;
         setRetryAfter(retry);
+        setSendError(err instanceof Error ? err.message : "Gagal mengirim pesan.");
+      } else {
+        setSendError(err instanceof Error ? err.message : "Gagal mengirim pesan.");
       }
-      setSendError(err instanceof Error ? err.message : "Gagal mengirim pesan.");
     } finally {
       setIsSending(false);
     }
@@ -266,13 +285,20 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
       if (pollRef.current) {
         window.clearInterval(pollRef.current);
       }
-      // Explicit lock release on room close (Section 5.2) — best-effort.
-      void withToken((token) =>
-        apiFetch(`/api/roles/${role.id}/training/lock`, {
-          method: "DELETE",
-          token,
-        }).catch(() => undefined),
-      );
+      if (statusPollRef.current) {
+        window.clearInterval(statusPollRef.current);
+      }
+      // Explicit lock release on room close (Section 5.2) — best-effort,
+      // only when this client actually holds the lock.
+      if (lockedRef.current) {
+        lockedRef.current = false;
+        void withToken((token) =>
+          apiFetch(`/api/roles/${role.id}/training/lock`, {
+            method: "DELETE",
+            token,
+          }).catch(() => undefined),
+        );
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role.id]);

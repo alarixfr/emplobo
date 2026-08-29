@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
-import { AssignmentPanel } from "@/components/roles/assignment-panel";
-import { GuideGeneratorPanel } from "@/components/roles/guide-generator-panel";
+import { RoleDetailPanels } from "@/components/roles/role-detail-panels";
 import { ApiError, apiFetch } from "@/lib/api";
 import { STATUS_LABEL, type RoleGuide, type TrainingRoleDetail } from "@/lib/roles";
 
@@ -83,14 +82,12 @@ export default async function RoleDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      <GuideGeneratorPanel
+      <RoleDetailPanels
         roleId={role.id}
         roleName={role.name}
-        roleStatus={role.status}
+        initialStatus={role.status}
         initialGuide={guide}
       />
-
-      <AssignmentPanel roleId={role.id} roleStatus={role.status} />
 
       <dl className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-border bg-card p-4">

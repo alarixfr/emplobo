@@ -235,32 +235,35 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
             chapterId={activeChapter.id}
             quiz={activeChapter.quiz}
             onQuizCompleted={(res: QuizSubmitResponse) => {
-              if (res.chapterCompleted) {
-                setChapters((prev) =>
-                  prev.map((c) =>
-                    c.id === activeChapter.id
-                      ? {
-                          ...c,
-                          completedAt: c.completedAt ?? new Date().toISOString(),
-                          quiz: c.quiz
-                            ? {
-                                ...c.quiz,
-                                bestScore: Math.max(c.quiz.bestScore ?? 0, res.score),
-                                attempts: [
-                                  {
-                                    id: res.attempt.id,
-                                    score: res.attempt.score,
-                                    createdAt: res.attempt.createdAt,
-                                  },
-                                  ...c.quiz.attempts,
-                                ],
-                              }
-                            : null,
-                        }
-                      : c,
-                  ),
-                );
-              }
+              // Best score/attempts update on EVERY attempt (a failed attempt
+              // that improves the score must show); completion is gated.
+              setChapters((prev) =>
+                prev.map((c) =>
+                  c.id === activeChapter.id
+                    ? {
+                        ...c,
+                        completedAt:
+                          res.chapterCompleted && !c.completedAt
+                            ? new Date().toISOString()
+                            : c.completedAt,
+                        quiz: c.quiz
+                          ? {
+                              ...c.quiz,
+                              bestScore: Math.max(c.quiz.bestScore ?? 0, res.score),
+                              attempts: [
+                                {
+                                  id: res.attempt.id,
+                                  score: res.attempt.score,
+                                  createdAt: res.attempt.createdAt,
+                                },
+                                ...c.quiz.attempts,
+                              ],
+                            }
+                          : null,
+                      }
+                    : c,
+                ),
+              );
             }}
           />
         ) : null}

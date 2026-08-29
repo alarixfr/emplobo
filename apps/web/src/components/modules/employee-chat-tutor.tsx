@@ -23,11 +23,15 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Mirrors activeSessionId for in-flight fetch guards — stale responses for
+  // a session the user already left must never render.
+  const activeSessionIdRef = useRef<string | null>(null);
 
   function scrollToBottom() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -73,10 +77,15 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
   }
 
   async function createNewSession() {
+    if (isCreatingSession) return;
+    setIsCreatingSession(true);
     setError(null);
     try {
       const token = await getToken();
-      if (!token) return;
+      if (!token) {
+        setError("Sesi tidak valid. Silakan login ulang.");
+        return;
+      }
 
       const data = await apiFetch<{ session: ChatSessionSummary }>("/api/my/chat/sessions", {
         method: "POST",
@@ -89,6 +98,8 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
       setMessages([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal membuat sesi baru.");
+    } finally {
+      setIsCreatingSession(false);
     }
   }
 
@@ -98,19 +109,28 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
 
     try {
       const token = await getToken();
-      if (!token) return;
+      if (!token) {
+        setError("Sesi tidak valid. Silakan login ulang.");
+        return;
+      }
 
       const data = await apiFetch<{ session: ChatSessionSummary; messages: ChatMessageItem[] }>(
         `/api/my/chat/sessions/${sessionId}/messages`,
         { token },
       );
 
+      // Overlapping fetch guard: only render if this session is still active.
+      if (activeSessionIdRef.current !== sessionId) return;
+
       setMessages(data.messages);
       setTimeout(scrollToBottom, 100);
     } catch (err) {
+      if (activeSessionIdRef.current !== sessionId) return;
       setError(err instanceof Error ? err.message : "Gagal memuat pesan chat.");
     } finally {
-      setIsLoadingMessages(false);
+      if (activeSessionIdRef.current === sessionId) {
+        setIsLoadingMessages(false);
+      }
     }
   }
 
@@ -120,12 +140,20 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
     const text = inputText.trim();
     if (!text || isSending || cooldownRemaining > 0) return;
 
+    // Flip the flag before ANY await — two rapid Enter presses (keydown +
+    // form submit) both pass the guard above otherwise.
+    setIsSending(true);
+    setError(null);
+
     let targetSessionId = activeSessionId;
     if (!targetSessionId) {
       // Auto-create first session
       try {
         const token = await getToken();
-        if (!token) return;
+        if (!token) {
+          setError("Sesi tidak valid. Silakan login ulang.");
+          return;
+        }
         const sData = await apiFetch<{ session: ChatSessionSummary }>("/api/my/chat/sessions", {
           method: "POST",
           token,
@@ -140,8 +168,6 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
       }
     }
 
-    setIsSending(true);
-    setError(null);
     setInputText("");
 
     // Optimistic user message
@@ -154,9 +180,19 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
     setMessages((prev) => [...prev, tempUserMsg]);
     setTimeout(scrollToBottom, 50);
 
+    const rollback = () => {
+      setMessages((prev) => prev.filter((m) => m.id !== tempUserMsg.id));
+      // Restore the typed text so a failed send isn't lost.
+      setInputText((prev) => (prev ? prev : text));
+    };
+
     try {
       const token = await getToken();
-      if (!token) return;
+      if (!token) {
+        rollback();
+        setError("Sesi tidak valid. Silakan login ulang.");
+        return;
+      }
 
       const data = await apiFetch<{
         userMessage: ChatMessageItem;
@@ -173,6 +209,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
       startCooldown(2);
       setTimeout(scrollToBottom, 100);
     } catch (err) {
+      rollback();
       if (err instanceof ApiError && err.status === 429) {
         const retry =
           typeof err.body === "object" &&
@@ -200,6 +237,10 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
   }, [roleId]);
 
   useEffect(() => {
+    activeSessionIdRef.current = activeSessionId;
+  }, [activeSessionId]);
+
+  useEffect(() => {
     if (activeSessionId) {
       void loadMessages(activeSessionId);
     }
@@ -217,9 +258,10 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
           <button
             type="button"
             onClick={() => void createNewSession()}
-            className="rounded-md bg-brand px-2 py-1 text-xs font-semibold text-brand-foreground transition hover:opacity-90"
+            disabled={isCreatingSession}
+            className="rounded-md bg-brand px-2 py-1 text-xs font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-60"
           >
-            + Sesi Baru
+            {isCreatingSession ? "Membuat..." : "+ Sesi Baru"}
           </button>
         </div>
 
@@ -260,7 +302,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
       </aside>
 
       {/* Main Chat Box */}
-      <section className="flex h-[600px] flex-col rounded-xl border border-border bg-card">
+      <section className="flex h-[70vh] max-h-[600px] min-h-[420px] flex-col rounded-xl border border-border bg-card">
         {/* Chat Header */}
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div>

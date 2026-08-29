@@ -25,14 +25,13 @@ export function GuideGeneratorPanel({
 }: GuideGeneratorPanelProps) {
   const { getToken } = useAuth();
   const [guide, setGuide] = useState<RoleGuide | null>(initialGuide);
-  const [status, setStatus] = useState<RoleStatus>(roleStatus);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
 
   const canGenerate = useMemo(
-    () => (status === "READY" || status === "PUBLISHED") && !isGenerating,
-    [status, isGenerating],
+    () => (roleStatus === "READY" || roleStatus === "PUBLISHED") && !isGenerating,
+    [roleStatus, isGenerating],
   );
 
   async function generateGuide() {
@@ -55,12 +54,20 @@ export function GuideGeneratorPanel({
         token,
       });
 
-      const guideData = await apiFetch<{ guide: RoleGuide }>(`/api/roles/${roleId}/guide`, {
-        token,
-      });
+      // Generation already succeeded and consumed a rate-limit slot — retry
+      // the guide fetch once so a network blip doesn't force a re-generate.
+      let guideData: { guide: RoleGuide };
+      try {
+        guideData = await apiFetch<{ guide: RoleGuide }>(`/api/roles/${roleId}/guide`, {
+          token,
+        });
+      } catch {
+        guideData = await apiFetch<{ guide: RoleGuide }>(`/api/roles/${roleId}/guide`, {
+          token,
+        });
+      }
 
       setGuide(guideData.guide);
-      setStatus(data.role.status);
       onStatusUpdated?.(data.role.status);
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
@@ -106,7 +113,7 @@ export function GuideGeneratorPanel({
         </button>
       </div>
 
-      {status === "DRAFT" ? (
+      {roleStatus === "DRAFT" ? (
         <p className="mt-3 rounded-md border border-border bg-background p-3 text-sm text-muted-foreground">
           Role masih DRAFT. Lanjutkan training sampai status READY untuk
           mengaktifkan pembuatan panduan.

@@ -10,7 +10,7 @@ const apiOrigin = process.env.NEXT_PUBLIC_API_URL
 
 const connectSrc = [
   "'self'",
-  "http://localhost:4000",
+  ...(isDev ? ["http://localhost:4000"] : []),
   ...(apiOrigin ? [apiOrigin] : []),
   "https://*.clerk.accounts.dev",
   "https://*.clerk.com",

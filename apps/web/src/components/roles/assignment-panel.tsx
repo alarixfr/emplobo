@@ -116,6 +116,12 @@ export function AssignmentPanel({ roleId, roleStatus }: AssignmentPanelProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleId]);
 
+  // Status is lifted to the parent (RoleDetailPanels) — sync it when guide
+  // generation flips this role to PUBLISHED without a page reload.
+  useEffect(() => {
+    setStatus(roleStatus);
+  }, [roleStatus]);
+
   return (
     <section className="rounded-xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
