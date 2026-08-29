@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, apiFetch } from "@/lib/api";
 import { ReadinessRing } from "@/components/ui/readiness-ring";
+import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type { RoleStatus, TrainingRoleSummary } from "@/lib/roles";
 
@@ -146,7 +147,7 @@ type RoleTrainingChatProps = {
 };
 
 function RoleTrainingChat({ role }: RoleTrainingChatProps) {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded } = useAuth();
   const [messages, setMessages] = useState<TrainingMessage[]>([]);
   const [input, setInput] = useState("");
   const [status, setStatus] = useState<RoleStatus>(role.status);
@@ -363,6 +364,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
   }
 
   useEffect(() => {
+    if (!isLoaded) return; // wait for Clerk before acquiring the lock
     void acquireLockAndLoad();
     void pollStatus();
     return () => {
@@ -381,7 +383,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role.id]);
+  }, [role.id, isLoaded]);
 
   useEffect(() => {
     if (!isLocked) return;
@@ -454,10 +456,18 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
 
         {/* Chat history */}
         <div className="scroll-slim flex flex-1 flex-col gap-6 overflow-y-auto bg-surface-muted p-6">
-          {isLoading ? (
-            <p className="font-body-sm text-body-sm text-secondary">
-              Memuat percakapan...
-            </p>
+          {isLoading || !isLoaded ? (
+            <div className="flex flex-col gap-6" aria-busy="true" aria-label="Memuat percakapan">
+              {[0, 1].map((i) => (
+                <div key={i} className="flex max-w-[85%] gap-4">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-ai-border text-primary">

@@ -7,6 +7,7 @@ import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { Skeleton } from "@/components/ui/skeleton";
 import type {
   ModuleChapter,
   ModuleGuide,
@@ -18,8 +19,59 @@ type ModuleReaderProps = {
   roleId: string;
 };
 
+function ReaderSkeleton() {
+  return (
+    <div
+      className="grid gap-8 lg:grid-cols-[1fr_280px]"
+      aria-busy="true"
+      aria-label="Memuat modul"
+    >
+      <div className="mx-auto w-full max-w-[720px]">
+        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-6 shadow-sm md:p-10">
+          <div className="flex gap-2">
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-5 w-24 rounded-full" />
+          </div>
+          <Skeleton className="mt-4 h-8 w-3/4" />
+          <div className="mt-3 flex gap-4">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+          <Skeleton className="my-6 h-px w-full" />
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-11/12" />
+            <Skeleton className="h-4 w-4/5" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+          <div className="mt-10 rounded-lg border border-outline-variant bg-surface-bright p-6 text-center">
+            <Skeleton className="mx-auto h-5 w-52" />
+            <Skeleton className="mx-auto mt-2 h-3 w-72" />
+            <Skeleton className="mx-auto mt-4 h-10 w-48" />
+          </div>
+        </div>
+      </div>
+      <aside className="hidden lg:block">
+        <div className="sticky top-24 space-y-8">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-28" />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-6 w-full" />
+            ))}
+          </div>
+          <div>
+            <Skeleton className="h-3 w-36" />
+            <Skeleton className="mt-2 h-1 w-full" />
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
 export function ModuleReader({ roleId }: ModuleReaderProps) {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded } = useAuth();
   const [guide, setGuide] = useState<ModuleGuide | null>(null);
   const [chapters, setChapters] = useState<ModuleChapter[]>([]);
   const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
@@ -43,6 +95,7 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
       : 0;
 
   async function load() {
+    if (!isLoaded) return; // wait for Clerk before calling getToken()
     setIsLoading(true);
     setError(null);
 
@@ -105,12 +158,12 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
   }
 
   useEffect(() => {
-    void load();
+    if (isLoaded) void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roleId]);
+  }, [roleId, isLoaded]);
 
-  if (isLoading) {
-    return <div className="h-72 animate-pulse rounded-xl bg-surface-container-low" />;
+  if (isLoading || !isLoaded) {
+    return <ReaderSkeleton />;
   }
 
   if (error) {

@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api";
 import type { EmployeeDirectoryEntry } from "@/lib/employees";
 import { initialsOf } from "@/components/shell/app-sidebar";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function completionFill(pct: number): string {
   if (pct >= 90) return "bg-primary";
@@ -15,8 +16,43 @@ function completionFill(pct: number): string {
   return "bg-secondary";
 }
 
+function DirectorySkeleton() {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Memuat karyawan">
+      <div className="grid gap-4 md:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm"
+          >
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="mt-2 h-8 w-16" />
+            <Skeleton className="mt-2 h-1.5 w-full" />
+          </div>
+        ))}
+      </div>
+      <Skeleton className="h-10 w-full md:w-72" />
+      <div className="rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-4 border-b border-slate-100 p-4 last:border-0"
+          >
+            <Skeleton className="h-9 w-9 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-2 w-1/2" />
+            </div>
+            <Skeleton className="h-3 w-24" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function EmployeeDirectory() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded } = useAuth();
   const [employees, setEmployees] = useState<EmployeeDirectoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +60,7 @@ export function EmployeeDirectory() {
   const [activeRoleFilter, setActiveRoleFilter] = useState<string | null>(null);
 
   async function load() {
+    if (!isLoaded) return; // wait for Clerk before calling getToken()
     setIsLoading(true);
     setError(null);
     try {
@@ -45,9 +82,9 @@ export function EmployeeDirectory() {
   }
 
   useEffect(() => {
-    void load();
+    if (isLoaded) void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isLoaded]);
 
   const roleNames = useMemo(() => {
     const set = new Set<string>();
@@ -100,10 +137,8 @@ export function EmployeeDirectory() {
     return worst;
   }, [employees]);
 
-  if (isLoading) {
-    return (
-      <div className="h-72 animate-pulse rounded-lg bg-surface-container-low" />
-    );
+  if (isLoading || !isLoaded) {
+    return <DirectorySkeleton />;
   }
 
   if (error) {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { EmployeeModuleSummary } from "@/lib/modules";
 
 function moduleIcon(name: string): string {
@@ -18,15 +19,58 @@ function moduleIcon(name: string): string {
   return "work";
 }
 
+function ModulesSkeleton() {
+  return (
+    <div className="space-y-12" aria-busy="true" aria-label="Memuat modul">
+      <section>
+        <Skeleton className="h-3 w-32" />
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm"
+            >
+              <div className="flex items-start gap-4">
+                <Skeleton className="h-16 w-16" />
+                <div className="flex-1 space-y-3">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-1.5 w-full" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section>
+        <Skeleton className="h-3 w-40" />
+        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm"
+            >
+              <Skeleton className="mx-auto h-12 w-12 rounded-full" />
+              <Skeleton className="mx-auto mt-3 h-3 w-2/3" />
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export function MyModulesList() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded } = useAuth();
   const [modules, setModules] = useState<EmployeeModuleSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    setError(null);
+    if (!isLoaded) return; // wait for Clerk before calling getToken()
     setIsLoading(true);
+    setError(null);
     try {
       const token = await getToken();
       if (!token) {
@@ -47,9 +91,9 @@ export function MyModulesList() {
   }
 
   useEffect(() => {
-    void load();
+    if (isLoaded) void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isLoaded]);
 
   const firstModuleId = modules[0]?.role.id ?? null;
 
@@ -63,13 +107,8 @@ export function MyModulesList() {
     [modules],
   );
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="h-28 animate-pulse rounded-xl bg-surface-container-low" />
-        <div className="h-28 animate-pulse rounded-xl bg-surface-container-low" />
-      </div>
-    );
+  if (isLoading || !isLoaded) {
+    return <ModulesSkeleton />;
   }
 
   if (error) {

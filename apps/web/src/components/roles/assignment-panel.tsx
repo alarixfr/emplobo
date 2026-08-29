@@ -3,6 +3,7 @@
 import { useAuth } from "@clerk/nextjs";
 import { useEffect, useMemo, useState } from "react";
 import { ApiError, apiFetch } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { RoleStatus } from "@/lib/roles";
 import { initialsOf } from "@/components/shell/app-sidebar";
 
@@ -20,7 +21,7 @@ type AssignmentPanelProps = {
 };
 
 export function AssignmentPanel({ roleId, roleStatus }: AssignmentPanelProps) {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded } = useAuth();
   const [status, setStatus] = useState<RoleStatus>(roleStatus);
   const [users, setUsers] = useState<AssignableUser[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -35,6 +36,7 @@ export function AssignmentPanel({ roleId, roleStatus }: AssignmentPanelProps) {
   );
 
   async function loadUsers() {
+    if (!isLoaded) return; // wait for Clerk before calling getToken()
     setIsLoading(true);
     setError(null);
     try {
@@ -112,9 +114,9 @@ export function AssignmentPanel({ roleId, roleStatus }: AssignmentPanelProps) {
   }
 
   useEffect(() => {
-    void loadUsers();
+    if (isLoaded) void loadUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roleId]);
+  }, [roleId, isLoaded]);
 
   // Status is lifted to the parent (RoleDetailPanels) — sync it when guide
   // generation flips this role to PUBLISHED without a page reload.
@@ -161,10 +163,19 @@ export function AssignmentPanel({ roleId, roleStatus }: AssignmentPanelProps) {
       ) : null}
 
       <div className="mt-4 rounded-lg border border-outline-variant bg-surface-bright">
-        {isLoading ? (
-          <p className="p-4 font-body-sm text-body-sm text-secondary">
-            Memuat karyawan...
-          </p>
+        {isLoading || !isLoaded ? (
+          <div className="space-y-3 p-4" aria-busy="true" aria-label="Memuat karyawan">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="h-4 w-4 rounded" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3 w-1/3" />
+                  <Skeleton className="h-2 w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : users.length === 0 ? (
           <p className="p-4 font-body-sm text-body-sm text-secondary">
             Belum ada karyawan di organisasi ini. Undang lewat Clerk di menu

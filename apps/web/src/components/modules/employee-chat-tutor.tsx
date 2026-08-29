@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { ChatMessageItem, ChatSessionSummary } from "@/lib/chat";
 
 type EmployeeChatTutorProps = {
@@ -20,7 +21,7 @@ const SUGGESTION_CHIPS = [
 ];
 
 export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded } = useAuth();
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
@@ -62,6 +63,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
   }
 
   async function loadSessions() {
+    if (!isLoaded) return; // wait for Clerk before calling getToken()
     setIsLoadingSessions(true);
     setError(null);
 
@@ -250,12 +252,12 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
   }
 
   useEffect(() => {
-    void loadSessions();
+    if (isLoaded) void loadSessions();
     return () => {
       if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roleId]);
+  }, [roleId, isLoaded]);
 
   useEffect(() => {
     activeSessionIdRef.current = activeSessionId;
@@ -287,10 +289,12 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
           </button>
         </div>
 
-        {isLoadingSessions ? (
-          <p className="mt-3 font-body-sm text-[12px] text-secondary">
-            Memuat sesi...
-          </p>
+        {isLoadingSessions || !isLoaded ? (
+          <div className="mt-3 space-y-2" aria-busy="true" aria-label="Memuat sesi">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-8 w-full" />
+            ))}
+          </div>
         ) : sessions.length === 0 ? (
           <p className="mt-3 font-body-sm text-[12px] text-secondary">
             Belum ada sesi tanya jawab.

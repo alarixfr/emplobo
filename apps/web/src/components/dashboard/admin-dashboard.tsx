@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ApiError, apiFetch } from "@/lib/api";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { RoleStatus } from "@/lib/roles";
 
 type ActivityItem = {
@@ -137,14 +138,66 @@ function statusFill(status: RoleStatus, pct: number): string {
   return "bg-secondary";
 }
 
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-8" aria-busy="true" aria-label="Memuat dashboard">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm"
+          >
+            <div className="flex items-start justify-between">
+              <Skeleton className="h-3 w-28" />
+              <Skeleton className="h-10 w-10 rounded-full" />
+            </div>
+            <Skeleton className="mt-4 h-8 w-20" />
+            <Skeleton className="mt-2 h-3 w-36" />
+          </div>
+        ))}
+      </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm lg:col-span-2">
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="mt-2 h-3 w-64" />
+          <div className="mt-6 space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-9 w-9 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-3 w-1/3" />
+                  <Skeleton className="h-2 w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
+          <Skeleton className="h-4 w-36" />
+          <div className="mt-6 space-y-5">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-2 w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function AdminDashboard() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded } = useAuth();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   async function load() {
-    setIsLoading(true);
+    if (!isLoaded) return; // wait for Clerk before calling getToken()
     setError(null);
     try {
       const token = await getToken();
@@ -163,26 +216,15 @@ export function AdminDashboard() {
       } else {
         setError(err instanceof Error ? err.message : "Gagal memuat dashboard.");
       }
-    } finally {
-      setIsLoading(false);
     }
   }
 
   useEffect(() => {
-    void load();
+    if (isLoaded) void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isLoaded]);
 
-  if (isLoading && !summary) {
-    return (
-      <div className="space-y-4">
-        <div className="h-28 animate-pulse rounded-xl bg-surface-container-low" />
-        <div className="h-56 animate-pulse rounded-xl bg-surface-container-low" />
-      </div>
-    );
-  }
-
-  if (error) {
+  if (error && !summary) {
     return (
       <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-6 shadow-sm">
         <p className="font-body-sm text-body-sm text-error">{error}</p>
@@ -197,7 +239,9 @@ export function AdminDashboard() {
     );
   }
 
-  if (!summary) return null;
+  if (!summary) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="space-y-8">
