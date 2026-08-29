@@ -27,6 +27,18 @@ const connectSrc = [
     : []),
 ];
 
+const scriptSrc = [
+  "'self'",
+  // 'unsafe-inline' is effectively required by Clerk's injected scripts.
+  "'unsafe-inline'",
+  // 'unsafe-eval' is only needed for Next.js dev (react-refresh); shipping it
+  // in production would weaken XSS mitigation.
+  ...(isDev ? ["'unsafe-eval'"] : []),
+  "https://*.clerk.accounts.dev",
+  "https://*.clerk.com",
+  "https://challenges.cloudflare.com",
+];
+
 const securityHeaders = [
   {
     key: "X-Frame-Options",
@@ -48,7 +60,7 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com",
+      "script-src " + scriptSrc.join(" "),
       // Google Fonts CSS + woff2 files (DM Sans / Fraunces) — without these
       // the @import in globals.css is blocked and the typography system
       // silently falls back to system fonts.
