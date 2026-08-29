@@ -85,12 +85,17 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
   const [status, setStatus] = useState<RoleStatus>(role.status);
   const [completeness, setCompleteness] = useState(role.completenessScore);
   const [isLocked, setIsLocked] = useState(false);
+  // Observer mode (Section 5.2): when another admin holds the training lock,
+  // show the holder's name and render the transcript read-only.
+  const [observerName, setObserverName] = useState<string | null>(null);
+  const [lockFree, setLockFree] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const pollRef = useRef<number | null>(null);
+  const statusPollRef = useRef<number | null>(null);
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
 
   const canSend = useMemo(
@@ -117,6 +122,8 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
         }),
       );
       setIsLocked(true);
+      setObserverName(null);
+      setLockFree(false);
 
       const data = await withToken((token) =>
         apiFetch<{
@@ -134,7 +141,26 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
     } catch (err) {
       if (err instanceof ApiError && err.status === 423) {
         setIsLocked(false);
-        setLoadError("Training Room sedang dipakai admin lain. Coba lagi nanti.");
+        const body = err.body as { activeTrainerName?: string | null } | null;
+        setObserverName(body?.activeTrainerName ?? "admin lain");
+
+        // Observer mode still loads the transcript read-only (Section 5.2).
+        try {
+          const data = await withToken((token) =>
+            apiFetch<{
+              role: {
+                status: RoleStatus;
+                completenessScore: number;
+              };
+              messages: TrainingMessage[];
+            }>(`/api/roles/${role.id}/training/messages`, { token }),
+          );
+          setStatus(data.role.status);
+          setCompleteness(data.role.completenessScore);
+          setMessages(data.messages);
+        } catch {
+          // Transcript load failed — observer banner still renders.
+        }
         return;
       }
       if (err instanceof Error) {
@@ -159,6 +185,36 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
     } catch {
       // noop
     }
+  }
+
+  // Idle status polling (Section 6) — hits GET /api/roles/:id which overlays
+  // the 30s role-status cache, so polling doesn't hammer Postgres. Keeps the
+  // completeness badge and READY CTA fresh even without sending messages, and
+  // lets an observer notice when the lock becomes free.
+  async function pollStatus() {
+    try {
+      const data = await withToken((token) =>
+        apiFetch<{
+          role: {
+            status: RoleStatus;
+            completenessScore: number;
+            activeTrainerId: string | null;
+          };
+        }>(`/api/roles/${role.id}`, { token }),
+      );
+      setStatus(data.role.status);
+      setCompleteness(data.role.completenessScore);
+      if (data.role.activeTrainerId === null) {
+        setLockFree(true);
+      }
+    } catch {
+      // Polling is best-effort — never surface transient errors here.
+    }
+  }
+
+  function retakeLock() {
+    setLockFree(false);
+    void acquireLockAndLoad();
   }
 
   async function submitMessage() {
@@ -236,6 +292,19 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
   }, [isLocked, role.id]);
 
   useEffect(() => {
+    statusPollRef.current = window.setInterval(() => {
+      void pollStatus();
+    }, 30_000);
+
+    return () => {
+      if (statusPollRef.current) {
+        window.clearInterval(statusPollRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role.id]);
+
+  useEffect(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
 
@@ -260,6 +329,25 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
         <p className="mx-4 mt-4 rounded-md border border-border bg-background p-3 text-sm text-accent md:mx-5">
           {loadError}
         </p>
+      ) : null}
+
+      {observerName ? (
+        <div className="mx-4 mt-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-background p-3 text-sm md:mx-5">
+          <span className="text-muted-foreground">
+            Mode observer — role ini sedang dilatih oleh{" "}
+            <strong className="text-foreground">{observerName}</strong>. Anda
+            dapat membaca percakapan, tetapi tidak bisa mengirim pesan.
+          </span>
+          {lockFree ? (
+            <button
+              type="button"
+              onClick={retakeLock}
+              className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-foreground transition hover:opacity-90"
+            >
+              Kunci bebas — ambil alih
+            </button>
+          ) : null}
+        </div>
       ) : null}
 
       <div className="flex-1 overflow-y-auto px-4 py-4 md:px-5">
@@ -308,7 +396,9 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
             placeholder={
               isLocked
                 ? "Jelaskan SOP / edge case / tools yang dipakai..."
-                : "Training Room terkunci"
+                : observerName
+                  ? "Mode observer — baca saja"
+                  : "Training Room terkunci"
             }
             className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none ring-ring focus:ring-2 disabled:opacity-60"
           />
