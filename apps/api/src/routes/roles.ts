@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createCache } from "../lib/cache.js";
 import { createRateLimiter } from "../lib/rate-limit.js";
 import { logAiUsage } from "../lib/ai-usage.js";
+import { syncOrgMembersIfStale } from "../lib/membership.js";
 import type { Env } from "../env.js";
 import type { AuthContext } from "../types.js";
 
@@ -1104,6 +1105,10 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           res.status(404).json({ error: "role not found" });
           return;
         }
+
+        // On-demand Clerk→User sync so the assignment checklist always lists
+        // members (webhook is best-effort; this guarantees a fresh mirror).
+        await syncOrgMembersIfStale(env, auth.orgId);
 
         const [users, assignments] = await Promise.all([
           prisma.user.findMany({

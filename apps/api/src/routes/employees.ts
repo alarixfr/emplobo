@@ -2,6 +2,7 @@ import { prisma } from "@emplobo/db";
 import { Router, type Request, type Response, type NextFunction } from "express";
 import type { Env } from "../env.js";
 import type { AuthContext } from "../types.js";
+import { syncOrgMembersIfStale } from "../lib/membership.js";
 
 /**
  * GET /api/employees (admin only) — Employee Directory behind
@@ -33,7 +34,7 @@ function average(nums: number[]): number | null {
   return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
 }
 
-export function createEmployeesRouter(requireAdmin: AuthMiddleware, _env: Env): Router {
+export function createEmployeesRouter(requireAdmin: AuthMiddleware, env: Env): Router {
   const router = Router();
 
   router.use(requireAdmin);
@@ -41,6 +42,11 @@ export function createEmployeesRouter(requireAdmin: AuthMiddleware, _env: Env): 
   router.get("/", async (req: Request, res: Response, next: NextFunction) => {
     try {
       const auth = requireAuthContext(req);
+
+      // On-demand Clerk→User sync: the local User mirror is webhook-fed, so
+      // members who joined before the webhook existed would otherwise never
+      // show up here (cooldown-bound, best-effort).
+      await syncOrgMembersIfStale(env, auth.orgId);
 
       const [users, assignments, chapters, progressRows, quizzes, attempts] =
         await Promise.all([

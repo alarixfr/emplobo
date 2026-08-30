@@ -1,6 +1,7 @@
 import { prisma } from "@emplobo/db";
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { createCache } from "../lib/cache.js";
+import { syncOrgMembersIfStale } from "../lib/membership.js";
 import type { Env } from "../env.js";
 import type { AuthContext } from "../types.js";
 
@@ -45,6 +46,11 @@ export function createDashboardRouter(requireAdmin: AuthMiddleware, env: Env): R
   router.get("/summary", async (req: Request, res: Response, next: NextFunction) => {
     try {
       const auth = requireAuthContext(req);
+
+      // Keep the Karyawan/Employee counts accurate even if the Clerk webhook
+      // hasn't been delivered for every member (cooldown-bound, best-effort).
+      await syncOrgMembersIfStale(env, auth.orgId);
+
       const cacheKey = `dashboard-summary:${auth.orgId}`;
 
       const cached = await cache.getJson<unknown>(cacheKey);

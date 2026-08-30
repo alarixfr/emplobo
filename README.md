@@ -549,6 +549,13 @@ GET    /api/employees                     # per-employee aggregates (assignments
 > Semua data per-user (chat sessions, quiz attempts, progress) **tidak
 > pernah** masuk cache ini.
 >
+> **Member Sync**: tabel `User` adalah mirror dari Clerk dan biasanya diisi
+> lewat webhook. Agar member yang bergabung sebelum webhook terpasang tetap
+> muncul, endpoint admin yang menampilkan daftar user (`GET /api/employees`,
+> `GET /api/dashboard/summary`, `GET /api/roles/:id/assignable-users`) otomatis
+> menyinkronkan membership organisasi dari Clerk ke `User` (cooldown 60 detik
+> per org, best-effort, tidak pernah memblokir request).
+>
 > **AI Usage (AiUsageLog)**: setiap panggilan AI (training, guide
 > generation, chat tutor) dicatat ke tabel `AiUsageLog` (org, user, kind,
 > token in/out) — basis data untuk tampilan "Pemakaian AI" di dashboard

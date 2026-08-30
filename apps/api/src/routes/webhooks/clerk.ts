@@ -1,4 +1,4 @@
-import { prisma, type AppRole } from "@emplobo/db";
+import { prisma } from "@emplobo/db";
 import {
   createClerkClient,
   type ClerkClient,
@@ -6,12 +6,11 @@ import {
 import { Router, type Request, type Response } from "express";
 import { Webhook } from "svix";
 import type { Env } from "../../env.js";
-import { mapClerkOrgRole } from "../../types.js";
-
-type ClerkEmailAddress = {
-  id: string;
-  email_address: string;
-};
+import {
+  displayName,
+  normalizeMember,
+  upsertUserFromMembership,
+} from "../../lib/membership.js";
 
 type ClerkUserPayload = {
   id: string;
@@ -19,7 +18,10 @@ type ClerkUserPayload = {
   last_name?: string | null;
   username?: string | null;
   primary_email_address_id?: string | null;
-  email_addresses?: ClerkEmailAddress[];
+  email_addresses?: Array<{
+    id: string;
+    email_address: string;
+  }>;
 };
 
 type ClerkMembershipPayload = {
@@ -34,96 +36,11 @@ type ClerkMembershipPayload = {
   };
 };
 
-function displayName(user: {
-  first_name?: string | null;
-  last_name?: string | null;
-  username?: string | null;
-  identifier?: string | null;
-}): string {
-  const full = [user.first_name, user.last_name]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
-  if (full) return full.slice(0, 200);
-  if (user.username) return user.username.slice(0, 200);
-  if (user.identifier) return user.identifier.slice(0, 200);
-  return "User";
-}
-
 function primaryEmail(user: ClerkUserPayload): string | null {
   const emails = user.email_addresses ?? [];
   const primary =
     emails.find((e) => e.id === user.primary_email_address_id) ?? emails[0];
   return primary?.email_address ?? null;
-}
-
-async function resolveMembershipEmail(
-  clerk: ClerkClient,
-  membership: ClerkMembershipPayload,
-): Promise<{ email: string; name: string }> {
-  const pud = membership.public_user_data;
-  const name = displayName(pud ?? {});
-  const identifier = pud?.identifier;
-
-  if (identifier?.includes("@")) {
-    return { email: identifier.slice(0, 320), name };
-  }
-
-  const userId = pud?.user_id;
-  if (!userId) {
-    return { email: "unknown@placeholder.local", name };
-  }
-
-  try {
-    const user = await clerk.users.getUser(userId);
-    const email =
-      user.emailAddresses.find((e) => e.id === user.primaryEmailAddressId)
-        ?.emailAddress ??
-      user.emailAddresses[0]?.emailAddress ??
-      "unknown@placeholder.local";
-    const clerkName = displayName({
-      first_name: user.firstName,
-      last_name: user.lastName,
-      username: user.username,
-      identifier: email,
-    });
-    return { email: email.slice(0, 320), name: clerkName };
-  } catch (err) {
-    console.warn("[webhook/clerk] failed to fetch user for email", err);
-    return { email: "unknown@placeholder.local", name };
-  }
-}
-
-async function upsertUserFromMembership(
-  clerk: ClerkClient,
-  membership: ClerkMembershipPayload,
-): Promise<void> {
-  const userId = membership.public_user_data?.user_id;
-  if (!userId) {
-    console.warn("[webhook/clerk] membership missing public_user_data.user_id");
-    return;
-  }
-
-  const orgId = membership.organization.id;
-  const role: AppRole = mapClerkOrgRole(membership.role);
-  const { email, name } = await resolveMembershipEmail(clerk, membership);
-
-  await prisma.user.upsert({
-    where: { id: userId },
-    create: {
-      id: userId,
-      orgId,
-      email,
-      name,
-      role,
-    },
-    update: {
-      orgId,
-      name,
-      role,
-      ...(email !== "unknown@placeholder.local" ? { email } : {}),
-    },
-  });
 }
 
 async function updateUserProfile(user: ClerkUserPayload): Promise<void> {
@@ -135,7 +52,12 @@ async function updateUserProfile(user: ClerkUserPayload): Promise<void> {
   }
 
   const email = primaryEmail(user) ?? existing.email;
-  const name = displayName(user);
+  const name = displayName({
+    firstName: user.first_name,
+    lastName: user.last_name,
+    username: user.username,
+    identifier: email,
+  });
 
   await prisma.user.update({
     where: { id: user.id },
@@ -205,11 +127,12 @@ export function createClerkWebhookRouter(env: Env) {
           break;
         }
         case "organizationMembership.deleted": {
-          const membership = evt.data as ClerkMembershipPayload;
-          const userId = membership.public_user_data?.user_id;
-          if (userId) {
+          const membership = normalizeMember(
+            evt.data as ClerkMembershipPayload,
+          );
+          if (membership.userId && membership.orgId) {
             await prisma.user.deleteMany({
-              where: { id: userId, orgId: membership.organization.id },
+              where: { id: membership.userId, orgId: membership.orgId },
             });
           }
           break;
@@ -227,3 +150,5 @@ export function createClerkWebhookRouter(env: Env) {
 
   return router;
 }
+
+export type { ClerkClient };
