@@ -80,7 +80,7 @@ Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = sat
 - **Dashboard admin** - Statistik lengkap: completion %, skor kuis, per-role progress, pemakaian AI 30 hari
 - **Employee Directory** - Halaman khusus admin untuk memantau progress tiap karyawan (search, filter role, AI insight)
 - **Developer Docs & Halaman Legal** - `/docs` (API reference 3-pane dengan dark code pane cURL/Node) dan `/privacy`, `/terms`
-- **UI/UX polish** - Design system **"Institutional Intelligence"** (Forest Green `#144225`, Enterprise Slate, indigo AI accent) dengan Hanken Grotesk / Inter / JetBrains Mono + Material Symbols; sidebar tonal, mobile bottom nav, readability ring, knowledge gaps, status badge label-caps di seluruh layar (landing, dashboard, training room, guide reader, quiz, chat tutor, learning center, docs, legal)
+- **UI/UX polish** - Design system **"Institutional Intelligence"** (Forest Green `#144225`, Enterprise Slate, indigo AI accent) dengan tipografi Inter (headline & body) + JetBrains Mono (data/label-caps) + Material Symbols; sidebar tonal, mobile bottom nav, skeleton loading, readability ring, knowledge gaps, status badge label-caps di seluruh layar (landing, dashboard, training room, guide reader, quiz, chat tutor, learning center, docs, legal)
 
 ---
 
@@ -118,7 +118,7 @@ Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = sat
 Framework    : Next.js 15 (App Router) + TypeScript
 UI Library   : Tailwind CSS v4 + design system "Institutional Intelligence"
                (Forest Green #144225 · Enterprise Slate · indigo AI accent #EEF2FF)
-Typography   : Hanken Grotesk (headline) · Inter (body) · JetBrains Mono (label-caps/data)
+Typography   : Inter (headline + body) · JetBrains Mono (label-caps/data)
 Icons        : Material Symbols Outlined (font, via Google Fonts)
 Auth UI      : Clerk B2B (Organizations)
 Validation   : Zod (client & server, .strict() di API)
@@ -612,7 +612,7 @@ Belum ada suite unit/integration/e2e terpisah pada tahap ini. Validasi saat ini
 berbasis lint/typecheck/build + smoke test endpoint/routing. Verifikasi fungsional
 per Section tersedia di bagian [User Guide](#-penggunaan) (Step 1–12 sudah aktif:
 seluruh fitur inti sampai AI Tutor grounded, polish UI/UX — design system
-"Institutional Intelligence" (Forest Green/Hanken/Inter/JetBrains Mono + Material
+"Institutional Intelligence" (Forest Green/Inter/JetBrains Mono + Material
 Symbols) konsisten di landing, dashboard, employee directory, training room,
 guide reader, quiz, AI tutor, learning center, docs, dan halaman legal — serta
 checklist keamanan Section 8 terverifikasi: tenant scoping (orgId di semua query),
