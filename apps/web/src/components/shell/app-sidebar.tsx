@@ -122,17 +122,6 @@ export function AppSidebar({ isAdmin }: { isAdmin: boolean }) {
             }}
           />
         </div>
-        <div className="mt-2 flex flex-col gap-1">
-          <a
-            href="mailto:support@emplobo.app"
-            className="group flex items-center gap-3 rounded-lg px-3 py-2.5 font-body-sm text-body-sm text-on-surface-variant transition-colors hover:bg-surface-container-high"
-          >
-            <span className="material-symbols-outlined text-[20px] text-secondary group-hover:text-primary">
-              support_agent
-            </span>
-            Support
-          </a>
-        </div>
       </div>
     </nav>
   );
