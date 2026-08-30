@@ -66,7 +66,7 @@ export default async function RolesPage() {
 
       <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
         {/* Role list */}
-        <section>
+        <section className="min-w-0">
           <h2 className="font-label-caps text-label-caps text-secondary">
             DAFTAR ROLE
           </h2>

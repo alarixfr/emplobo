@@ -48,7 +48,7 @@ export default async function AppLayout({
           </div>
         </header>
 
-        <main className="flex-1 p-margin-mobile md:p-margin-desktop md:pb-margin-desktop pb-24">
+        <main className="flex-1 overflow-x-clip p-margin-mobile md:p-margin-desktop md:pb-margin-desktop pb-24">
           {children}
         </main>
       </div>

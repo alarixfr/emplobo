@@ -289,7 +289,7 @@ export function AdminDashboard() {
 
       {/* ── Kesiapan AI table + Aktivitas Terbaru ────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <section className="rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm lg:col-span-2">
+        <section className="min-w-0 rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm lg:col-span-2">
           <div className="border-b border-slate-200 p-5">
             <h2 className="font-headline-sm text-[18px] text-on-surface">
               Kesiapan AI
@@ -392,7 +392,7 @@ export function AdminDashboard() {
         </section>
 
         {/* Recent activity timeline */}
-        <section className="rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm">
+        <section className="min-w-0 rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm">
           <div className="border-b border-slate-200 p-5">
             <h2 className="font-headline-sm text-[18px] text-on-surface">
               Aktivitas Terbaru
