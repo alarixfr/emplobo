@@ -4,6 +4,9 @@ import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
 import { ReadinessRing } from "@/components/ui/readiness-ring";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -109,7 +112,7 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
                 onClick={() => selectRole(role.id)}
                 className={`flex items-center justify-between rounded-lg border p-3 text-left transition-colors ${
                   active
-                    ? "border-primary bg-white shadow-sm ring-1 ring-primary"
+                    ? "border-primary bg-primary-fixed-dim/40 shadow-sm ring-1 ring-primary"
                     : "border-slate-200 bg-white shadow-sm hover:border-slate-300"
                 }`}
               >
@@ -523,7 +526,18 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
                         : "user-bubble rounded-tr-sm"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    {isAI ? (
+                      <div className="chat-markdown">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeSanitize]}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="whitespace-pre-wrap">{message.content}</p>
+                    )}
                   </div>
                 </div>
               );

@@ -245,6 +245,7 @@ function buildTutorSystemPrompt(
   return [
     `You are Emplobo's AI Tutor for the role: ${roleName}.`,
     "Your mission is to answer questions from UMKM employees about their role and daily SOPs.",
+    "ALWAYS respond in Indonesian (Bahasa Indonesia) using clear, supportive language for on-the-job use.",
     "",
     "CRITICAL GROUNDING RULES:",
     "1. Answer ONLY based on the official Guide and training material provided in the <knowledge_base> below.",
