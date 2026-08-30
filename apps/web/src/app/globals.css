@@ -403,3 +403,38 @@ body {
   background: #4b5563;
   border-radius: 9999px;
 }
+
+/* ── Industry marquee (landing trust bar) ───────────────────────────────
+   Endless, seamless loop: the track holds the item list twice and is
+   translated by -50% over the animation, so it re-frames seamlessly.     */
+.marquee-mask {
+  overflow: hidden;
+  width: 100%;
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 40s linear infinite;
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: auto;
+  }
+  .marquee-track [data-dup="true"] {
+    display: none;
+  }
+}

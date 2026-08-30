@@ -21,6 +21,15 @@ const ADVANTAGES = [
   },
 ];
 
+const INDUSTRIES = [
+  "KOPI & KEDAI",
+  "RESTORAN & WARUNG",
+  "RITEL & TOKO",
+  "LAUNDRY",
+  "BENGKEL",
+  "JASA LAYANAN",
+];
+
 const STEPS = [
   {
     num: "01",
@@ -191,14 +200,32 @@ export default function HomePage() {
         </section>
 
         {/* ── Trust bar ────────────────────────────────────────────────── */}
-        <section className="border-y border-outline-variant bg-surface-container-lowest">
-          <div className="mx-auto flex w-full max-w-container flex-col items-center gap-4 px-4 py-8 md:px-10">
-            <p className="font-label-caps text-label-caps text-secondary">
-              DIRANCANG UNTUK PELATIHAN TIM UMKM
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 font-headline-sm text-lg font-semibold text-outline">
-              KOPI &amp; KEDAI · RESTORAN &amp; WARUNG · RITEL &amp; TOKO ·
-              LAUNDRY · BENGKEL · JASA LAYANAN
+        <section className="overflow-hidden border-y border-outline-variant bg-surface-container-lowest py-8">
+          <p className="mb-6 text-center font-label-caps text-label-caps text-secondary">
+            DIRANCANG UNTUK PELATIHAN TIM UMKM
+          </p>
+
+          {/* Endless marquee — item list duplicated for a seamless loop; the
+              duplicated set is aria-hidden so screen readers read it once. */}
+          <div className="marquee-mask">
+            <div className="marquee-track" aria-label="Bisnis yang didukung Emplobo">
+              {[0, 1].map((copy) => (
+                <div
+                  key={copy}
+                  aria-hidden={copy === 1}
+                  data-dup={copy === 1}
+                  className="flex shrink-0 items-center gap-10 px-5 font-headline-sm text-lg font-semibold text-outline"
+                >
+                  {(INDUSTRIES).map((item) => (
+                    <span key={item} className="flex items-center gap-10">
+                      {item}
+                      <span className="material-symbols-outlined text-base text-outline-variant">
+                        brightness_1
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              ))}
             </div>
           </div>
         </section>
