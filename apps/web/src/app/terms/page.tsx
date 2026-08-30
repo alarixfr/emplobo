@@ -27,7 +27,7 @@ export default function TermsPage() {
             paragraphs: [
               "Anda bertanggung jawab atas akurasi materi SOP yang diajarkan ke AI. Emplobo menjadikan materi tersebut sebagai satu-satunya dasar jawaban AI tutor.",
               "Anda menjamin bahwa materi yang diunggah tidak melanggar hukum atau hak pihak ketiga.",
-              "Karyawan diwajibkan memverifikasi prosedur kritis (keselamatan, uang, layanan) kepada atasan — jawaban AI tutor bersifat informatif.",
+              "Karyawan diwajibkan memverifikasi prosedur kritis (keselamatan, uang, layanan) kepada atasan. Jawaban AI tutor bersifat informatif.",
             ],
           },
           {

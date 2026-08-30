@@ -28,7 +28,7 @@ export default function PrivacyPage() {
             paragraphs: [
               "Materi training yang Anda ajarkan digunakan untuk melatih dan mengontekstualisasi AI tutor bisnis Anda. AI tutor hanya menjawab berdasarkan materi yang benar-benar Anda ajarkan, tidak dari pengetahuan umum di luar itu.",
               "Semua percakapan training dan chat diproses melalui penyedia AI pihak ketiga (Anthropic Claude) untuk menghasilkan jawaban. Teks yang Anda berikan dibungkus sebagai data, bukan instruksi.",
-              "Jika jawaban tidak tercakup dalam materi, AI tutor akan menyatakannya secara eksplisit dan menyarankan Anda menghubungi atasan — tidak pernah mengarang prosedur.",
+              "Jika jawaban tidak tercakup dalam materi, AI tutor akan menyatakannya secara eksplisit dan menyarankan Anda menghubungi atasan, tanpa pernah mengarang prosedur.",
             ],
           },
           {

@@ -51,13 +51,13 @@ UMKM sering bergantung pada satu orang (owner/HR) untuk mengulang onboarding dan
 
 ### Solusi yang Ditawarkan
 
-Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = satu AI “business brain.” Admin (owner/HR) melatih AI lewat Training Room berbasis chat per peran kerja (mis. Kasir, Barista). AI menilai kelengkapan knowledge (0–100), dan setelah siap menghasilkan panduan berstruktur + kuis. Karyawan yang di-assign ke peran itu membaca chapter, mengerjakan kuis, lalu chat dengan AI tutor yang **hanya** menjawab dari materi yang benar-benar diajarkan admin — tanpa mengarang SOP.
+Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = satu AI “business brain.” Admin (owner/HR) melatih AI lewat Training Room berbasis chat per peran kerja (mis. Kasir, Barista). AI menilai kelengkapan knowledge (0–100), dan setelah siap menghasilkan panduan berstruktur + kuis. Karyawan yang di-assign ke peran itu membaca chapter, mengerjakan kuis, lalu chat dengan AI tutor yang **hanya** menjawab dari materi yang benar-benar diajarkan admin, tanpa mengarang SOP.
 
 ### Tujuan Proyek
 
 - 🎯 **Tujuan Utama**: Satu kali training oleh admin → onboarding & tutoring tak terbatas untuk karyawan, 24/7
 - 📊 **Target Pengguna**: Owner/HR UMKM (ADMIN) dan karyawan (EMPLOYEE) dalam organisasi Clerk B2B
-- 💡 **Value Proposition**: Loop AI-trains-AI (owner ajar sekali → AI ajar semua), digate oleh skor completeness — bukan LMS generik
+- 💡 **Value Proposition**: Loop AI-trains-AI (owner ajar sekali → AI ajar semua), digate oleh skor completeness, bukan LMS generik
 
 ---
 
@@ -469,7 +469,7 @@ sekali penuh terhadap deployment live sebelum submit.
 
 1. **Dashboard**: `/app` menampilkan header sapaan + aksi cepat, bento grid metrik (total role, karyawan, rata-rata kuis, AI usage), tabel **Brain Readiness** (status badge, progress bar knowledge completeness, aksi edit per role) dan timeline **Recent Activity**.
 2. **Roles**: buka `/app/roles` → buat role (nama + deskripsi opsional) → lihat detail di `/app/roles/[id]` (right rail berisi ring readiness + knowledge gaps).
-3. **Employee Directory**: `/app/employees` — search, filter pill per role, metrik workforce/completion + kartu AI Insight, tabel progress per karyawan.
+3. **Employee Directory**: `/app/employees`: search, filter pill per role, metrik workforce/completion + kartu AI Insight, tabel progress per karyawan.
 4. **Training Room**: Buka `/app/training` (halaman terpusat, bisa pilih role) atau `/app/training/[id]` untuk langsung ke role tertentu — layout 3 kolom (Roles Context / chat dengan ai-bubble & user-bubble / right rail Brain Readiness ring + Knowledge Gaps + tombol Generate Guide). Sistem mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin. Jika admin lain memegang kunci, room terbuka dalam **mode observer** (baca-saja dengan nama pemegang kunci, plus tombol ambil alih saat kunci bebas), dan badge status/completeness diperbarui otomatis tiap 30 detik via polling cache.
 5. **Generate Guide**: saat status role `READY` (completeness ≥ 75), klik **Generate Guide** → AI menyusun panduan berstruktur (chapter markdown + kuis) dari seluruh transcript training, divalidasi Zod, lalu ditulis atomik ke DB; status berubah jadi `PUBLISHED`. Maksimal 3 generasi per jam per role.
 6. **Assign Karyawan**: setelah `PUBLISHED`, pilih karyawan (`org:member`) dari panel assignment di halaman detail role untuk memberi akses modul. Di halaman Karyawan (`/app/employees`), chip role di tiap baris menampilkan status assignment karyawan tersebut (baca-saja).
@@ -477,13 +477,13 @@ sekali penuh terhadap deployment live sebelum submit.
 #### Untuk Karyawan (`org:member`)
 
 1. **Dashboard Karyawan**: `/app` menampilkan kartu akses Learning Center.
-2. **Learning Center**: Buka `/app/my/modules` — kartu modul dengan ikon per role, status pill (BELUM MULAI / SEDANG BERLANGSUNG / SELESAI), progress bar + persentase, tombol Lanjutkan/Mulai, grid sertifikasi kompetensi, dan FAB **Tanya AI Tutor**.
+2. **Learning Center**: Buka `/app/my/modules`: kartu modul dengan ikon per role, status pill (BELUM MULAI / SEDANG BERLANGSUNG / SELESAI), progress bar + persentase, tombol Lanjutkan/Mulai, grid sertifikasi kompetensi, dan FAB **Tanya AI Tutor**.
 3. **Membaca Modul & Kuis**: Klik modul → guide reader (breadcrumb, badge "AI Verified", kategori, meta, TOC sticky + chapter progress, CTA "Kerjakan Kuis Bab") → kuis satu-soal-per-halaman ("Soal X dari Y", progress bar, Previous/Skip/Submit) dengan grading server-side, dan tandai selesai atau lulus kuis untuk mencatat progres pembelajaran.
-4. **Chat AI Tutor (24/7)**: Pindah ke tab "AI TUTOR (24/7)" pada modul terkait — header dengan avatar + indikator online, AI bubble indigo (`ai-bubble`), user bubble hijau, suggestion chips, typing indicator, dan disclaimer. AI tutor di-grounded ketat pada SOP/panduan peran tersebut (tidak mengarang prosedur yang belum diajarkan).
+4. **Chat AI Tutor (24/7)**: Pindah ke tab "AI TUTOR (24/7)" pada modul terkait: header dengan avatar + indikator online, AI bubble indigo (`ai-bubble`), user bubble hijau, suggestion chips, typing indicator, dan disclaimer. AI tutor di-grounded ketat pada SOP/panduan peran tersebut (tidak mengarang prosedur yang belum diajarkan).
 
 #### Halaman Publik
 
-- **Landing**: `/` — marketing page (hero, keunggulan, cara kerja 3 langkah, CTA).
+- **Landing**: `/`: marketing page (hero, keunggulan, cara kerja 3 langkah, CTA).
 - **Developer Docs**: `/docs` — API reference 3-pane (TOC, endpoint + param tables, dark code pane cURL/Node toggle).
 - **Legal**: `/privacy` (kebijakan privasi, AI grounded, isolasi tenant) & `/terms` (syarat & ketentuan) dengan sticky outline + scroll-spy.
 

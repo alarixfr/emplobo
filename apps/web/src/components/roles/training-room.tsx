@@ -81,7 +81,7 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
         >
           {roles.map((role) => (
             <option key={role.id} value={role.id}>
-              {role.name} — {role.completenessScore}%
+              {role.name} · {role.completenessScore}%
             </option>
           ))}
         </select>
@@ -451,7 +451,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
         {observerName ? (
           <div className="mx-6 mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-surface-muted p-3">
             <span className="font-body-sm text-body-sm text-on-surface-variant">
-              Mode observer — role ini sedang dilatih oleh{" "}
+              Mode observer. Role ini sedang dilatih oleh{" "}
               <strong className="text-on-surface">{observerName}</strong>. Anda
               dapat membaca percakapan, tetapi tidak bisa mengirim pesan.
             </span>
@@ -575,7 +575,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
                 isLocked
                   ? "Jelaskan prosedurnya di sini..."
                   : observerName
-                    ? "Mode observer — baca saja"
+                    ? "Mode observer. Baca saja"
                     : "Training Room terkunci"
               }
               className="w-full resize-none rounded-lg border border-slate-300 bg-surface-muted px-4 py-3 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-60"

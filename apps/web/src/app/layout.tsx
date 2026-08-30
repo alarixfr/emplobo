@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Emplobo",
   description:
-    "AI-powered SDM/training brain for UMKM — train once, onboard everyone.",
+    "AI-powered SDM/training brain for UMKM. Train once, onboard everyone.",
   icons: {
     icon: "/favicon.ico",
     apple: "/logo-icon.png",

@@ -11,7 +11,7 @@ export function MarketingFooter() {
     <footer className="border-t border-outline-variant bg-surface-container-low">
       <div className="mx-auto flex w-full max-w-container flex-col items-center justify-between gap-4 px-4 py-8 sm:flex-row md:px-10">
         <p className="font-body-sm text-body-sm text-secondary">
-          © {new Date().getFullYear()} Emplobo. Empowering UMKM Growth.
+          © {new Date().getFullYear()} Emplobo. Untuk tumbuh bersama UMKM.
         </p>
         <nav className="flex flex-wrap items-center gap-5">
           {FOOTER_LINKS.map((link) => (

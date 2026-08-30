@@ -173,7 +173,7 @@ export default async function RoleDetailPage({ params }: PageProps) {
             <p className="mt-1 font-body-sm text-[12px] leading-5 text-secondary">
               Admin melatih AI di Training Room sampai materi dirasa cukup. AI
               mengevaluasi skor kelengkapan (0–100) dan menyarankan kapan
-              panduan siap dibuat — mulai 75% status berubah menjadi READY.
+              panduan siap dibuat. Mulai 75%, status berubah menjadi READY.
             </p>
           </div>
         </aside>

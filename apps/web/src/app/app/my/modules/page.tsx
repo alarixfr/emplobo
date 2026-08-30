@@ -16,7 +16,7 @@ export default async function MyModulesPage() {
           Selamat datang kembali, {displayName.split(" ")[0]}.
         </h1>
         <p className="mt-1 font-body-lg text-body-lg text-on-surface-variant">
-          Lanjutkan modul pelatihan yang ditugaskan admin Anda — baca panduan,
+          Lanjutkan modul pelatihan yang ditugaskan admin Anda. Baca panduan,
           kerjakan kuis, dan tanya AI Tutor kapan saja.
         </p>
       </div>

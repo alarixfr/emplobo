@@ -7,7 +7,7 @@ const ADVANTAGES = [
   {
     icon: "model_training",
     title: "Latih Sekali",
-    desc: "Owner/HR menuangkan SOP dan know-how ke AI Business Brain lewat chat — sekali saja, per role.",
+    desc: "Owner/HR menuangkan SOP dan know-how ke AI Business Brain lewat chat. Cukup sekali saja, per role.",
   },
   {
     icon: "trending_up",
@@ -17,7 +17,7 @@ const ADVANTAGES = [
   {
     icon: "verified_user",
     title: "Konsistensi Terjamin",
-    desc: "AI tutor di-grounding ketat pada materi yang benar-benar diajarkan — tidak ada prosedur yang dikarang.",
+    desc: "AI tutor di-grounding ketat pada materi yang benar-benar diajarkan. Tidak ada prosedur yang dikarang.",
   },
 ];
 
@@ -35,7 +35,7 @@ const STEPS = [
     num: "01",
     tone: "primary" as const,
     title: "Buat role kerja",
-    desc: "Kasir, Barista, Waiter — definisikan peran yang perlu dilatih di bisnis Anda.",
+    desc: "Kasir, Barista, Waiter. Definisikan peran yang perlu dilatih di bisnis Anda.",
   },
   {
     num: "02",
@@ -65,7 +65,7 @@ export default function HomePage() {
           <p className="mx-auto mt-6 max-w-2xl font-body-lg text-body-lg text-on-surface-variant">
             Emplobo adalah otak SDM untuk UMKM: latih AI sekali dengan SOP
             bisnis Anda, lalu biarkan AI meng-onboard dan mengajar setiap
-            karyawan — tanpa batas, 24/7.
+            karyawan tanpa batas, 24/7.
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
             <SignedOut>
