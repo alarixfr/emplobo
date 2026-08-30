@@ -288,7 +288,6 @@ export function EmployeeDirectory() {
                   <th className="px-5 py-3 font-label-caps text-label-caps text-secondary">
                     NILAI RATA-RATA
                   </th>
-                  <th className="px-5 py-3" />
                 </tr>
               </thead>
               <tbody>
@@ -313,21 +312,21 @@ export function EmployeeDirectory() {
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         {employee.role === "ADMIN" ? (
-                          <span className="rounded-full bg-primary-container px-2.5 py-1 font-label-caps text-[10px] text-on-primary-container">
+                          <span className="rounded-md bg-primary-container px-1.5 py-0.5 font-label-caps text-[10px] text-on-primary-container">
                             MANAJER
                           </span>
                         ) : null}
                         {employee.assignments.length === 0 ? (
-                          <span className="rounded-full bg-surface-variant px-2.5 py-1 font-label-caps text-[10px] text-secondary">
+                          <span className="font-label-caps text-[10px] text-secondary">
                             BELUM DITUGASKAN
                           </span>
                         ) : (
                           employee.assignments.map((a) => (
                             <span
                               key={a.roleId}
-                              className="rounded-full bg-surface-variant px-2.5 py-1 font-label-caps text-[10px] text-on-surface-variant"
+                              className="rounded-md bg-surface-variant px-1.5 py-0.5 font-label-caps text-[10px] text-on-surface-variant"
                             >
                               {a.roleName.toUpperCase()}
                             </span>
@@ -351,17 +350,6 @@ export function EmployeeDirectory() {
                       {employee.avgQuizBestScore !== null
                         ? `${employee.avgQuizBestScore}/100`
                         : "—"}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <Link
-                        href="/app/roles"
-                        className="inline-flex text-secondary transition-colors hover:text-primary"
-                        aria-label={`Kelola ${employee.name}`}
-                      >
-                        <span className="material-symbols-outlined">
-                          more_vert
-                        </span>
-                      </Link>
                     </td>
                   </tr>
                 ))}
