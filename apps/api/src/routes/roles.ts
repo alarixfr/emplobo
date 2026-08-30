@@ -81,6 +81,18 @@ function cleanUserText(input: string): string {
   return input.replace(/<\/?business_data>/gi, "").replace(/\0/g, "").trim();
 }
 
+// The model is told the wrapper tags are DATA, not output, but it occasionally
+// echoes them back (bare or inside a markdown.xml fence). Strip the structural
+// delimiters from the reply so they never render literally in the Training Room.
+function stripStructuralTags(text: string): string {
+  return text
+    .replace(/```xml\s*[\s\S]*?<\/business_data>\s*```/gi, "")
+    .replace(/```xml\s*[\s\S]*?<\/knowledge_base>\s*```/gi, "")
+    .replace(/<\/?business_data>|<\/?knowledge_base>/gi, "")
+    .replace(/```xml/gi, "")
+    .trim();
+}
+
 function toOpenRouterModel(model: string): string {
   // Keep caller model names stable in code while routing through OpenRouter.
   if (model === "claude-sonnet-4-5") {
@@ -694,7 +706,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
             roleId: role.id,
             orgId: auth.orgId,
             sender: "ai",
-            content: aiReply.text,
+            content: stripStructuralTags(aiReply.text),
             tokenEst: estimateTokens(aiReply.text),
           },
           select: { id: true, sender: true, content: true, createdAt: true },

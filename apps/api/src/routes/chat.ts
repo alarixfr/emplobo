@@ -62,6 +62,19 @@ function wrapBusinessData(content: string): string {
   return `<business_data>\n${sanitizeUserText(content)}\n</business_data>`;
 }
 
+// The model is told the wrapper tags are DATA, not output, but it occasionally
+// echoes them back (bare or inside a markdown.xml fence). Strip the structural
+// delimiters from the reply so they never render as literal text to the user.
+// Only the tags are removed — the reply's actual content is untouched.
+function stripStructuralTags(text: string): string {
+  return text
+    .replace(/```xml\s*[\s\S]*?<\/business_data>\s*```/gi, "")
+    .replace(/```xml\s*[\s\S]*?<\/knowledge_base>\s*```/gi, "")
+    .replace(/<\/?business_data>|<\/?knowledge_base>/gi, "")
+    .replace(/```xml/gi, "")
+    .trim();
+}
+
 function enforceChatCooldown(key: string): { ok: true } | { ok: false; retryAfter: number } {
   const now = Date.now();
   const nextAllowedAt = chatCooldownState.get(key);
@@ -634,7 +647,7 @@ export function createChatRouter(requireAuth: AuthMiddleware, env: Env): Router 
             sessionId: session.id,
             orgId: auth.orgId,
             sender: "ai",
-            content: aiReply.text,
+            content: stripStructuralTags(aiReply.text),
           },
           select: {
             id: true,
