@@ -14,7 +14,7 @@ type NavItem = {
 const ADMIN_NAV: NavItem[] = [
   { href: "/app", label: "Dashboard", icon: "dashboard" },
   { href: "/app/training", label: "Training Room", icon: "school" },
-  { href: "/app/roles", label: "Roles & Guides", icon: "menu_book" },
+  { href: "/app/roles", label: "Roles", icon: "menu_book" },
   { href: "/app/employees", label: "Karyawan", icon: "group" },
 ];
 
@@ -60,7 +60,7 @@ export function AppSidebar({ isAdmin }: { isAdmin: boolean }) {
 
       <div className="px-4 pb-4">
         <Link
-          href={isAdmin ? "/app/roles" : "/app/my/modules"}
+          href={isAdmin ? "/app/roles#new-role" : "/app/my/modules"}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-label-caps text-label-caps text-on-primary shadow-sm transition-colors hover:bg-primary-container"
         >
           <span className="material-symbols-outlined text-lg">add</span>
@@ -75,6 +75,7 @@ export function AppSidebar({ isAdmin }: { isAdmin: boolean }) {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={active ? "page" : undefined}
               className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 font-body-sm text-body-sm transition-colors ${
                 active
                   ? "bg-primary-container font-medium text-on-primary-container"
@@ -127,7 +128,7 @@ export function AppSidebar({ isAdmin }: { isAdmin: boolean }) {
             className="group flex items-center gap-3 rounded-lg px-3 py-2.5 font-body-sm text-body-sm text-on-surface-variant transition-colors hover:bg-surface-container-high"
           >
             <span className="material-symbols-outlined text-[20px] text-secondary group-hover:text-primary">
-              settings
+              support_agent
             </span>
             Support
           </a>

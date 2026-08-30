@@ -15,7 +15,7 @@ export default async function EmployeesPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 className="font-headline-md text-headline-md text-on-surface">
-            Employee Directory
+            Direktori Karyawan
           </h1>
           <p className="mt-1 max-w-2xl font-body-md text-body-md text-on-surface-variant">
             Pantau progress pelatihan setiap karyawan: modul yang diikuti,

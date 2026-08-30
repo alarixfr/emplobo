@@ -248,7 +248,7 @@ export function AdminDashboard() {
       {/* ── Metrics bento grid ───────────────────────────────────────── */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="TOTAL ROLE"
+          label="JUMLAH ROLE"
           value={String(summary.roles.total)}
           hint={`${summary.roles.draft} draft · ${summary.roles.ready} siap · ${summary.roles.published} published`}
           icon="menu_book"
@@ -277,7 +277,7 @@ export function AdminDashboard() {
           iconClass="bg-tertiary-fixed text-on-tertiary-fixed-variant"
         />
         <StatCard
-          label="AI USAGE (30 HARI)"
+          label="PEMAKAIAN AI (30 HARI)"
           value={formatTokens(
             summary.aiUsage30d.tokensIn + summary.aiUsage30d.tokensOut,
           )}
@@ -287,12 +287,12 @@ export function AdminDashboard() {
         />
       </div>
 
-      {/* ── Brain Readiness table + Recent Activity ──────────────────── */}
+      {/* ── Kesiapan AI table + Aktivitas Terbaru ────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm lg:col-span-2">
           <div className="border-b border-slate-200 p-5">
             <h2 className="font-headline-sm text-[18px] text-on-surface">
-              Brain Readiness
+              Kesiapan AI
             </h2>
             <p className="mt-0.5 font-body-sm text-body-sm text-secondary">
               Status kelengkapan pengetahuan AI per role.
@@ -310,13 +310,13 @@ export function AdminDashboard() {
                 <thead>
                   <tr className="border-b border-slate-200">
                     <th className="px-5 py-3 font-label-caps text-label-caps text-secondary">
-                      ROLE / BRAIN
+                      ROLE
                     </th>
                     <th className="px-5 py-3 font-label-caps text-label-caps text-secondary">
                       STATUS
                     </th>
                     <th className="px-5 py-3 font-label-caps text-label-caps text-secondary">
-                      KNOWLEDGE COMPLETENESS
+                      KELENGKAPAN
                     </th>
                     <th className="px-5 py-3" />
                   </tr>
@@ -365,7 +365,7 @@ export function AdminDashboard() {
                             </span>
                           </div>
                           <p className="mt-1 text-[12px] text-secondary">
-                            Tim {role.avgCompletionPct}% · Quiz{" "}
+                            Tim {role.avgCompletionPct}% · Kuis{" "}
                             {role.avgQuizBestScore !== null
                               ? `${role.avgQuizBestScore}/100`
                               : "—"}
@@ -395,7 +395,7 @@ export function AdminDashboard() {
         <section className="rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm">
           <div className="border-b border-slate-200 p-5">
             <h2 className="font-headline-sm text-[18px] text-on-surface">
-              Recent Activity
+              Aktivitas Terbaru
             </h2>
           </div>
           <div className="relative p-5">

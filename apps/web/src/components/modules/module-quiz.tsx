@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import type {
@@ -40,6 +40,7 @@ export function ModuleQuizCard({
     questions.length > 0
       ? Math.round(((currentQuestion + 1) / questions.length) * 100)
       : 0;
+  const resultRef = useRef<HTMLDivElement | null>(null);
 
   function handleSelectOption(optionIndex: number) {
     if (result) return; // Locked while viewing results
@@ -84,6 +85,8 @@ export function ModuleQuizCard({
       setBestScore((prev) => Math.max(prev ?? 0, data.score));
 
       onQuizCompleted?.(data);
+      // Move focus to the result so keyboard/screen-reader users land on it.
+      requestAnimationFrame(() => resultRef.current?.focus());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal mengirim jawaban kuis.");
     } finally {
@@ -110,7 +113,7 @@ export function ModuleQuizCard({
           Knowledge Check
         </h2>
         <span className="font-data-point text-data-point text-secondary">
-          Soal {currentQuestion + 1} dari {questions.length}
+          {result ? "HASIL" : `Soal ${currentQuestion + 1} dari ${questions.length}`}
         </span>
       </div>
       <ProgressBar percent={progressPct} className="mt-3" />
@@ -130,9 +133,11 @@ export function ModuleQuizCard({
 
       {result ? (
         /* ── Result view ─────────────────────────────────────────────── */
-        <div className="mt-8 space-y-4">
+        <div className="mt-8 space-y-4" aria-live="polite">
           <div
-            className={`rounded-lg border p-5 ${
+            ref={resultRef}
+            tabIndex={-1}
+            className={`rounded-lg border p-5 outline-none ${
               result.passed
                 ? "border-primary-fixed-dim bg-primary-fixed/30"
                 : "border-error-container bg-error-container/40"
@@ -316,7 +321,7 @@ export function ModuleQuizCard({
                   onClick={() => setCurrentQuestion((prev) => prev + 1)}
                   className="inline-flex items-center rounded-lg border border-secondary px-4 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
                 >
-                  LEWATI
+                  LANJUT
                 </button>
               ) : null}
               {isLastQuestion ? (
@@ -324,7 +329,7 @@ export function ModuleQuizCard({
                   type="button"
                   onClick={() => void handleSubmit()}
                   disabled={!isAllAnswered || isSubmitting}
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isSubmitting ? "MEMERIKSA…" : "KIRIM JAWABAN"}
                   <span className="material-symbols-outlined text-[18px]">

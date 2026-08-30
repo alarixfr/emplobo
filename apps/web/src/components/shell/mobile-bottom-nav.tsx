@@ -12,13 +12,13 @@ type NavItem = {
 const ADMIN_NAV: NavItem[] = [
   { href: "/app", label: "Home", icon: "dashboard" },
   { href: "/app/training", label: "Training", icon: "school" },
-  { href: "/app/employees", label: "Tim", icon: "group" },
-  { href: "/app/roles", label: "Guides", icon: "menu_book" },
+  { href: "/app/employees", label: "Karyawan", icon: "group" },
+  { href: "/app/roles", label: "Roles", icon: "menu_book" },
 ];
 
 const EMPLOYEE_NAV: NavItem[] = [
   { href: "/app", label: "Home", icon: "dashboard" },
-  { href: "/app/my/modules", label: "Learn", icon: "school" },
+  { href: "/app/my/modules", label: "Belajar", icon: "school" },
 ];
 
 /**
@@ -43,6 +43,7 @@ export function MobileBottomNav({ isAdmin }: { isAdmin: boolean }) {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={active ? "page" : undefined}
               className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 ${
                 active ? "bg-primary-fixed-dim/60" : ""
               }`}

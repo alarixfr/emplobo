@@ -162,7 +162,7 @@ export function EmployeeDirectory() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
           <p className="font-label-caps text-label-caps text-secondary">
-            TOTAL WORKFORCE
+            TOTAL KARYAWAN
           </p>
           <p className="mt-2 font-headline-md text-[32px] leading-10 text-on-surface">
             {totalWorkforce}
@@ -174,7 +174,7 @@ export function EmployeeDirectory() {
 
         <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
           <p className="font-label-caps text-label-caps text-secondary">
-            TRAINING COMPLETION
+            PROGRES PELATIHAN
           </p>
           <p className="mt-2 font-headline-md text-[32px] leading-10 text-on-surface">
             {avgCompletion}%
@@ -191,7 +191,7 @@ export function EmployeeDirectory() {
             <span className="material-symbols-outlined text-[18px]">
               psychology
             </span>
-            AI INSIGHT
+            WAWASAN AI
           </p>
           {weakestRole ? (
             <>
@@ -199,13 +199,13 @@ export function EmployeeDirectory() {
                 Trainee role{" "}
                 <span className="font-semibold">{weakestRole.roleName}</span>{" "}
                 punya completion terendah ({weakestRole.avg}%). Pertimbangkan
-                tambahan training atau regenerasi guide.
+                training tambahan di Training Room.
               </p>
               <Link
                 href="/app/training"
                 className="mt-2 inline-flex items-center gap-1 font-data-point text-data-point font-bold text-status-ready hover:underline"
               >
-                Generate Guide
+                Buka Training Room
                 <span className="material-symbols-outlined text-[16px]">
                   arrow_forward
                 </span>
@@ -244,7 +244,7 @@ export function EmployeeDirectory() {
                 : "text-secondary hover:text-on-surface"
             }`}
           >
-            ALL ROLES
+            SEMUA ROLE
           </button>
           {roleNames.map((roleName) => (
             <button
@@ -277,16 +277,16 @@ export function EmployeeDirectory() {
               <thead>
                 <tr className="border-b border-slate-200">
                   <th className="px-5 py-3 font-label-caps text-label-caps text-secondary">
-                    EMPLOYEE
+                    KARYAWAN
                   </th>
                   <th className="px-5 py-3 font-label-caps text-label-caps text-secondary">
-                    ROLES
+                    ROLE
                   </th>
                   <th className="px-5 py-3 font-label-caps text-label-caps text-secondary">
-                    PROGRESS
+                    PROGRES
                   </th>
                   <th className="px-5 py-3 font-label-caps text-label-caps text-secondary">
-                    AVG SCORE
+                    NILAI RATA-RATA
                   </th>
                   <th className="px-5 py-3" />
                 </tr>
@@ -316,7 +316,7 @@ export function EmployeeDirectory() {
                       <div className="flex flex-wrap gap-1.5">
                         {employee.role === "ADMIN" ? (
                           <span className="rounded-full bg-primary-container px-2.5 py-1 font-label-caps text-[10px] text-on-primary-container">
-                            MANAGER
+                            MANAJER
                           </span>
                         ) : null}
                         {employee.assignments.length === 0 ? (

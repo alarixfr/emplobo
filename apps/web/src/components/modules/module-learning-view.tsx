@@ -6,10 +6,16 @@ import { ModuleReader } from "./module-reader";
 
 type ModuleLearningViewProps = {
   roleId: string;
+  initialTab?: "reader" | "tutor";
 };
 
-export function ModuleLearningView({ roleId }: ModuleLearningViewProps) {
-  const [activeTab, setActiveTab] = useState<"reader" | "tutor">("reader");
+/**
+ * Both panels stay mounted; switching tabs only toggles visibility so the
+ * guide-reader position AND the AI-tutor conversation thread (session,
+ * messages, scroll) survive a tab switch instead of remounting fresh.
+ */
+export function ModuleLearningView({ roleId, initialTab = "reader" }: ModuleLearningViewProps) {
+  const [activeTab, setActiveTab] = useState<"reader" | "tutor">(initialTab);
 
   return (
     <div className="space-y-6">
@@ -46,11 +52,12 @@ export function ModuleLearningView({ roleId }: ModuleLearningViewProps) {
         </button>
       </div>
 
-      {activeTab === "reader" ? (
+      <div className={activeTab === "reader" ? "block" : "hidden"}>
         <ModuleReader roleId={roleId} />
-      ) : (
+      </div>
+      <div className={activeTab === "tutor" ? "block" : "hidden"}>
         <EmployeeChatTutor roleId={roleId} />
-      )}
+      </div>
     </div>
   );
 }

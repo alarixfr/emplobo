@@ -109,7 +109,7 @@ export function CreateRoleForm({ onCreated }: CreateRoleFormProps) {
           required
           disabled={isPending}
           placeholder="Kasir"
-          className="w-full rounded-lg border border-slate-300 bg-surface-muted px-3 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:opacity-60"
+          className="w-full rounded-lg border border-slate-300 bg-surface-muted px-3 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:cursor-not-allowed disabled:opacity-60"
         />
       </div>
 
@@ -128,7 +128,7 @@ export function CreateRoleForm({ onCreated }: CreateRoleFormProps) {
           rows={3}
           disabled={isPending}
           placeholder="Melayani pembayaran, mengoperasikan POS, menangani refund…"
-          className="w-full resize-y rounded-lg border border-slate-300 bg-surface-muted px-3 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:opacity-60"
+          className="w-full resize-y rounded-lg border border-slate-300 bg-surface-muted px-3 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:cursor-not-allowed disabled:opacity-60"
         />
       </div>
 
@@ -141,7 +141,7 @@ export function CreateRoleForm({ onCreated }: CreateRoleFormProps) {
       <button
         type="submit"
         disabled={isPending}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:opacity-60"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-60"
       >
         <span className="material-symbols-outlined text-[18px]">add</span>
         {isPending ? "MENYIMPAN…" : "BUAT ROLE"}

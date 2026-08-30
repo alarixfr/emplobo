@@ -95,7 +95,16 @@ export function MyModulesList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded]);
 
-  const firstModuleId = modules[0]?.role.id ?? null;
+  // Prefer the module the user is actively working on for the tutor FAB.
+  const tutorModuleId = useMemo(() => {
+    const sorted = [...modules].sort((a, b) => {
+      const aActive = a.progress.completionPct > 0 && a.progress.completionPct < 100 ? 1 : 0;
+      const bActive = b.progress.completionPct > 0 && b.progress.completionPct < 100 ? 1 : 0;
+      if (aActive !== bActive) return bActive - aActive;
+      return b.progress.completionPct - a.progress.completionPct;
+    });
+    return sorted[0]?.role.id ?? null;
+  }, [modules]);
 
   const certifications = useMemo(
     () =>
@@ -192,9 +201,9 @@ export function MyModulesList() {
                     <div className="mt-3">
                       <ProgressBar percent={module.progress.completionPct} />
                       <p className="mt-1.5 font-label-caps text-[10px] text-secondary">
-                        {module.progress.completionPct}% SELESAI
+                        BAB SELESAI {module.progress.completionPct}%
                         {module.progress.avgBestScore !== null
-                          ? ` · NILAI ${module.progress.avgBestScore}`
+                          ? ` · SKOR KUIS TERBAIK ${module.progress.avgBestScore}`
                           : ""}
                       </p>
                     </div>
@@ -250,15 +259,21 @@ export function MyModulesList() {
               <p className="mt-0.5 font-label-caps text-[10px] text-secondary">
                 {cert.passed ? "TERVERIFIKASI" : "TERKUNCI"}
               </p>
+              {!cert.passed ? (
+                <p className="mt-1 text-center font-body-sm text-[10px] leading-3 text-outline">
+                  Perlu selesaikan bab &amp; nilai kuis ≥ 70
+                </p>
+              ) : null}
             </div>
           ))}
         </div>
       </section>
 
       {/* ── Ask AI Tutor FAB ──────────────────────────────────────────── */}
-      {firstModuleId ? (
+      {tutorModuleId ? (
         <Link
-          href={`/app/my/modules/${firstModuleId}`}
+          href={`/app/my/modules/${tutorModuleId}?tab=tutor`}
+          aria-label="Tanya AI Tutor"
           className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-status-ready px-4 py-3 text-white shadow-lg transition-transform hover:scale-105 md:bottom-8 md:right-8"
         >
           <span className="material-symbols-outlined ms-fill">psychology</span>

@@ -34,6 +34,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
   const [error, setError] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const threadRef = useRef<HTMLDivElement | null>(null);
   const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
   // Mirrors activeSessionId for in-flight fetch guards — stale responses for
   // a session the user already left must never render.
@@ -45,6 +46,14 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
 
   function scrollToBottom() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  // Jump to the newest message instantly whenever a thread finishes loading,
+  // so reopening a conversation never lands mid-history.
+  function jumpToBottom() {
+    if (threadRef.current) {
+      threadRef.current.scrollTo({ top: threadRef.current.scrollHeight });
+    }
   }
 
   function startCooldown(seconds = 2) {
@@ -137,7 +146,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
       if (activeSessionIdRef.current !== sessionId) return;
 
       setMessages(data.messages);
-      setTimeout(scrollToBottom, 100);
+      setTimeout(jumpToBottom, 0);
     } catch (err) {
       if (activeSessionIdRef.current !== sessionId) return;
       setError(err instanceof Error ? err.message : "Gagal memuat pesan chat.");
@@ -148,10 +157,10 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
     }
   }
 
-  async function handleSendMessage(e?: React.FormEvent) {
+  async function handleSendMessage(e?: React.FormEvent, presetText?: string) {
     if (e) e.preventDefault();
 
-    const text = inputText.trim();
+    const text = (presetText ?? inputText).trim();
     if (!text || isSending || cooldownRemaining > 0) return;
 
     // Flip the flag before ANY await — two rapid Enter presses (keydown +
@@ -252,7 +261,14 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
   }
 
   useEffect(() => {
-    if (isLoaded) void loadSessions();
+    if (isLoaded) {
+      // Role changed (or Clerk became ready) — drop the previous role's
+      // sessions/messages so the new role's thread is the only one shown.
+      setSessions([]);
+      setActiveSessionId(null);
+      setMessages([]);
+      void loadSessions();
+    }
     return () => {
       if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
     };
@@ -360,7 +376,11 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
         </div>
 
         {/* Message thread */}
-        <div className="scroll-slim flex-1 space-y-4 overflow-y-auto bg-surface-muted p-4">
+        <div
+          ref={threadRef}
+          aria-live="polite"
+          className="scroll-slim flex-1 space-y-4 overflow-y-auto bg-surface-muted p-4"
+        >
           {isLoadingMessages ? (
             <p className="text-center font-body-sm text-[12px] text-secondary">
               Memuat riwayat chat...
@@ -382,12 +402,20 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
             </div>
           ) : (
             <>
-              {/* Date separator pill */}
-              <div className="flex justify-center">
-                <span className="rounded-full bg-surface-container-high px-3 py-1 font-label-caps text-[10px] text-secondary">
-                  HARI INI
-                </span>
-              </div>
+              {/* Date separator pill — only when the newest message is today */}
+              {(() => {
+                const newest = messages[messages.length - 1];
+                const isToday =
+                  newest !== undefined &&
+                  new Date(newest.createdAt).toDateString() === new Date().toDateString();
+                return isToday ? (
+                  <div className="flex justify-center">
+                    <span className="rounded-full bg-surface-container-high px-3 py-1 font-label-caps text-[10px] text-secondary">
+                      HARI INI
+                    </span>
+                  </div>
+                ) : null;
+              })()}
 
               {messages.map((msg) => {
                 const isUser = msg.sender === "user";
@@ -458,15 +486,15 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
             <p className="mb-2 font-body-sm text-body-sm text-error">{error}</p>
           ) : null}
 
-          {/* Quick suggestion chips */}
+          {/* Quick suggestion chips — send the question directly */}
           <div className="mb-3 flex flex-wrap gap-2">
             {SUGGESTION_CHIPS.map((chip) => (
               <button
                 key={chip}
                 type="button"
                 disabled={isSending || cooldownRemaining > 0}
-                onClick={() => setInputText(chip)}
-                className="rounded-full border border-outline-variant px-3.5 py-1.5 font-body-sm text-[12px] text-secondary transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+                onClick={() => void handleSendMessage(undefined, chip)}
+                className="rounded-full border border-outline-variant px-3.5 py-1.5 font-body-sm text-[12px] text-secondary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {chip}
               </button>
@@ -492,18 +520,30 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
             <button
               type="submit"
               disabled={!inputText.trim() || isSending || cooldownRemaining > 0}
-              aria-label="Kirim pesan"
-              className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-lg bg-primary text-on-primary transition-colors hover:bg-primary-container disabled:opacity-50"
+              aria-label={
+                cooldownRemaining > 0
+                  ? `Tunggu ${cooldownRemaining} detik`
+                  : "Kirim pesan"
+              }
+              className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-lg bg-primary text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="material-symbols-outlined">
-                {cooldownRemaining > 0 ? "hourglass_top" : "send"}
+                {isSending ? "progress_activity" : cooldownRemaining > 0 ? "hourglass_top" : "send"}
               </span>
             </button>
           </form>
           <p className="mt-2 text-center font-body-sm text-[12px] text-secondary">
-            Jawaban AI Tutor berdasarkan SOP &amp; panduan resmi peran ini.
-            Selalu verifikasi prosedur kritis kepada atasan Anda. · Cooldown 2
-            detik antar pesan.
+            {cooldownRemaining > 0 ? (
+              <span className="text-status-locked">
+                Mohon tunggu {cooldownRemaining} detik sebelum mengirim lagi.
+              </span>
+            ) : (
+              <>
+                Jawaban AI Tutor berdasarkan SOP &amp; panduan resmi peran ini.
+                Selalu verifikasi prosedur kritis kepada atasan Anda. · Cooldown
+                2 detik antar pesan.
+              </>
+            )}
           </p>
         </div>
       </section>

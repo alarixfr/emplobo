@@ -77,7 +77,8 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
   const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const activeChapter = useMemo(
     () => chapters.find((chapter) => chapter.id === activeChapterId) ?? null,
@@ -97,12 +98,12 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
   async function load() {
     if (!isLoaded) return; // wait for Clerk before calling getToken()
     setIsLoading(true);
-    setError(null);
+    setLoadError(null);
 
     try {
       const token = await getToken();
       if (!token) {
-        setError("Sesi tidak valid. Silakan login ulang.");
+        setLoadError("Sesi tidak valid. Silakan login ulang.");
         return;
       }
 
@@ -115,7 +116,7 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
       setChapters(data.chapters);
       setActiveChapterId((prev) => prev ?? data.chapters[0]?.id ?? null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal memuat modul.");
+      setLoadError(err instanceof Error ? err.message : "Gagal memuat modul.");
     } finally {
       setIsLoading(false);
     }
@@ -123,12 +124,12 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
 
   async function markComplete(chapterId: string) {
     setIsSaving(true);
-    setError(null);
+    setSaveError(null);
 
     try {
       const token = await getToken();
       if (!token) {
-        setError("Sesi tidak valid. Silakan login ulang.");
+        setSaveError("Sesi tidak valid. Silakan login ulang.");
         return;
       }
 
@@ -148,9 +149,11 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
       );
     } catch (err) {
       if (err instanceof ApiError && err.status === 403) {
-        setError("Anda tidak memiliki akses ke chapter ini.");
+        setSaveError("Anda tidak memiliki akses ke chapter ini.");
       } else {
-        setError(err instanceof Error ? err.message : "Gagal menyimpan progress.");
+        setSaveError(
+          err instanceof Error ? err.message : "Gagal menyimpan progress.",
+        );
       }
     } finally {
       setIsSaving(false);
@@ -166,10 +169,17 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
     return <ReaderSkeleton />;
   }
 
-  if (error) {
+  if (loadError) {
     return (
       <div className="rounded-lg border border-error-container bg-error-container/40 p-6">
-        <p className="font-body-sm text-body-sm text-error">{error}</p>
+        <p className="font-body-sm text-body-sm text-error">{loadError}</p>
+        <button
+          type="button"
+          onClick={() => void load()}
+          className="mt-3 inline-flex items-center rounded-lg bg-primary px-4 py-2 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
+        >
+          MUAT ULANG
+        </button>
       </div>
     );
   }
@@ -190,6 +200,39 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
     <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
       {/* ── Article column (720px) ────────────────────────────────────── */}
       <div className="mx-auto w-full max-w-[720px]">
+        {/* Mobile chapter stepper — desktop has the sticky TOC instead */}
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-surface-container-lowest p-2 shadow-sm lg:hidden">
+          <button
+            type="button"
+            onClick={() =>
+              hasPrev && setActiveChapterId(chapters[activeIndex - 1]!.id)
+            }
+            disabled={!hasPrev}
+            aria-label="Bab sebelumnya"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              arrow_back
+            </span>
+          </button>
+          <span className="font-data-point text-data-point text-on-surface">
+            BAB {activeIndex + 1} / {chapters.length}
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              hasNext && setActiveChapterId(chapters[activeIndex + 1]!.id)
+            }
+            disabled={!hasNext}
+            aria-label="Bab berikutnya"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              arrow_forward
+            </span>
+          </button>
+        </div>
+
         <article className="relative rounded-lg border border-slate-200 bg-surface-container-lowest p-6 shadow-sm md:p-10">
           {/* Floating AI Verified badge */}
           <div className="absolute -top-3 right-4 flex items-center gap-1.5 rounded-full border border-ai-border bg-ai-accent px-3 py-1 shadow-sm md:-right-3">
@@ -197,7 +240,7 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
               auto_awesome
             </span>
             <span className="font-label-caps text-[10px] text-primary">
-              AI VERIFIED
+              DIGENERASI AI
             </span>
           </div>
 
@@ -252,21 +295,31 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
               materinya.
             </p>
             <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => void markComplete(activeChapter.id)}
-                disabled={isSaving}
-                className="inline-flex items-center gap-2 rounded-lg border border-secondary px-4 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low disabled:opacity-60"
-              >
-                <span className="material-symbols-outlined text-[18px]">
-                  task_alt
+              {saveError ? (
+                <p className="w-full rounded-lg border border-error-container bg-error-container/40 p-3 font-body-sm text-body-sm text-error">
+                  {saveError}
+                </p>
+              ) : null}
+              {activeChapter.completedAt ? (
+                <span className="inline-flex items-center gap-2 rounded-lg border border-primary-fixed-dim bg-primary-fixed/40 px-4 py-2.5 font-label-caps text-label-caps text-on-primary-fixed-variant">
+                  <span className="material-symbols-outlined ms-fill text-[18px]">
+                    check_circle
+                  </span>
+                  SELESAI DIBACA
                 </span>
-                {isSaving
-                  ? "MENYIMPAN…"
-                  : activeChapter.completedAt
-                    ? "TANDAI SELESAI"
-                    : "TANDAI SELESAI DIBACA"}
-              </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void markComplete(activeChapter.id)}
+                  disabled={isSaving}
+                  className="inline-flex items-center gap-2 rounded-lg border border-secondary px-4 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    task_alt
+                  </span>
+                  {isSaving ? "MENYIMPAN…" : "TANDAI SELESAI DIBACA"}
+                </button>
+              )}
               {activeChapter.quiz ? (
                 <a
                   href="#chapter-quiz"
@@ -364,7 +417,7 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
         <div className="sticky top-24 space-y-8">
           <nav>
             <h2 className="font-label-caps text-label-caps text-secondary">
-              DI HALAMAN INI
+              DAFTAR BAB
             </h2>
             <ul className="mt-4 space-y-1">
               {chapters.map((chapter) => {
@@ -401,7 +454,7 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
           <div>
             <div className="flex items-center justify-between">
               <h2 className="font-label-caps text-label-caps text-secondary">
-                CHAPTER PROGRESS
+                PROGRES BAB
               </h2>
               <span className="font-data-point text-data-point text-primary">
                 {progressPercent}%

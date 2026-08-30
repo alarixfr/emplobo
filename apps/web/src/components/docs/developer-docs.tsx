@@ -129,6 +129,70 @@ const { role } = await res.json();`,
   },
 );`,
       },
+      {
+        method: "POST",
+        path: "/api/roles/:id/training/lock",
+        desc: "Mengunci Training Room untuk satu admin (atomik). 423 jika dipegang admin lain.",
+        params: [],
+        response: 200,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl -X POST "$API/roles/$ROLE_ID/training/lock" \\
+  -H "Authorization: Bearer $CLERK_TOKEN"`
+            : `const res = await fetch(
+  \`\${API}/roles/\${roleId}/training/lock\`,
+  { method: "POST", headers: { Authorization: \`Bearer \${token}\` } },
+);
+// 423 → sedang dikunci admin lain; body berisi activeTrainerName`,
+      },
+      {
+        method: "GET",
+        path: "/api/roles/:id/training/messages",
+        desc: "Transkrip percakapan training + status role.",
+        params: [],
+        response: 200,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl "$API/roles/$ROLE_ID/training/messages" \\
+  -H "Authorization: Bearer $CLERK_TOKEN"`
+            : `const res = await fetch(
+  \`\${API}/roles/\${roleId}/training/messages\`,
+  { headers: { Authorization: \`Bearer \${token}\` } },
+);
+const { role, messages } = await res.json();`,
+      },
+      {
+        method: "GET",
+        path: "/api/roles/:id/guide",
+        desc: "Guide terpublikasi role (chapter + pertanyaan kuis, tanpa kunci jawaban).",
+        params: [],
+        response: 200,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl "$API/roles/$ROLE_ID/guide" \\
+  -H "Authorization: Bearer $CLERK_TOKEN"`
+            : `const res = await fetch(
+  \`\${API}/roles/\${roleId}/guide\`,
+  { headers: { Authorization: \`Bearer \${token}\` } },
+);
+const { guide } = await res.json();`,
+      },
+      {
+        method: "GET",
+        path: "/api/roles/:id/assignable-users",
+        desc: "Daftar karyawan org yang bisa ditugaskan + status assignment mereka.",
+        params: [],
+        response: 200,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl "$API/roles/$ROLE_ID/assignable-users" \\
+  -H "Authorization: Bearer $CLERK_TOKEN"`
+            : `const res = await fetch(
+  \`\${API}/roles/\${roleId}/assignable-users\`,
+  { headers: { Authorization: \`Bearer \${token}\` } },
+);
+const { role, users } = await res.json();`,
+      },
     ],
   },
   {
@@ -199,6 +263,69 @@ const { score, passed, results } = await res.json();`,
   },
 );
 const { aiMessage } = await res.json();`,
+      },
+      {
+        method: "GET",
+        path: "/api/my/modules/:roleId/chapters",
+        desc: "Chapter guide + quiz (tanpa kunci jawaban) untuk modul yang ditugaskan.",
+        params: [],
+        response: 200,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl "$API/my/modules/$ROLE_ID/chapters" \\
+  -H "Authorization: Bearer $CLERK_TOKEN"`
+            : `const res = await fetch(
+  \`\${API}/my/modules/\${roleId}/chapters\`,
+  { headers: { Authorization: \`Bearer \${token}\` } },
+);
+const { guide, chapters } = await res.json();`,
+      },
+      {
+        method: "GET",
+        path: "/api/my/chat/sessions",
+        desc: "Daftar sesi chat AI Tutor milik pengguna (opsional filter ?roleId=).",
+        params: [],
+        response: 200,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl "$API/my/chat/sessions?roleId=$ROLE_ID" \\
+  -H "Authorization: Bearer $CLERK_TOKEN"`
+            : `const res = await fetch(
+  \`\${API}/my/chat/sessions?roleId=\${roleId}\`,
+  { headers: { Authorization: \`Bearer \${token}\` } },
+);
+const { sessions } = await res.json();`,
+      },
+      {
+        method: "GET",
+        path: "/api/my/chat/sessions/:id/messages",
+        desc: "Riwayat percakapan sebuah sesi (ownership diverifikasi per request).",
+        params: [],
+        response: 200,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl "$API/my/chat/sessions/$SESSION_ID/messages" \\
+  -H "Authorization: Bearer $CLERK_TOKEN"`
+            : `const res = await fetch(
+  \`\${API}/my/chat/sessions/\${sessionId}/messages\`,
+  { headers: { Authorization: \`Bearer \${token}\` } },
+);
+const { messages } = await res.json();`,
+      },
+      {
+        method: "GET",
+        path: "/api/dashboard/summary",
+        desc: "Ringkasan dashboard admin: jumlah, skor kuis, completion per role, aktivitas terbaru.",
+        params: [],
+        response: 200,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl "$API/dashboard/summary" \\
+  -H "Authorization: Bearer $CLERK_TOKEN"`
+            : `const res = await fetch(\`\${API}/dashboard/summary\`, {
+  headers: { Authorization: \`Bearer \${token}\` },
+});
+const { summary } = await res.json();`,
       },
     ],
   },
@@ -274,6 +401,20 @@ export function DeveloperDocs() {
 $API=${process.env.NEXT_PUBLIC_API_URL ?? "https://api.emplobo-demo.example.com"}
 
 curl "$API/health"`;
+
+  const activeEndpointStatus =
+    activeEndpoint !== null
+      ? (() => {
+          for (const s of SECTIONS) {
+            if (!s.endpoints) continue;
+            const ep = s.endpoints.find(
+              (e) => `${s.id}:${e.path}` === activeEndpoint,
+            );
+            if (ep) return ep.response;
+          }
+          return 200;
+        })()
+      : 200;
 
   return (
     <div className="grid gap-8 lg:grid-cols-[240px_1fr_420px]">
@@ -396,16 +537,34 @@ curl "$API/health"`;
                           </p>
                         )}
 
+                        {/* Inline code sample for mobile/tablet — the dark
+                            right pane is hidden below lg, so the "see example"
+                            action must work without it. */}
+                        <details className="group mt-4 lg:hidden">
+                          <summary className="inline-flex cursor-pointer list-none items-center gap-2 font-label-caps text-label-caps text-status-ready">
+                            <span className="material-symbols-outlined text-[16px]">
+                              code
+                            </span>
+                            LIHAT CONTOH cURL
+                          </summary>
+                          <pre className="scroll-slim-dark mt-3 overflow-x-auto rounded-lg bg-inverse-surface p-4 font-data-point text-[12px] leading-5 text-inverse-on-surface">
+                            {ep.code("curl")}
+                          </pre>
+                        </details>
+
                         <button
                           type="button"
                           onClick={() => scrollToEndpoint(section.id, ep.path)}
-                          className="mt-4 inline-flex items-center gap-2 font-label-caps text-label-caps text-status-ready hover:underline"
+                          className="mt-4 hidden items-center gap-2 font-label-caps text-label-caps text-status-ready hover:underline lg:inline-flex"
                         >
                           <span className="material-symbols-outlined text-[16px]">
                             code
                           </span>
                           LIHAT CONTOH {lang === "curl" ? "cURL" : "NODE.JS"}
                         </button>
+                        <p className="mt-3 font-data-point text-[11px] text-secondary">
+                          RESPONSE: {ep.response} · JSON
+                        </p>
                       </div>
                     );
                   })
@@ -446,7 +605,7 @@ curl "$API/health"`;
             <code>{activeCode}</code>
           </pre>
           <div className="border-t border-white/10 px-4 py-2.5 font-data-point text-[11px] text-primary-fixed-dim">
-            RESPONSE: 200 OK · JSON
+            RESPONSE: {activeEndpoint !== null ? activeEndpointStatus : "—"} OK · JSON
           </div>
         </div>
       </aside>

@@ -5,10 +5,12 @@ import { ModuleLearningView } from "@/components/modules/module-learning-view";
 
 type PageProps = {
   params: Promise<{ roleId: string }>;
+  searchParams: Promise<{ tab?: string }>;
 };
 
-export default async function MyModuleRolePage({ params }: PageProps) {
+export default async function MyModuleRolePage({ params, searchParams }: PageProps) {
   const { roleId } = await params;
+  const { tab } = await searchParams;
   const { orgRole } = await auth();
 
   if (orgRole !== "org:member") {
@@ -34,7 +36,7 @@ export default async function MyModuleRolePage({ params }: PageProps) {
         <span className="text-on-surface">MODUL</span>
       </nav>
 
-      <ModuleLearningView roleId={roleId} />
+      <ModuleLearningView roleId={roleId} initialTab={tab === "tutor" ? "tutor" : "reader"} />
     </div>
   );
 }

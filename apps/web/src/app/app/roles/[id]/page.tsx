@@ -108,11 +108,11 @@ export default async function RoleDetailPage({ params }: PageProps) {
         <aside className="space-y-4">
           <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 text-center shadow-sm">
             <h2 className="mb-4 font-headline-sm text-[18px] text-on-surface">
-              Brain Readiness
+              Kesiapan AI
             </h2>
             <ReadinessRing percent={role.completenessScore} />
             <p className="font-body-sm text-body-sm text-secondary">
-              Completeness
+              Kelengkapan
             </p>
           </div>
 
@@ -140,7 +140,7 @@ export default async function RoleDetailPage({ params }: PageProps) {
               <span className="material-symbols-outlined text-status-locked">
                 error
               </span>
-              Knowledge Gaps
+              Celah Pengetahuan
             </h2>
             {missingAreas.length === 0 ? (
               <p className="font-body-sm text-body-sm text-secondary">

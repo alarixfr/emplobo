@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap");
 @import "tailwindcss";
 
 /*
@@ -80,9 +80,11 @@
   --color-on-background: #1a1c19;
 
   /* ── Fonts (loaded via Google Fonts stylesheet above) ─────────────── */
-  --font-headline-lg: "Hanken Grotesk", system-ui, sans-serif;
-  --font-headline-md: "Hanken Grotesk", system-ui, sans-serif;
-  --font-headline-sm: "Hanken Grotesk", system-ui, sans-serif;
+  /* Professional, general-purpose face: Inter throughout (headlines and
+     body); JetBrains Mono reserved for data/labels/code only. */
+  --font-headline-lg: "Inter", system-ui, sans-serif;
+  --font-headline-md: "Inter", system-ui, sans-serif;
+  --font-headline-sm: "Inter", system-ui, sans-serif;
   --font-body-lg: "Inter", system-ui, sans-serif;
   --font-body-md: "Inter", system-ui, sans-serif;
   --font-body-sm: "Inter", system-ui, sans-serif;

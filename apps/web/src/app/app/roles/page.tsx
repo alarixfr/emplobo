@@ -55,7 +55,7 @@ export default async function RolesPage() {
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <h1 className="font-headline-md text-headline-md text-on-surface">
-            Roles &amp; Guides
+            Roles
           </h1>
           <p className="mt-1 max-w-2xl font-body-md text-body-md text-on-surface-variant">
             Buat peran kerja (Kasir, Barista, …) lalu latih AI per role di
@@ -145,7 +145,7 @@ export default async function RolesPage() {
                         <span className="material-symbols-outlined text-[16px]">
                           visibility
                         </span>
-                        DETAIL
+                        LIHAT
                       </Link>
                     </div>
                   </div>
@@ -156,7 +156,7 @@ export default async function RolesPage() {
         </section>
 
         {/* Create role form */}
-        <aside>
+        <aside id="new-role" className="scroll-mt-24">
           <h2 className="font-label-caps text-label-caps text-secondary">
             ROLE BARU
           </h2>

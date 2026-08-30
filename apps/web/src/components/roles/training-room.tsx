@@ -168,6 +168,7 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
   const statusPollRef = useRef<number | null>(null);
   const lockedRef = useRef(false);
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
+  const historyRef = useRef<HTMLDivElement | null>(null);
 
   const canSend = useMemo(
     () => isLocked && !isSending && input.trim().length > 0,
@@ -407,8 +408,17 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
   }, [role.id]);
 
   useEffect(() => {
+    // Jump to the newest message whenever new ones arrive.
     endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
+
+  // On first open, place the chat at the newest message without an animation,
+  // so the user never lands mid-conversation and has to scroll down.
+  useEffect(() => {
+    if (!isLoading && messages.length > 0) {
+      historyRef.current?.scrollTo({ top: historyRef.current.scrollHeight });
+    }
+  }, [isLoading, messages.length]);
 
   return (
     <>
@@ -455,7 +465,10 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
         ) : null}
 
         {/* Chat history */}
-        <div className="scroll-slim flex flex-1 flex-col gap-6 overflow-y-auto bg-surface-muted p-6">
+        <div
+          ref={historyRef}
+          className="scroll-slim flex flex-1 flex-col gap-6 overflow-y-auto bg-surface-muted p-6"
+        >
           {isLoading || !isLoaded ? (
             <div className="flex flex-col gap-6" aria-busy="true" aria-label="Memuat percakapan">
               {[0, 1].map((i) => (
@@ -568,24 +581,24 @@ function RoleTrainingChat({ role }: RoleTrainingChatProps) {
 
       {/* ── Sidebar (right rail) ──────────────────────────────────────── */}
       <aside className="flex flex-col gap-4 pb-8 lg:col-span-3 lg:pb-0">
-        {/* Brain Readiness */}
+        {/* Kesiapan AI */}
         <div className="rounded-xl border border-slate-200 bg-white p-5 text-center shadow-sm">
           <h3 className="mb-4 font-headline-sm text-[18px] text-on-surface">
-            Brain Readiness
+            Kesiapan AI
           </h3>
           <ReadinessRing percent={completeness} />
           <p className="font-body-sm text-body-sm text-secondary">
-            Completeness
+            Kelengkapan
           </p>
         </div>
 
-        {/* Knowledge Gaps */}
+        {/* Celah Pengetahuan */}
         <div className="flex-1 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h3 className="mb-4 flex items-center gap-2 font-headline-sm text-[18px] text-on-surface">
             <span className="material-symbols-outlined text-status-locked">
               error
             </span>
-            Knowledge Gaps
+            Celah Pengetahuan
           </h3>
           {missingAreas.length === 0 ? (
             <p className="font-body-sm text-body-sm text-secondary">

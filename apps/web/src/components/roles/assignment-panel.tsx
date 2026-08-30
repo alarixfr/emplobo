@@ -141,7 +141,7 @@ export function AssignmentPanel({ roleId, roleStatus }: AssignmentPanelProps) {
           type="button"
           onClick={() => void assignUsers()}
           disabled={!canAssign}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-[18px]">
             assignment_ind

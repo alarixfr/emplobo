@@ -194,7 +194,7 @@ export default function HomePage() {
         <section className="border-y border-outline-variant bg-surface-container-lowest">
           <div className="mx-auto flex w-full max-w-container flex-col items-center gap-4 px-4 py-8 md:px-10">
             <p className="font-label-caps text-label-caps text-secondary">
-              DIPERCAYA UNTUK PELATIHAN TIM UMKM
+              DIRANCANG UNTUK PELATIHAN TIM UMKM
             </p>
             <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 font-headline-sm text-lg font-semibold text-outline">
               KOPI &amp; KEDAI · RESTORAN &amp; WARUNG · RITEL &amp; TOKO ·
