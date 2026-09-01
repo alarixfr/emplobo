@@ -1,6 +1,6 @@
 <div align="center">
   
-  # Emplobo
+  # Emplob
   ### Latih sekali, ajar semua — otak SDM untuk UMKM
   
   [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_Site-success?style=for-the-badge)](https://[URL_DEMO])
