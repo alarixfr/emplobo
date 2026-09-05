@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { Env } from "../env.js";
 import type { AuthContext } from "../types.js";
 import { createCache } from "../lib/cache.js";
+import { buildChangeSummary } from "../lib/guide-changes.js";
 
 type AuthMiddleware = (
   req: Request,
@@ -341,6 +342,7 @@ export function createContentRouter(requireAdmin: AuthMiddleware, env: Env): Rou
       await persistGuideEdit({
         orgId: auth.orgId,
         roleId: role.id,
+        publishedBy: auth.userId,
         body: parsed.data,
       });
 
@@ -371,18 +373,20 @@ export function createContentRouter(requireAdmin: AuthMiddleware, env: Env): Rou
 async function persistGuideEdit(params: {
   orgId: string;
   roleId: string;
+  publishedBy: string;
   body: SaveGuideInput;
 }) {
-  const { orgId, roleId, body } = params;
+  const { orgId, roleId, publishedBy, body } = params;
 
   await prisma.$transaction(async (db) => {
     const guide = await db.guide.findFirst({
       where: { roleId, orgId },
       select: {
         id: true,
+        version: true,
         chapters: {
           orderBy: { order: "asc" },
-          select: { id: true, quiz: { select: { id: true } } },
+          select: { id: true, title: true, content: true, quiz: { select: { id: true } } },
         },
       },
     });
@@ -390,7 +394,9 @@ async function persistGuideEdit(params: {
       throw new HttpError(404, "Guide belum ada. Generate guide terlebih dahulu.");
     }
 
-    const existingChapters = new Map(guide.chapters.map((c) => [c.id, c.quiz?.id ?? null]));
+    const existingChapters = new Map(
+      guide.chapters.map((c) => [c.id, { quizId: c.quiz?.id ?? null, title: c.title, content: c.content }]),
+    );
     const submittedChapterIds = body.chapters
       .map((chapter) => chapter.id)
       .filter((id): id is string => Boolean(id));
@@ -438,7 +444,7 @@ async function persistGuideEdit(params: {
         chapterId = created.id;
       }
 
-      const previousQuizId = chapterInput.id ? existingChapters.get(chapterInput.id) ?? null : null;
+      const previousQuizId = chapterInput.id ? existingChapters.get(chapterInput.id)?.quizId ?? null : null;
 
       if (!chapterInput.quiz) {
         if (previousQuizId) {
@@ -509,9 +515,56 @@ async function persistGuideEdit(params: {
       }
     }
 
-    await db.guide.update({
-      where: { id: guide.id },
-      data: { version: { increment: 1 }, updatedAt: new Date() },
+    // Optimistic version claim: only increments if no other request already
+    // published a newer version mid-save (otherwise two editors could stamp
+    // the same version number and break the @@unique([guideId, version])).
+    const claimed = await db.guide.updateMany({
+      where: { id: guide.id, orgId, version: guide.version },
+      data: { title: body.title, version: { increment: 1 }, updatedAt: new Date() },
+    });
+    if (claimed.count === 0) {
+      throw new HttpError(
+        409,
+        "Panduan berubah dari tab/permintaan lain. Muat ulang halaman penyunting lalu coba lagi.",
+      );
+    }
+    const newVersion = guide.version + 1;
+
+    // Immutable snapshot for version history + rollback, with a deterministic
+    // changelog computed from the before/after chapter list (no LLM).
+    const beforeChapters = guide.chapters.map((c) => ({
+      title: c.title,
+      content: c.content,
+    }));
+    const afterChapters = body.chapters.map((c) => ({
+      title: c.title,
+      content: c.content,
+    }));
+    await db.guideVersion.create({
+      data: {
+        orgId,
+        guideId: guide.id,
+        roleId,
+        version: newVersion,
+        title: body.title,
+        summary: buildChangeSummary(beforeChapters, afterChapters).text,
+        content: {
+          chapters: body.chapters.map((chapter) => ({
+            title: chapter.title,
+            content: chapter.content,
+            quiz: chapter.quiz
+              ? {
+                  questions: chapter.quiz.questions.map((question) => ({
+                    question: question.question,
+                    options: [...question.options],
+                    correctIndex: question.correctIndex,
+                  })),
+                }
+              : null,
+          })),
+        },
+        publishedBy,
+      },
     });
   });
 }

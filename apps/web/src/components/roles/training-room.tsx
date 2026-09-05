@@ -184,7 +184,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
-  const [guideReady, setGuideReady] = useState(false);
+  const [draftCreated, setDraftCreated] = useState(false);
   const [knowledgeDocs, setKnowledgeDocs] = useState<KnowledgeDocumentSummary[]>([]);
   const [knowledgeQuota, setKnowledgeQuota] = useState<KnowledgeQuota | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
@@ -469,14 +469,19 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
     setIsGenerating(true);
     setGenerateError(null);
     try {
-      await withToken((token) =>
-        apiFetch(`/api/roles/${role.id}/guide/generate`, {
+      const data = await withToken((token) =>
+        apiFetch<{
+          draft: { targetVersion: number };
+          role: { id: string; status: RoleStatus };
+        }>(`/api/roles/${role.id}/guide/generate`, {
           method: "POST",
           token,
         }),
       );
-      setStatus("PUBLISHED");
-      setGuideReady(true);
+      // Generation no longer publishes immediately — it produces a reviewable
+      // draft. Status stays READY/PUBLISHED until the admin publishes it.
+      setStatus(data.role.status);
+      setDraftCreated(true);
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
         setGenerateError(
@@ -973,20 +978,20 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
                 {generateError}
               </p>
             ) : null}
-            {guideReady ? (
+            {draftCreated ? (
               <div className="space-y-2">
                 <p className="flex items-center justify-center gap-2 font-body-sm text-body-sm font-medium text-primary">
                   <span className="material-symbols-outlined text-[18px]">
-                    check_circle
+                    draft
                   </span>
-                  Guide berhasil dibuat!
+                  Panduan dibuat sebagai draf pembaruan.
                 </p>
                 <Link
                   href={`/app/roles/${role.id}`}
                   className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 px-4 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
                 >
-                  <span className="material-symbols-outlined">auto_stories</span>
-                  LIHAT GUIDE
+                  <span className="material-symbols-outlined">rate_review</span>
+                  TINJAU &amp; TERBITKAN
                 </Link>
               </div>
             ) : (

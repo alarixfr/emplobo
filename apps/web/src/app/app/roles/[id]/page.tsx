@@ -27,13 +27,22 @@ export default async function RoleDetailPage({ params }: PageProps) {
 
   let role: TrainingRoleDetail;
   let missingAreas: string[] = [];
+  let pendingGuideDraft: {
+    id: string;
+    title: string;
+    baseVersion: number;
+    createdAt: string;
+    updatedAt: string;
+  } | null = null;
   try {
-    const data = await apiFetch<{ role: TrainingRoleDetail; missingAreas?: string[] }>(
-      `/api/roles/${id}`,
-      { token },
-    );
+    const data = await apiFetch<{
+      role: TrainingRoleDetail;
+      missingAreas?: string[];
+      guideDraft?: typeof pendingGuideDraft;
+    }>(`/api/roles/${id}`, { token });
     role = data.role;
     missingAreas = data.missingAreas ?? [];
+    pendingGuideDraft = data.guideDraft ?? null;
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       notFound();
@@ -78,6 +87,14 @@ export default async function RoleDetailPage({ params }: PageProps) {
               {role.name}
             </h1>
             <StatusBadge status={role.status} />
+            {pendingGuideDraft ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-status-ready/10 px-2.5 py-1 font-label-caps text-[10px] text-status-ready">
+                <span className="material-symbols-outlined ms-fill text-[12px]">
+                  update
+                </span>
+                DRAF PERUBAHAN MENUNGGU TINJAUAN
+              </span>
+            ) : null}
           </div>
           {role.description ? (
             <p className="mt-1 max-w-2xl font-body-md text-body-md text-on-surface-variant">

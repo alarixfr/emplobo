@@ -41,6 +41,7 @@ export function createMyRouter(requireAuth: AuthMiddleware): Router {
         select: {
           id: true,
           assignedAt: true,
+          assignedGuideVersion: true,
           role: {
             select: {
               id: true,
@@ -132,6 +133,10 @@ export function createMyRouter(requireAuth: AuthMiddleware): Router {
         const scores = bestByRole.get(m.role.id) ?? [];
         return {
           ...m,
+          // True when the live guide is newer than the version the employee
+          // was assigned (or last acknowledged). Drives the "ada pembaruan
+          // panduan" badge + banner in the employee app.
+          hasGuideUpdate: (m.role.guide?.version ?? 1) > m.assignedGuideVersion,
           progress: {
             totalChapters: total,
             completedChapters: completed,
@@ -169,7 +174,7 @@ export function createMyRouter(requireAuth: AuthMiddleware): Router {
             userId: auth.userId,
             roleId: roleId.data,
           },
-          select: { id: true },
+          select: { id: true, assignedGuideVersion: true },
         });
 
         if (!assignment) {
@@ -291,6 +296,24 @@ export function createMyRouter(requireAuth: AuthMiddleware): Router {
           };
         });
 
+        const hasGuideUpdate = guide.version > assignment.assignedGuideVersion;
+
+        // Acknowledge-on-read: opening the module clears the "ada pembaruan
+        // panduan" badge. Server-side acknowledgment, idempotent (only bumps
+        // up), never lowers the baseline. Computed before the ack so this
+        // response still reports whether an update was pending.
+        if (hasGuideUpdate) {
+          await prisma.employeeModule.updateMany({
+            where: {
+              id: assignment.id,
+              orgId: auth.orgId,
+              userId: auth.userId,
+              assignedGuideVersion: { lt: guide.version },
+            },
+            data: { assignedGuideVersion: guide.version },
+          });
+        }
+
         res.json({
           guide: {
             id: guide.id,
@@ -298,6 +321,7 @@ export function createMyRouter(requireAuth: AuthMiddleware): Router {
             version: guide.version,
             publishedAt: guide.publishedAt,
           },
+          hasGuideUpdate,
           chapters,
         });
       } catch (err) {

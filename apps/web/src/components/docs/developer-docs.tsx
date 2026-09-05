@@ -90,9 +90,9 @@ const { aiMessage, role } = await res.json();`,
       {
         method: "POST",
         path: "/api/roles/:id/guide/generate",
-        desc: "Membuat/memperbarui guide ber-bab + kuis. Hanya ketika status READY atau PUBLISHED.",
+        desc: "Menghasilkan draf panduan (bab + kuis) dari transkrip training — TIDAK langsung menerbitkan. Hanya saat status READY atau PUBLISHED.",
         params: [],
-        response: 200,
+        response: 201,
         code: (lang: Lang) =>
           lang === "curl"
             ? `curl -X POST "$API/roles/$ROLE_ID/guide/generate" \\
@@ -104,7 +104,48 @@ const { aiMessage, role } = await res.json();`,
     headers: { Authorization: \`Bearer \${token}\` },
   },
 );
-const { role } = await res.json();`,
+const { draft, role } = await res.json();`,
+      },
+      {
+        method: "POST",
+        path: "/api/roles/:id/guide/draft/publish",
+        desc: "Menerbitkan draf terbaru secara atomik: progres karyawan dipertahankan (bab dengan judul sama dipetakan ulang), versi baru tercatat + riwayat.",
+        params: [],
+        response: 200,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl -X POST "$API/roles/$ROLE_ID/guide/draft/publish" \\
+  -H "Authorization: Bearer $CLERK_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{}'`
+            : `const res = await fetch(
+  \`\${API}/roles/\${roleId}/guide/draft/publish\`,
+  {
+    method: "POST",
+    headers: {
+      Authorization: \`Bearer \${token}\`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({}),
+  },
+);
+const { guide, summary } = await res.json();`,
+      },
+      {
+        method: "GET",
+        path: "/api/roles/:id/guide/versions",
+        desc: "Riwayat versi panduan (snapshot + changelog) untuk audit dan rollback.",
+        params: [],
+        response: 200,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl "$API/roles/$ROLE_ID/guide/versions" \\
+  -H "Authorization: Bearer $CLERK_TOKEN"`
+            : `const res = await fetch(
+  \`\${API}/roles/\${roleId}/guide/versions\`,
+  { headers: { Authorization: \`Bearer \${token}\` } },
+);
+const { versions } = await res.json();`,
       },
       {
         method: "POST",

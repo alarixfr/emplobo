@@ -75,6 +75,7 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
   const [guide, setGuide] = useState<ModuleGuide | null>(null);
   const [chapters, setChapters] = useState<ModuleChapter[]>([]);
   const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
+  const [hasGuideUpdate, setHasGuideUpdate] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -109,11 +110,13 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
 
       const data = await apiFetch<{
         guide: ModuleGuide;
+        hasGuideUpdate: boolean;
         chapters: ModuleChapter[];
       }>(`/api/my/modules/${roleId}/chapters`, { token });
 
       setGuide(data.guide);
       setChapters(data.chapters);
+      setHasGuideUpdate(data.hasGuideUpdate);
       setActiveChapterId((prev) => prev ?? data.chapters[0]?.id ?? null);
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Gagal memuat modul.");
@@ -200,6 +203,23 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
     <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
       {/* ── Article column (720px) ────────────────────────────────────── */}
       <div className="mx-auto w-full max-w-[720px]">
+        {/* Updated-guide acknowledgment banner (server clears the marker on
+            read, so this shows exactly once per update). */}
+        {hasGuideUpdate ? (
+          <div className="mb-4 flex items-start gap-3 rounded-lg border border-status-ready bg-status-ready/10 p-4">
+            <span className="material-symbols-outlined ms-fill text-[20px] text-status-ready">
+              update
+            </span>
+            <p className="font-body-sm text-body-sm text-on-surface">
+              <span className="font-label-caps text-label-caps text-status-ready">
+                PANDUAN TELAH DIPERBARUI
+              </span>{" "}
+              — admin/HR memperbarui isi panduan ini. Materi di bawah adalah
+              versi terbaru (v{guide.version}).
+            </p>
+          </div>
+        ) : null}
+
         {/* Mobile chapter stepper — desktop has the sticky TOC instead */}
         <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-outline-variant bg-surface-container-lowest p-2 shadow-sm lg:hidden">
           <button

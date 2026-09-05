@@ -1,6 +1,8 @@
 export type EmployeeModuleSummary = {
   id: string;
   assignedAt: string;
+  assignedGuideVersion: number;
+  hasGuideUpdate: boolean;
   role: {
     id: string;
     name: string;

@@ -158,6 +158,7 @@ export function buildGuideSystemPrompt(
   roleName: string,
   knowledgeBaseSection: string,
   recentUserMessages: string[] = [],
+  existingGuideStructure?: string,
 ): string {
   return [
     `ANDA ADALAH: penulis panduan onboarding (guide) untuk role kerja "${roleName}" di sebuah UMKM.`,
@@ -168,6 +169,18 @@ export function buildGuideSystemPrompt(
     "1. Transkrip training di dalam <business_data> — ini sumber utama. Seluruh prosedur, angka, takaran, dan istilah harus absah dari transkrip ini.",
     "2. Knowledge library di dalam <knowledge_base> — hanya boleh dipakai untuk memperkaya bila KONSISTEN dengan transkrip.",
     "- JANGAN PERNAH mengarang prosedur, angka, takaran, harga, atau fakta yang tidak ada di sumber. Jika ada angka penting yang hilang, tuliskan instruksi untuk ditanyakan ke atasan, jangan menebak.",
+    "",
+    existingGuideStructure
+      ? [
+          "UPDATE PANDUAN YANG SUDAH ADA (ikuti ini saat admin meminta pembaruan):",
+          "Panduan lama tercantum di bawah dalam [STRUKTUR PANDUAN SAAT INI].",
+          "- Pertahankan bab yang masih benar dan relevan; perbarui isinya bila perlu.",
+          "- Tambahkan bab baru untuk materi yang belum tercakup; jangan mengulang struktur yang tak berubah.",
+          "- Saat isi sebuah bab sedikit berubah namun esensinya sama, JAGA judul bab tetap sama supaya progres karyawan yang sudah selesai membaca bab itu tidak hilang.",
+          `[STRUKTUR PANDUAN SAAT INI]`,
+          existingGuideStructure,
+        ].join("\n")
+      : "STRUKTUR PANDUAN (pertama kali):",
     "",
     "STRUKTUR PANDUAN:",
     "- Buat 2–4 bab. Tiap bab berjudul padat dan berisi Markdown yang rapi (langkah bernomor, bullet, dan tabel bila relevan). Target pembaca: karyawan baru yang ingin langsung praktik.",

@@ -68,6 +68,7 @@ model TrainingRole {
 
   trainingMessages TrainingMessage[]
   guide            Guide?
+  guideDraft       GuideDraft?
   employeeModules  EmployeeModule[]
 
   @@index([orgId])
@@ -104,6 +105,7 @@ model Guide {
 
   role     TrainingRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
   chapters Chapter[]
+  versions GuideVersion[]
 
   @@index([orgId])
 }
@@ -134,6 +136,52 @@ model Quiz {
   chapter   Chapter        @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   questions QuizQuestion[]
 
+  @@index([orgId])
+}
+
+// ── GUIDE UPDATE LIFECYCLE ─────────────────────────────────────────────
+// Regenerating a published guide must never clobber the live content or
+// wipe employee progress. The update flow is: regenerate → GuideDraft
+// (admin reviews the diff) → publish (atomic, progress-preserving, versioned).
+// Every publish writes an immutable GuideVersion snapshot for history +
+// one-click rollback. A draft for a role must exist before publish.
+
+model GuideDraft {
+  id          String   @id @default(cuid())
+  orgId       String
+  roleId      String   @unique
+  title       String   @db.VarChar(200)
+  baseVersion Int      @default(1) // guide version this draft was generated from
+  content     Json // { chapters: [{ title, content, quiz? }] } — admin-only review material
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  role TrainingRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
+}
+
+// Immutable snapshot of every published guide version (v1, v2, …). Kept for
+// the admin version-history view and for re-opening an old version as a new
+// draft (rollback). `content` is a full copy of chapters at publish time —
+// admin-only, never employee-facing.
+model GuideVersion {
+  id          String   @id @default(cuid())
+  orgId       String
+  guideId     String
+  roleId      String
+  version     Int
+  title       String   @db.VarChar(200)
+  summary     String   @db.Text // changelog ("Dipublikasikan pertama kali", "Bab X diperbarui", …)
+  content     Json // snapshot: { chapters: [{ title, content, quiz? }] }
+  publishedBy String
+  publishedAt DateTime @default(now())
+
+  guide Guide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@unique([guideId, version])
+  @@index([guideId])
   @@index([orgId])
 }
 
@@ -169,12 +217,13 @@ model QuizAttempt {
 // ── EMPLOYEE ASSIGNMENT & PROGRESS ─────────────────────────────────────────
 
 model EmployeeModule {
-  id         String   @id @default(cuid())
-  orgId      String
-  userId     String
-  roleId     String
-  assignedAt DateTime @default(now())
-  assignedBy String
+  id                   String   @id @default(cuid())
+  orgId                String
+  userId               String
+  roleId               String
+  assignedGuideVersion Int      @default(1) // guide version the employee was assigned
+  assignedAt           DateTime @default(now())
+  assignedBy           String
 
   user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   role TrainingRole @relation(fields: [roleId], references: [id], onDelete: Cascade)

@@ -48,3 +48,46 @@ export const STATUS_LABEL: Record<RoleStatus, string> = {
   READY: "Siap",
   PUBLISHED: "Dipublikasikan",
 };
+
+// ── Guide update lifecycle (draft review + version history) ───────────────
+export type GuideChangeStats = {
+  addedCount: number;
+  updatedCount: number;
+  removedCount: number;
+  unchangedCount: number;
+  hasChanges: boolean;
+};
+
+export type GuideDraftChapter = {
+  title: string;
+  content: string;
+  quiz: {
+    questions: {
+      question: string;
+      options: string[];
+      correctIndex: number;
+    }[];
+  } | null;
+};
+
+export type GuideDraftFull = {
+  id: string;
+  title: string;
+  baseVersion: number;
+  targetVersion: number;
+  createdAt: string;
+  updatedAt: string;
+  changes: GuideChangeStats & { text: string };
+  summary: string;
+  chapters: GuideDraftChapter[];
+};
+
+export type GuideVersionInfo = {
+  id: string;
+  version: number;
+  title: string;
+  summary: string;
+  publishedBy: string;
+  publishedByName: string | null;
+  publishedAt: string;
+};

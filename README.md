@@ -68,7 +68,8 @@ Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = sat
 | Fitur | Deskripsi | Keunggulan |
 |----------|--------------|---------------|
 | **Training Room** | Admin chat dengan AI untuk mengisi SOP/know-how per Role | AI self-score completeness & gate readiness (≥75 → READY) |
-| **Guide Generation** | Dari transcript training → chapter markdown + kuis | Structured JSON tervalidasi Zod, ditulis atomik di DB |
+| **Guide Generation** | Dari transcript training → chapter markdown + kuis | Structured JSON tervalidasi Zod; hasil masuk sebagai **draf** untuk ditinjau admin, bukan langsung menimpa guide live |
+| **Siklus Update Guide** | Regenerasi dari training lanjutan → draf → tinjauan → terbit atomik | Progres karyawan dipertahankan (bab dengan judul sama dipetakan ulang), tiap terbitan disimpan sebagai versi immutabel + changelog, dan bisa dibuka ulang untuk rollback; karyawan diberi lencana "panduan diperbarui" |
 | **Training File Attach** | Seret & letakkan file SOP langsung ke composer, atau klik tombol attach, untuk upload dari chat | File masuk ke Knowledge Library sebagai DRAFT dan baru dipakai AI setelah dikonfirmasi |
 | **Content Editor** | Tinjau & edit guide hasil AI per role: ubah chapter (tambah/pindah/hapus), edit markdown dengan pratinjau, dan kelola soal kuis + jawaban benar | Simpan atomik satu klik, langsung berlaku untuk karyawan; correctIndex hanya untuk admin |
 | **Employee Learning** | Baca chapter → kuis → progress tracking | Jawaban benar dinilai server-side; `correctIndex` tidak bocor ke client |
@@ -81,7 +82,8 @@ Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = sat
 - **Training lock** - Mencegah dua admin train Role yang sama secara bersamaan
 - **Rate limit & cooldown** - Proteksi biaya AI (Upstash Redis) di setiap endpoint AI (training, guide gen, chat message, chat session)
 - **Knowledge Library** - Repositori knowledge organisasi dengan upload file max 10 MB, quota org 100 MB, editor manual, dan chunking untuk retrieval AI. Dokumen baru masuk sebagai **DRAFT**; admin mengonfirmasi (dari Knowledge Library atau Training Room) sebelum isinya dipakai AI training/tutor — mencegah knowledge yang belum divalidasi ikut menjawab.
-- **Content Editor (/app/content)** - Editor manual guide/kuis hasil AI: reorder/tambah/hapus chapter, editor markdown + pratinjau, dan builder soal kuis; simpan atomik dengan versi bertambah.
+- **Content Editor (/app/content)** - Editor manual guide/kuis hasil AI: reorder/tambah/hapus chapter, editor markdown + pratinjau, dan builder soal kuis; simpan atomik dengan versi bertambah dan setiap simpanan merekam snapshot GuideVersion untuk riwayat.
+- **Guide update lifecycle** - Regenerasi AI (3/jam/role, rate-limited) tidak pernah menimpa guide live: hasilnya menjadi **draf tinjauan** dengan ringkasan perubahan deterministik (bab baru/diubah/dihapus). Penerbitan adalah satu transaksi atomik yang menjaga progres karyawan (bab berjudul sama dipetakan ke baris lama, quiz diganti, bab dihapus beserta progresnya), menaikkan versi, menulis snapshot immutabel + changelog, dan memberi karyawan lencana **"Ada pembaruan"** yang hilang setelah mereka membaca versi terbaru. Riwayat versi bisa dibuka ulang sebagai draf (rollback).
 - **Dashboard admin** - Statistik lengkap: completion %, skor kuis, per-role progress, pemakaian AI 30 hari
 - **Employee Directory** - Halaman khusus admin untuk memantau progress tiap karyawan (search, filter role, AI insight)
 - **Developer Docs & Halaman Legal** - `/docs` (API reference 3-pane dengan dark code pane cURL/Node) dan `/privacy`, `/terms`
@@ -237,7 +239,7 @@ tambahan yang tetap dibatasi oleh tenant dan role yang sedang aktif.
 
 ### Database Schema
 
-Lihat `packages/db/prisma/schema.prisma`. Model inti: `User` (mirror Clerk), `TrainingRole`, `TrainingMessage`, `Guide`/`Chapter`, `Quiz`/`QuizQuestion`/`QuizAttempt`, `EmployeeModule`, `ChapterProgress`, `ChatSession`/`ChatMessage`, `AiUsageLog`, `KnowledgeQuota`, `KnowledgeDocument`, `KnowledgeChunk`. Setiap model tenant-owned punya kolom `orgId`.
+Lihat `packages/db/prisma/schema.prisma`. Model inti: `User` (mirror Clerk), `TrainingRole`, `TrainingMessage`, `Guide`/`Chapter`, `GuideDraft` (draf pembaruan menunggu tinjauan), `GuideVersion` (snapshot immutabel + changelog tiap terbitan), `Quiz`/`QuizQuestion`/`QuizAttempt`, `EmployeeModule`, `ChapterProgress`, `ChatSession`/`ChatMessage`, `AiUsageLog`, `KnowledgeQuota`, `KnowledgeDocument`, `KnowledgeChunk`. Setiap model tenant-owned punya kolom `orgId`.
 
 ### Folder Structure
 

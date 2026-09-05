@@ -1,4 +1,4 @@
-import { prisma, type RoleStatus } from "@emplobo/db";
+import { prisma, type Prisma, type RoleStatus } from "@emplobo/db";
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
 import { createCache } from "../lib/cache.js";
@@ -15,6 +15,7 @@ import {
   type AiCallResult,
 } from "../lib/openrouter.js";
 import { buildGuideSystemPrompt, buildScoringPrompt, buildTrainingSystemPrompt } from "../lib/prompts.js";
+import { buildChangeSummary, chapterKey, type FlatChapter } from "../lib/guide-changes.js";
 import { createRateLimiter } from "../lib/rate-limit.js";
 import { logAiUsage } from "../lib/ai-usage.js";
 import { syncOrgMembersIfStale } from "../lib/membership.js";
@@ -73,6 +74,242 @@ const guideGenerationSchema = z.object({
 });
 
 type GeneratedChapter = z.infer<typeof guideChapterSchema>;
+
+// ── Guide update lifecycle (regenerate → draft → review → publish) ─────────
+// Canonical draft/snapshot chapter shape. Unlike guideGenerationSchema (one
+// quiz question per chapter from the AI), this supports the manual content
+// editor's multi-question quizzes as well, so both publish paths share it and
+// snapshots are interchangeable for rollback.
+const draftQuestionSchema = z.object({
+  question: z.string().trim().min(1),
+  options: z.array(z.string().trim().min(1)).length(4),
+  correctIndex: z.number().int().min(0).max(3),
+});
+
+const draftChapterSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  content: z.string().trim().min(1),
+  quiz: z
+    .object({
+      questions: z.array(draftQuestionSchema).min(1).max(25),
+    })
+    .nullable()
+    .optional(),
+});
+
+const draftContentSchema = z.object({
+  chapters: z.array(draftChapterSchema).min(1).max(20),
+});
+
+export type DraftQuestion = z.infer<typeof draftQuestionSchema>;
+type DraftChapter = z.infer<typeof draftChapterSchema>;
+
+function generatedToDraftChapter(chapter: GeneratedChapter): DraftChapter {
+  return {
+    title: stripStructuralMarkers(chapter.title) || "Bab",
+    content:
+      stripStructuralMarkers(chapter.content) ||
+      "(Bab ini tidak memiliki konten yang bisa ditampilkan.)",
+    quiz: chapter.quiz
+      ? {
+          questions: [
+            {
+              question:
+                stripStructuralMarkers(chapter.quiz.question) ||
+                "Pertanyaan kuis untuk bab ini.",
+              options: chapter.quiz.options.map(
+                (option, optionIndex) =>
+                  stripStructuralMarkers(option) || `Opsi ${optionIndex + 1}`,
+              ),
+              correctIndex: chapter.quiz.correctIndex,
+            },
+          ],
+        }
+      : null,
+  };
+}
+
+function parseDraftContent(raw: unknown): DraftChapter[] | null {
+  const parsed = draftContentSchema.safeParse(raw);
+  return parsed.success ? parsed.data.chapters : null;
+}
+
+class GuidePublishConflict extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GuidePublishConflict";
+  }
+}
+
+async function createQuizWithQuestions(
+  tx: Prisma.TransactionClient,
+  params: { chapterId: string; orgId: string; questions: DraftQuestion[] },
+): Promise<void> {
+  const quiz = await tx.quiz.create({
+    data: { chapterId: params.chapterId, orgId: params.orgId },
+    select: { id: true },
+  });
+  await tx.quizQuestion.createMany({
+    data: params.questions.map((question, index) => ({
+      quizId: quiz.id,
+      orgId: params.orgId,
+      order: index + 1,
+      question: question.question,
+      options: question.options,
+      correctIndex: question.correctIndex,
+    })),
+  });
+}
+
+/**
+ * Atomic, progress-preserving publish of a GuideDraft:
+ *  - consumes the draft row inside the transaction (acts as a lock — the
+ *    losing concurrent publish fails cleanly instead of double-writing),
+ *  - bumps Guide.version via an optimistic `updateMany` claim (extra guard),
+ *  - keeps matching-chapter rows (title match) so ChapterProgress survives; a
+ *    chapter whose content changed but title stayed keeps its progress,
+ *  - writes an immutable GuideVersion snapshot for history + rollback,
+ *  - all-or-nothing: any failure rolls the whole swap back.
+ */
+async function publishGuideDraftTx(
+  tx: Prisma.TransactionClient,
+  params: { orgId: string; roleId: string; publishedBy: string },
+): Promise<{
+  version: number;
+  summary: string;
+  targetTitle: string;
+  hadGuide: boolean;
+}> {
+  const { orgId, roleId, publishedBy } = params;
+
+  const draft = await tx.guideDraft.findFirst({
+    where: { roleId, orgId },
+    select: { id: true, title: true, content: true },
+  });
+  if (!draft) {
+    throw new GuidePublishConflict("Tidak ada draf perubahan untuk diterbitkan.");
+  }
+  // Claim the draft BEFORE any guide writes. Only the transaction that owns
+  // the draft proceeds; the other gets "sudah diterbitkan" (rolled back too).
+  await tx.guideDraft.deleteMany({ where: { id: draft.id, roleId, orgId } });
+
+  const chapters = parseDraftContent(draft.content);
+  if (!chapters) {
+    throw new GuidePublishConflict("Draf tidak memiliki konten yang valid.");
+  }
+
+  const now = new Date();
+
+  const existingGuide = await tx.guide.findFirst({
+    where: { roleId, orgId },
+    select: {
+      id: true,
+      version: true,
+      chapters: {
+        orderBy: { order: "asc" },
+        select: { id: true, title: true, content: true },
+      },
+    },
+  });
+
+  let guideId: string;
+  let newVersion: number;
+
+  if (!existingGuide) {
+    const created = await tx.guide.create({
+      data: { orgId, roleId, title: draft.title, version: 1, publishedAt: now },
+      select: { id: true },
+    });
+    guideId = created.id;
+    newVersion = 1;
+  } else {
+    const claimed = await tx.guide.updateMany({
+      where: { id: existingGuide.id, orgId, version: existingGuide.version },
+      data: {
+        title: draft.title,
+        version: { increment: 1 },
+        publishedAt: now,
+        updatedAt: now,
+      },
+    });
+    if (claimed.count === 0) {
+      throw new GuidePublishConflict(
+        "Panduan sedang diperbarui oleh permintaan lain. Muat ulang dan coba lagi.",
+      );
+    }
+    guideId = existingGuide.id;
+    newVersion = existingGuide.version + 1;
+  }
+
+  const existingChapters = existingGuide?.chapters ?? [];
+  const matchedIds = new Set<string>();
+
+  for (const [index, chapter] of chapters.entries()) {
+    const order = index + 1;
+    const key = chapterKey(chapter.title);
+    const match = existingChapters.find(
+      (existing) => chapterKey(existing.title) === key && !matchedIds.has(existing.id),
+    );
+
+    if (match) {
+      matchedIds.add(match.id);
+      await tx.chapter.update({
+        where: { id: match.id },
+        data: { order, title: chapter.title, content: chapter.content },
+      });
+      await tx.quiz.deleteMany({ where: { chapterId: match.id, orgId } });
+      if (chapter.quiz) {
+        await createQuizWithQuestions(tx, { chapterId: match.id, orgId, questions: chapter.quiz.questions });
+      }
+    } else {
+      const created = await tx.chapter.create({
+        data: { guideId, orgId, order, title: chapter.title, content: chapter.content },
+        select: { id: true },
+      });
+      if (chapter.quiz) {
+        await createQuizWithQuestions(tx, { chapterId: created.id, orgId, questions: chapter.quiz.questions });
+      }
+    }
+  }
+
+  const removedIds = existingChapters
+    .filter((existing) => !matchedIds.has(existing.id))
+    .map((existing) => existing.id);
+  if (removedIds.length > 0) {
+    await tx.chapter.deleteMany({ where: { id: { in: removedIds }, guideId, orgId } });
+  }
+
+  const changes = buildChangeSummary(
+    existingChapters.map((c) => ({ title: c.title, content: c.content })),
+    chapters.map((c) => ({ title: c.title, content: c.content })),
+  );
+  const summary = existingGuide
+    ? changes.text
+    : `Panduan diterbitkan pertama kali — ${chapters.length} bab.`;
+
+  await tx.guideVersion.create({
+    data: {
+      orgId,
+      guideId,
+      roleId,
+      version: newVersion,
+      title: draft.title,
+      summary,
+      content: {
+        chapters: chapters.map((chapter) => ({
+          title: chapter.title,
+          content: chapter.content,
+          quiz: chapter.quiz
+            ? { questions: chapter.quiz.questions.map((q) => ({ ...q, options: [...q.options] })) }
+            : null,
+        })),
+      },
+      publishedBy,
+    },
+  });
+
+  return { version: newVersion, summary, targetTitle: draft.title, hadGuide: Boolean(existingGuide) };
+}
 
 // Guide generation is the most expensive single AI call — 3/hour per Role
 // (Section 5.3). Protects against accidental double-clicks and cost blowups.
@@ -239,9 +476,24 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           updatedAt: string;
         }>(`role-gaps:${id.data}`);
 
+        // Lightweight guide-draft meta so the role page can immediately show
+        // "ada draf perubahan yang belum diterbitkan" (no content here — the
+        // full draft is fetched on demand via GET /guide/draft).
+        const guideDraft = await prisma.guideDraft.findFirst({
+          where: { roleId: role.id, orgId: auth.orgId },
+          select: {
+            id: true,
+            title: true,
+            baseVersion: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+
         res.json({
           role,
           missingAreas: gaps?.missingAreas ?? [],
+          guideDraft,
         });
       } catch (err) {
         next(err);
@@ -776,7 +1028,11 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
     },
   );
 
-  // POST /api/roles/:id/guide/generate (Section 5.3)
+  // POST /api/roles/:id/guide/generate — regenerate the guide from the full
+  // training transcript. Never writes to the live guide: it produces a
+  // reviewable GuideDraft (Section 5.3 upgrade). Publishing is a separate,
+  // explicit, atomic step (POST /guide/draft/publish) so a regeneration can
+  // never silently clobber the guide employees already read.
   router.post(
     "/:id/guide/generate",
     async (req: Request, res: Response, next: NextFunction) => {
@@ -823,6 +1079,26 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         guideGenInFlight.add(roleKey);
         guideGenKey = roleKey;
 
+        // On updates, tell the model what already exists so it keeps coherent
+        // chapters (and preserves titles of essentially-unchanged chapters,
+        // which keeps employee ChapterProgress after the update is published).
+        const existingGuide = await prisma.guide.findFirst({
+          where: { roleId: role.id, orgId: auth.orgId },
+          select: {
+            id: true,
+            version: true,
+            chapters: {
+              orderBy: { order: "asc" },
+              select: { title: true, content: true },
+            },
+          },
+        });
+        const existingGuideStructure = existingGuide
+          ? existingGuide.chapters
+              .map((chapter, index) => `${index + 1}. ${chapter.title}`)
+              .join("\n")
+          : undefined;
+
         // Build from ALL training messages, not the sliding window
         // (this is a one-shot batch job — generous token budget is fine).
         const fullTranscript = await prisma.trainingMessage.findMany({
@@ -852,6 +1128,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           fullTranscript
             .filter((m) => m.sender === "admin")
             .map((m) => m.content),
+          existingGuideStructure,
         );
 
         const transcriptMessage: AnthropicMessage = {
@@ -904,101 +1181,380 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           return;
         }
 
+        const draftChapters = generated.chapters.map(generatedToDraftChapter);
+        const existingFlat: FlatChapter[] = (existingGuide?.chapters ?? []).map((c) => ({
+          title: c.title,
+          content: c.content,
+        }));
+        const changes = buildChangeSummary(
+          existingFlat,
+          draftChapters.map((c) => ({ title: c.title, content: c.content })),
+        );
+
         const now = new Date();
-
-        // All-or-nothing write: Guide + Chapters + Quiz + QuizQuestions
-        // in one $transaction (Section 5.3 step 4, Section 8 checklist).
-        await prisma.$transaction(async (tx) => {
-          const guide = await tx.guide.upsert({
-            where: { roleId: role.id },
-            create: {
-              orgId: auth.orgId,
-              roleId: role.id,
-              title: `Panduan ${role.name}`,
-              publishedAt: now,
-            },
-            update: {
-              title: `Panduan ${role.name}`,
-              version: { increment: 1 },
-              publishedAt: now,
-              updatedAt: now,
-            },
-            select: { id: true },
-          });
-
-          // Replace chapters (cascades to quiz/questions + chapter progress)
-          await tx.chapter.deleteMany({
-            where: { guideId: guide.id, orgId: auth.orgId },
-          });
-
-          for (const [i, chapter] of generated.chapters.entries()) {
-            // Strip any structural delimiters the model echoed into the guide
-            // so they never render as literal text to employees (Section 7).
-            const chapterTitle =
-              stripStructuralMarkers(chapter.title) || `Bab ${i + 1}`;
-            const chapterContent =
-              stripStructuralMarkers(chapter.content) ||
-              "(Bab ini tidak memiliki konten yang bisa ditampilkan.)";
-
-            const chapterRow = await tx.chapter.create({
-              data: {
-                guideId: guide.id,
-                orgId: auth.orgId,
-                order: i + 1,
-                title: chapterTitle,
-                content: chapterContent,
-              },
-              select: { id: true },
-            });
-
-            if (chapter.quiz) {
-              const quiz = await tx.quiz.create({
-                data: {
-                  chapterId: chapterRow.id,
-                  orgId: auth.orgId,
-                },
-                select: { id: true },
-              });
-
-              const quizQuestion =
-                stripStructuralMarkers(chapter.quiz.question) ||
-                "Pertanyaan kuis untuk bab ini.";
-              const quizOptions = chapter.quiz.options.map(
-                (option, optionIndex) =>
-                  stripStructuralMarkers(option) || `Opsi ${optionIndex + 1}`,
-              );
-
-              await tx.quizQuestion.createMany({
-                data: [
-                  {
-                    quizId: quiz.id,
-                    orgId: auth.orgId,
-                    question: quizQuestion,
-                    options: quizOptions,
-                    correctIndex: chapter.quiz.correctIndex,
-                  },
-                ],
-              });
-            }
-          }
-
-          await tx.trainingRole.update({
-            where: { id: role.id },
-            data: { status: "PUBLISHED" },
-          });
+        const draft = await prisma.guideDraft.upsert({
+          where: { roleId: role.id },
+          create: {
+            orgId: auth.orgId,
+            roleId: role.id,
+            title: `Panduan ${role.name}`,
+            baseVersion: existingGuide?.version ?? 1,
+            content: { chapters: draftChapters },
+            createdBy: auth.userId,
+          },
+          update: {
+            title: `Panduan ${role.name}`,
+            baseVersion: existingGuide?.version ?? 1,
+            content: { chapters: draftChapters },
+            createdBy: auth.userId,
+            updatedAt: now,
+          },
+          select: { id: true, title: true, baseVersion: true, createdAt: true, updatedAt: true },
         });
 
-        // Invalidate caches (Section 6): guide + role status
-        await cache.invalidateGuide(role.id);
-        await cache.del(`role-status:${role.id}`);
-
-        res.json({ role: { id: role.id, status: "PUBLISHED" } });
+        // Nothing is published yet — role stays READY/PUBLISHED until the
+        // admin reviews and explicitly publishes the draft.
+        res.status(201).json({
+          draft: {
+            id: draft.id,
+            title: draft.title,
+            baseVersion: draft.baseVersion,
+            targetVersion: (existingGuide?.version ?? 0) + 1,
+            createdAt: draft.createdAt,
+            updatedAt: draft.updatedAt,
+            changes,
+            summary: existingGuide
+              ? changes.text
+              : `Panduan pertama kali dibuat — ${draftChapters.length} bab.`,
+            chapters: draftChapters,
+          },
+          role: { id: role.id, status: role.status },
+        });
       } catch (err) {
         next(err);
       } finally {
         if (guideGenKey) {
           guideGenInFlight.delete(guideGenKey);
         }
+      }
+    },
+  );
+
+  // GET /api/roles/:id/guide/draft — review the pending draft (admin only).
+  // Change summary is recomputed against the CURRENT live guide so it stays
+  // honest even if the guide was edited between generation and review.
+  router.get(
+    "/:id/guide/draft",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const auth = requireAuthContext(req);
+        const id = z.string().cuid().safeParse(req.params.id);
+        if (!id.success) {
+          res.status(400).json({ error: "invalid role id" });
+          return;
+        }
+
+        const role = await prisma.trainingRole.findFirst({
+          where: { id: id.data, orgId: auth.orgId, isActive: true },
+          select: { id: true },
+        });
+        if (!role) {
+          res.status(404).json({ error: "role not found" });
+          return;
+        }
+
+        const [draft, liveGuide] = await Promise.all([
+          prisma.guideDraft.findFirst({
+            where: { roleId: role.id, orgId: auth.orgId },
+            select: { id: true, title: true, baseVersion: true, content: true, createdAt: true, updatedAt: true },
+          }),
+          prisma.guide.findFirst({
+            where: { roleId: role.id, orgId: auth.orgId },
+            select: {
+              version: true,
+              chapters: { orderBy: { order: "asc" }, select: { title: true, content: true } },
+            },
+          }),
+        ]);
+
+        if (!draft) {
+          res.status(404).json({ error: "no guide draft for this role" });
+          return;
+        }
+
+        const chapters = parseDraftContent(draft.content) ?? [];
+        const changes = buildChangeSummary(
+          (liveGuide?.chapters ?? []).map((c) => ({ title: c.title, content: c.content })),
+          chapters.map((c) => ({ title: c.title, content: c.content })),
+        );
+
+        res.json({
+          draft: {
+            id: draft.id,
+            title: draft.title,
+            baseVersion: draft.baseVersion,
+            targetVersion: (liveGuide?.version ?? 0) + 1,
+            createdAt: draft.createdAt,
+            updatedAt: draft.updatedAt,
+            changes,
+            summary: liveGuide
+              ? changes.text
+              : `Panduan pertama kali dibuat — ${chapters.length} bab.`,
+            chapters,
+          },
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
+  // POST /api/roles/:id/guide/draft/publish — atomic, progress-preserving,
+  // versioned publish of the pending draft. Rate-limited only by the draft's
+  // existence (no AI call); concurrent publishes fail cleanly via the
+  // transaction-level draft claim.
+  router.post(
+    "/:id/guide/draft/publish",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const auth = requireAuthContext(req);
+        const id = z.string().cuid().safeParse(req.params.id);
+        if (!id.success) {
+          res.status(400).json({ error: "invalid role id" });
+          return;
+        }
+
+        const body = z.object({}).strict().safeParse(req.body ?? {});
+        if (!body.success) {
+          res.status(400).json({ error: "invalid body", details: body.error.flatten() });
+          return;
+        }
+
+        const role = await prisma.trainingRole.findFirst({
+          where: { id: id.data, orgId: auth.orgId, isActive: true },
+          select: { id: true },
+        });
+        if (!role) {
+          res.status(404).json({ error: "role not found" });
+          return;
+        }
+
+        const result = await prisma.$transaction((tx) =>
+          publishGuideDraftTx(tx, {
+            orgId: auth.orgId,
+            roleId: role.id,
+            publishedBy: auth.userId,
+          }),
+        );
+
+        await prisma.trainingRole.update({
+          where: { id: role.id },
+          data: { status: "PUBLISHED" },
+        });
+
+        // Invalidate caches (Section 6): guide + role status
+        await cache.invalidateGuide(role.id);
+        await cache.del(`role-status:${role.id}`);
+
+        res.json({
+          guide: { version: result.version },
+          role: { id: role.id, status: "PUBLISHED" },
+          summary: result.summary,
+        });
+      } catch (err) {
+        if (err instanceof GuidePublishConflict) {
+          res.status(409).json({ error: err.message });
+          return;
+        }
+        next(err);
+      }
+    },
+  );
+
+  // DELETE /api/roles/:id/guide/draft — discard the pending review draft.
+  router.delete(
+    "/:id/guide/draft",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const auth = requireAuthContext(req);
+        const id = z.string().cuid().safeParse(req.params.id);
+        if (!id.success) {
+          res.status(400).json({ error: "invalid role id" });
+          return;
+        }
+
+        const role = await prisma.trainingRole.findFirst({
+          where: { id: id.data, orgId: auth.orgId, isActive: true },
+          select: { id: true },
+        });
+        if (!role) {
+          res.status(404).json({ error: "role not found" });
+          return;
+        }
+
+        const deleted = await prisma.guideDraft.deleteMany({
+          where: { roleId: role.id, orgId: auth.orgId },
+        });
+        if (deleted.count === 0) {
+          res.status(404).json({ error: "no guide draft for this role" });
+          return;
+        }
+
+        res.json({ ok: true });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
+  // GET /api/roles/:id/guide/versions — version history + changelog.
+  router.get(
+    "/:id/guide/versions",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const auth = requireAuthContext(req);
+        const id = z.string().cuid().safeParse(req.params.id);
+        if (!id.success) {
+          res.status(400).json({ error: "invalid role id" });
+          return;
+        }
+
+        const role = await prisma.trainingRole.findFirst({
+          where: { id: id.data, orgId: auth.orgId, isActive: true },
+          select: { id: true },
+        });
+        if (!role) {
+          res.status(404).json({ error: "role not found" });
+          return;
+        }
+
+        const versions = await prisma.guideVersion.findMany({
+          where: { roleId: role.id, orgId: auth.orgId },
+          orderBy: { version: "desc" },
+          select: { id: true, version: true, title: true, summary: true, publishedBy: true, publishedAt: true },
+        });
+
+        const publisherIds = [...new Set(versions.map((v) => v.publishedBy))];
+        const publishers =
+          publisherIds.length > 0
+            ? await prisma.user.findMany({
+                where: { id: { in: publisherIds }, orgId: auth.orgId },
+                select: { id: true, name: true },
+              })
+            : [];
+        const publisherNames = new Map(publishers.map((u) => [u.id, u.name]));
+
+        res.json({
+          versions: versions.map((v) => ({
+            ...v,
+            publishedByName: publisherNames.get(v.publishedBy) ?? null,
+          })),
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
+  // POST /api/roles/:id/guide/draft/from-version — reopen an old published
+  // version as a new draft (rollback). Publishing it bumps to the next
+  // version; nothing historical is overwritten.
+  router.post(
+    "/:id/guide/draft/from-version",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        const auth = requireAuthContext(req);
+        const id = z.string().cuid().safeParse(req.params.id);
+        if (!id.success) {
+          res.status(400).json({ error: "invalid role id" });
+          return;
+        }
+
+        const body = z
+          .object({ version: z.number().int().min(1) })
+          .strict()
+          .safeParse(req.body);
+        if (!body.success) {
+          res.status(400).json({ error: "invalid body", details: body.error.flatten() });
+          return;
+        }
+
+        const role = await prisma.trainingRole.findFirst({
+          where: { id: id.data, orgId: auth.orgId, isActive: true },
+          select: { id: true },
+        });
+        if (!role) {
+          res.status(404).json({ error: "role not found" });
+          return;
+        }
+
+        const pendingDraft = await prisma.guideDraft.findFirst({
+          where: { roleId: role.id, orgId: auth.orgId },
+          select: { id: true },
+        });
+        if (pendingDraft) {
+          res.status(409).json({
+            error: "Masih ada draf yang belum diterbitkan. Terbitkan atau batalkan dulu.",
+          });
+          return;
+        }
+
+        const version = await prisma.guideVersion.findFirst({
+          where: { roleId: role.id, orgId: auth.orgId, version: body.data.version },
+          select: { id: true, title: true, version: true, content: true },
+        });
+        if (!version) {
+          res.status(404).json({ error: "guide version not found" });
+          return;
+        }
+
+        const chapters = parseDraftContent(version.content);
+        if (!chapters) {
+          res.status(500).json({ error: "saved guide version could not be reopened" });
+          return;
+        }
+
+        const draft = await prisma.guideDraft.create({
+          data: {
+            orgId: auth.orgId,
+            roleId: role.id,
+            title: version.title,
+            baseVersion: version.version,
+            content: { chapters },
+            createdBy: auth.userId,
+          },
+          select: { id: true, title: true, baseVersion: true, createdAt: true, updatedAt: true },
+        });
+
+        const liveGuide = await prisma.guide.findFirst({
+          where: { roleId: role.id, orgId: auth.orgId },
+          select: {
+            version: true,
+            chapters: { orderBy: { order: "asc" }, select: { title: true, content: true } },
+          },
+        });
+        const changes = buildChangeSummary(
+          (liveGuide?.chapters ?? []).map((c) => ({ title: c.title, content: c.content })),
+          chapters.map((c) => ({ title: c.title, content: c.content })),
+        );
+
+        res.status(201).json({
+          draft: {
+            id: draft.id,
+            title: draft.title,
+            baseVersion: draft.baseVersion,
+            targetVersion: (liveGuide?.version ?? 0) + 1,
+            createdAt: draft.createdAt,
+            updatedAt: draft.updatedAt,
+            changes,
+            summary: liveGuide
+              ? `Dibuka dari versi v${version.version} untuk dipulihkan (rollback).\n${changes.text}`
+              : `Dibuka dari versi v${version.version} (tidak ada panduan aktif).`,
+            chapters,
+          },
+        });
+      } catch (err) {
+        next(err);
       }
     },
   );
@@ -1102,12 +1658,20 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         const validSet = new Set(validUsers.map((u) => u.id));
         const invalidUserIds = body.data.userIds.filter((uid) => !validSet.has(uid));
 
+        // New assignments start on the guide version currently live —
+        // that's the baseline for "ada pembaruan panduan?" for employees.
+        const currentGuide = await prisma.guide.findFirst({
+          where: { roleId: role.id, orgId: auth.orgId },
+          select: { version: true },
+        });
+
         const result = await prisma.employeeModule.createMany({
           data: validUsers.map((u) => ({
             orgId: auth.orgId,
             userId: u.id,
             roleId: role.id,
             assignedBy: auth.userId,
+            assignedGuideVersion: currentGuide?.version ?? 1,
           })),
           skipDuplicates: true,
         });
