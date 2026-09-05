@@ -555,7 +555,13 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         try {
           aiReply = await callOpenRouterText(
             env,
-            buildTrainingSystemPrompt(role.name, buildKnowledgeBaseEnvelope(knowledgeChunks)),
+            buildTrainingSystemPrompt(
+              role.name,
+              buildKnowledgeBaseEnvelope(knowledgeChunks),
+              selected
+                .filter((m) => m.sender === "admin")
+                .map((m) => m.content),
+            ),
             buildHistoryMessages(selected),
             500,
             {
@@ -843,6 +849,9 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         const systemPrompt = buildGuideSystemPrompt(
           role.name,
           buildKnowledgeBaseEnvelope(knowledgeChunks),
+          fullTranscript
+            .filter((m) => m.sender === "admin")
+            .map((m) => m.content),
         );
 
         const transcriptMessage: AnthropicMessage = {

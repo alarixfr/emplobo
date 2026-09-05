@@ -568,7 +568,10 @@ DELETE /api/knowledge/:id                  # soft-delete (ARCHIVED)
 # AI model — semua panggilan AI (training, scoring, guide, tutor) memakai slug
 # env OPENROUTER_MODEL (default "minimax/minimax-m3:free", gratis, context 1M).
 # Untuk biaya nol pastikan key WAJIB ada di prod; opsional di dev (fallback canned reply).
-# Bahasa default semua interaksi AI: Bahasa Indonesia (sesuai LANGUAGE_DIRECTIVE di lib/prompts.ts).
+# Bahasa default semua interaksi AI: Bahasa Indonesia, diperkuat sebagai aturan utama
+# (LANGUAGE_DIRECTIVE di lib/prompts.ts). AI juga membaca 4 pesan pengguna terakhir untuk
+# menyesuaikan bahasa jawaban (detectConversationLanguage: bila pesan terakhir dominan
+# Bahasa Inggris, jawaban ikut Bahasa Inggris; bila kembali ke Indonesia, langsung kembali).
 
 # Section 3.6 — Manual Content Editor (requireAdmin; atomic save + version bump)
 GET    /api/content                        # hub: published roles + guide stats

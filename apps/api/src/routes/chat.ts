@@ -423,14 +423,8 @@ export function createChatRouter(requireAuth: AuthMiddleware, env: Env): Router 
         tokenBudget: 5000,
       });
 
-      const systemPrompt = buildTutorSystemPrompt(
-        role.name,
-        guideText,
-        trainingSummary,
-        formatKnowledgeChunksForPrompt(knowledgeChunks),
-      );
-
-      // 6. Sliding window of last 10 session messages
+      // 6. Sliding window of last 10 session messages (needed both for the
+      // language directive below and for the conversation history).
       const recentSessionMessages = await prisma.chatMessage.findMany({
         where: {
           sessionId: session.id,
@@ -443,6 +437,19 @@ export function createChatRouter(requireAuth: AuthMiddleware, env: Env): Router 
           content: true,
         },
       });
+
+      const systemPrompt = buildTutorSystemPrompt(
+        role.name,
+        guideText,
+        trainingSummary,
+        formatKnowledgeChunksForPrompt(knowledgeChunks),
+        [
+          ...recentSessionMessages
+            .filter((m) => m.sender === "user")
+            .map((m) => m.content),
+          body.data.content,
+        ],
+      );
 
       const history: { role: "user" | "assistant"; content: string }[] = buildHistoryMessages(
         recentSessionMessages.reverse(),
