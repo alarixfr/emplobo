@@ -242,7 +242,6 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         res.json({
           role,
           missingAreas: gaps?.missingAreas ?? [],
-          missingAreasUpdatedAt: gaps?.updatedAt ?? null,
         });
       } catch (err) {
         next(err);

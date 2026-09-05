@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
+import { KnowledgeGaps } from "@/components/roles/knowledge-gaps";
 import { RoleDetailPanels } from "@/components/roles/role-detail-panels";
-import { KnowledgeGapsPanel } from "@/components/roles/knowledge-gaps-panel";
 import { ReadinessRing } from "@/components/ui/readiness-ring";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ApiError, apiFetch } from "@/lib/api";
@@ -27,16 +27,13 @@ export default async function RoleDetailPage({ params }: PageProps) {
 
   let role: TrainingRoleDetail;
   let missingAreas: string[] = [];
-  let missingAreasUpdatedAt: string | null = null;
   try {
-    const data = await apiFetch<{
-      role: TrainingRoleDetail;
-      missingAreas?: string[];
-      missingAreasUpdatedAt?: string | null;
-    }>(`/api/roles/${id}`, { token });
+    const data = await apiFetch<{ role: TrainingRoleDetail; missingAreas?: string[] }>(
+      `/api/roles/${id}`,
+      { token },
+    );
     role = data.role;
     missingAreas = data.missingAreas ?? [];
-    missingAreasUpdatedAt = data.missingAreasUpdatedAt ?? null;
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       notFound();
@@ -151,12 +148,7 @@ export default async function RoleDetailPage({ params }: PageProps) {
           </dl>
 
           <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
-            <KnowledgeGapsPanel
-              missingAreas={missingAreas}
-              evaluatedAt={missingAreasUpdatedAt}
-              completeness={role.completenessScore}
-              headingLevel={2}
-            />
+            <KnowledgeGaps gaps={missingAreas} />
           </div>
 
           <div className="rounded-lg border border-dashed border-outline-variant bg-surface-container-low p-4">
