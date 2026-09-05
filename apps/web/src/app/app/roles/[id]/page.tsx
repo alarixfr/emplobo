@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
 import { RoleDetailPanels } from "@/components/roles/role-detail-panels";
+import { KnowledgeGapsPanel } from "@/components/roles/knowledge-gaps-panel";
 import { ReadinessRing } from "@/components/ui/readiness-ring";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ApiError, apiFetch } from "@/lib/api";
@@ -26,13 +27,16 @@ export default async function RoleDetailPage({ params }: PageProps) {
 
   let role: TrainingRoleDetail;
   let missingAreas: string[] = [];
+  let missingAreasUpdatedAt: string | null = null;
   try {
-    const data = await apiFetch<{ role: TrainingRoleDetail; missingAreas?: string[] }>(
-      `/api/roles/${id}`,
-      { token },
-    );
+    const data = await apiFetch<{
+      role: TrainingRoleDetail;
+      missingAreas?: string[];
+      missingAreasUpdatedAt?: string | null;
+    }>(`/api/roles/${id}`, { token });
     role = data.role;
     missingAreas = data.missingAreas ?? [];
+    missingAreasUpdatedAt = data.missingAreasUpdatedAt ?? null;
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       notFound();
@@ -147,34 +151,12 @@ export default async function RoleDetailPage({ params }: PageProps) {
           </dl>
 
           <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
-            <h2 className="mb-3 flex items-center gap-2 font-headline-sm text-[18px] text-on-surface">
-              <span className="material-symbols-outlined text-status-locked">
-                error
-              </span>
-              Celah Pengetahuan
-            </h2>
-            {missingAreas.length === 0 ? (
-              <p className="font-body-sm text-body-sm text-secondary">
-                AI mengevaluasi kelengkapan setiap 5 pesan training. Celah
-                pengetahuan yang terdeteksi akan muncul di sini.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {missingAreas.map((gap, idx) => (
-                  <li
-                    key={idx}
-                    className="flex items-start gap-2 rounded-lg border border-status-locked border-l-4 bg-surface-bright p-3"
-                  >
-                    <span className="material-symbols-outlined mt-0.5 text-[18px] text-status-locked">
-                      pending
-                    </span>
-                    <span className="font-data-point text-data-point font-bold text-on-surface">
-                      {gap}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <KnowledgeGapsPanel
+              missingAreas={missingAreas}
+              evaluatedAt={missingAreasUpdatedAt}
+              completeness={role.completenessScore}
+              headingLevel={2}
+            />
           </div>
 
           <div className="rounded-lg border border-dashed border-outline-variant bg-surface-container-low p-4">

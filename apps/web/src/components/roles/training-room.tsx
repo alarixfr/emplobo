@@ -13,6 +13,7 @@ import { KNOWLEDGE_FILE_ACCEPT } from "@/components/ui/file-dropzone";
 import { ReadinessRing } from "@/components/ui/readiness-ring";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { KnowledgeGapsPanel } from "@/components/roles/knowledge-gaps-panel";
 import type { RoleStatus, TrainingRoleSummary } from "@/lib/roles";
 
 type TrainingMessage = {
@@ -44,6 +45,12 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
   );
 
   const [missingAreas, setMissingAreas] = useState<string[]>([]);
+  const [missingAreasEvaluatedAt, setMissingAreasEvaluatedAt] = useState<
+    string | null
+  >(null);
+  const [liveCompleteness, setLiveCompleteness] = useState(
+    selectedRole?.completenessScore ?? 0,
+  );
 
   if (!selectedRole) {
     return (
@@ -64,6 +71,9 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
 
   function selectRole(roleId: string) {
     setMissingAreas([]);
+    setMissingAreasEvaluatedAt(null);
+    const nextRole = roles.find((role) => role.id === roleId);
+    setLiveCompleteness(nextRole?.completenessScore ?? 0);
     setSelectedRoleId(roleId);
     router.push(`/app/training/${roleId}`);
   }
@@ -145,36 +155,12 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
 
         {/* Celah Pengetahuan — pinned to the bottom of the Roles Context rail */}
         <div className="scroll-slim flex max-h-[40%] min-h-[96px] flex-col overflow-y-auto border-t border-slate-200 bg-surface-container-lowest p-4">
-          <h3 className="mb-3 flex items-center gap-2 font-headline-sm text-[16px] text-on-surface">
-            <span className="material-symbols-outlined text-[18px] text-status-locked">
-              error
-            </span>
-            Celah Pengetahuan
-          </h3>
-          {missingAreas.length === 0 ? (
-            <p className="font-body-sm text-[12px] leading-5 text-secondary">
-              AI mengevaluasi kelengkapan setiap 5 pesan training. Celah
-              pengetahuan yang terdeteksi akan muncul di sini.
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {missingAreas.map((gap, idx) => (
-                <li
-                  key={idx}
-                  className="flex items-start gap-2.5 rounded-lg border border-status-locked border-l-4 bg-surface-bright p-2.5"
-                >
-                  <span className="material-symbols-outlined mt-0.5 text-base text-status-locked">
-                    pending
-                  </span>
-                  <div>
-                    <h4 className="font-data-point text-[13px] font-bold text-on-surface">
-                      {gap}
-                    </h4>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+          <KnowledgeGapsPanel
+            missingAreas={missingAreas}
+            evaluatedAt={missingAreasEvaluatedAt}
+            completeness={liveCompleteness}
+            headingLevel={3}
+          />
         </div>
       </aside>
 
@@ -183,7 +169,10 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
         key={selectedRole.id}
         role={selectedRole}
         missingAreas={missingAreas}
+        gapsEvaluatedAt={missingAreasEvaluatedAt}
         setMissingAreas={setMissingAreas}
+        setGapsEvaluatedAt={setMissingAreasEvaluatedAt}
+        onCompletenessChange={setLiveCompleteness}
       />
     </div>
   );
@@ -192,10 +181,20 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
 type RoleTrainingChatProps = {
   role: TrainingRoleSummary;
   missingAreas: string[];
+  gapsEvaluatedAt: string | null;
   setMissingAreas: Dispatch<SetStateAction<string[]>>;
+  setGapsEvaluatedAt: Dispatch<SetStateAction<string | null>>;
+  onCompletenessChange: (score: number) => void;
 };
 
-function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingChatProps) {
+function RoleTrainingChat({
+  role,
+  missingAreas,
+  gapsEvaluatedAt,
+  setMissingAreas,
+  setGapsEvaluatedAt,
+  onCompletenessChange,
+}: RoleTrainingChatProps) {
   const { getToken, isLoaded } = useAuth();
   const [messages, setMessages] = useState<TrainingMessage[]>([]);
   const [input, setInput] = useState("");
@@ -258,6 +257,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
     );
     setStatus(data.role.status);
     setCompleteness(data.role.completenessScore);
+    onCompletenessChange(data.role.completenessScore);
     setMessages(data.messages);
   }
 
@@ -401,13 +401,18 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
             activeTrainerId: string | null;
           };
           missingAreas?: string[];
+          missingAreasUpdatedAt?: string | null;
         }>(`/api/roles/${role.id}`, { token }),
       );
       setStatus(data.role.status);
       setCompleteness(data.role.completenessScore);
+      onCompletenessChange(data.role.completenessScore);
       setLockFree(data.role.activeTrainerId === null);
       if (data.missingAreas) {
         setMissingAreas(data.missingAreas);
+      }
+      if (data.missingAreasUpdatedAt) {
+        setGapsEvaluatedAt(data.missingAreasUpdatedAt);
       }
     } catch {
       // Polling is best-effort — never surface transient errors here.
@@ -462,6 +467,10 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
       ]);
       setStatus(data.role.status);
       setCompleteness(data.role.completenessScore);
+      onCompletenessChange(data.role.completenessScore);
+      // Refresh gaps + readiness immediately — scoring may have just run
+      // server-side (every 5th message) and wrote the role-gaps cache.
+      void pollStatus();
     } catch (err) {
       // The server rolled the admin message back on AI failure — remove the
       // optimistic copy and restore the text so nothing is lost.
@@ -958,8 +967,12 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
               aria-label="Kirim pesan"
               className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-lg bg-primary p-3 text-white transition-colors hover:bg-primary-container disabled:opacity-50"
             >
-              <span className="material-symbols-outlined">
-                {isSending ? "progress_activity animate-spin" : "send"}
+              <span
+                className={`material-symbols-outlined ${
+                  isSending ? "animate-spin" : ""
+                }`}
+              >
+                {isSending ? "progress_activity" : "send"}
               </span>
             </button>
           </div>
@@ -977,36 +990,12 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
       <aside className="flex flex-col gap-4 lg:col-span-3">
         {/* Celah Pengetahuan — mobile only (desktop shows it in Roles Context) */}
         <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm lg:hidden">
-          <h3 className="mb-3 flex items-center gap-2 font-headline-sm text-[18px] text-on-surface">
-            <span className="material-symbols-outlined text-[18px] text-status-locked">
-              error
-            </span>
-            Celah Pengetahuan
-          </h3>
-          {missingAreas.length === 0 ? (
-            <p className="font-body-sm text-body-sm text-secondary">
-              AI mengevaluasi kelengkapan setiap 5 pesan training. Celah
-              pengetahuan yang terdeteksi akan muncul di sini.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {missingAreas.map((gap, idx) => (
-                <li
-                  key={idx}
-                  className="flex items-start gap-3 rounded-lg border border-status-locked border-l-4 bg-surface-bright p-3"
-                >
-                  <span className="material-symbols-outlined mt-0.5 text-lg text-status-locked">
-                    pending
-                  </span>
-                  <div>
-                    <h4 className="font-data-point text-data-point font-bold text-on-surface">
-                      {gap}
-                    </h4>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+          <KnowledgeGapsPanel
+            missingAreas={missingAreas}
+            evaluatedAt={gapsEvaluatedAt}
+            completeness={completeness}
+            headingLevel={3}
+          />
         </div>
 
         {/* Kesiapan AI + Guide Generation */}

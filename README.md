@@ -529,7 +529,7 @@ GET  /api/admin/ping         # requireAdmin — 403 unless org:admin
 # Section 3 — Roles (requireAdmin; orgId dari token)
 POST /api/roles              # body: { name, description? } → create DRAFT
 GET  /api/roles              # list active roles in org
-GET  /api/roles/:id          # single role (404 if wrong org / missing) + missingAreas (Knowledge Gaps, dari cache Redis)
+GET  /api/roles/:id          # single role (404 if wrong org / missing) + missingAreas + missingAreasUpdatedAt (Knowledge Gaps, dari cache Redis)
 
 # Section 4 — Training Room (requireAdmin; tenant-scoped + lock enforced)
 POST   /api/roles/:id/training/lock       # atomic lock acquire (423 if held by other admin)
