@@ -69,14 +69,19 @@ Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = sat
 |----------|--------------|---------------|
 | **Training Room** | Admin chat dengan AI untuk mengisi SOP/know-how per Role | AI self-score completeness & gate readiness (≥75 → READY) |
 | **Guide Generation** | Dari transcript training → chapter markdown + kuis | Structured JSON tervalidasi Zod, ditulis atomik di DB |
+| **Training File Attach** | Seret & letakkan file SOP langsung ke composer, atau klik tombol attach, untuk upload dari chat | File masuk ke Knowledge Library sebagai DRAFT dan baru dipakai AI setelah dikonfirmasi |
+| **Content Editor** | Tinjau & edit guide hasil AI per role: ubah chapter (tambah/pindah/hapus), edit markdown dengan pratinjau, dan kelola soal kuis + jawaban benar | Simpan atomik satu klik, langsung berlaku untuk karyawan; correctIndex hanya untuk admin |
 | **Employee Learning** | Baca chapter → kuis → progress tracking | Jawaban benar dinilai server-side; `correctIndex` tidak bocor ke client |
 | **AI Tutor Chat** | Karyawan tanya AI scoped ke Role yang di-assign | Tidak boleh mengarang SOP di luar materi yang diajarkan |
+| **Knowledge Library** | Upload via drag & drop atau pilih file, tulis catatan manual, edit knowledge organisasi | File diproses server-side, dipecah jadi chunk, dan masuk sebagai DRAFT — dikonfirmasi admin sebelum dipakai AI training/tutor |
 
 ### Fitur Tambahan
 
 - **Multi-tenant Clerk B2B** - Satu org Clerk = satu UMKM; role `org:admin` / `org:member`
 - **Training lock** - Mencegah dua admin train Role yang sama secara bersamaan
 - **Rate limit & cooldown** - Proteksi biaya AI (Upstash Redis) di setiap endpoint AI (training, guide gen, chat message, chat session)
+- **Knowledge Library** - Repositori knowledge organisasi dengan upload file max 10 MB, quota org 100 MB, editor manual, dan chunking untuk retrieval AI. Dokumen baru masuk sebagai **DRAFT**; admin mengonfirmasi (dari Knowledge Library atau Training Room) sebelum isinya dipakai AI training/tutor — mencegah knowledge yang belum divalidasi ikut menjawab.
+- **Content Editor (/app/content)** - Editor manual guide/kuis hasil AI: reorder/tambah/hapus chapter, editor markdown + pratinjau, dan builder soal kuis; simpan atomik dengan versi bertambah.
 - **Dashboard admin** - Statistik lengkap: completion %, skor kuis, per-role progress, pemakaian AI 30 hari
 - **Employee Directory** - Halaman khusus admin untuk memantau progress tiap karyawan (search, filter role, AI insight)
 - **Developer Docs & Halaman Legal** - `/docs` (API reference 3-pane dengan dark code pane cURL/Node) dan `/privacy`, `/terms`
@@ -123,6 +128,7 @@ Icons        : Material Symbols Outlined (font, via Google Fonts)
 Auth UI      : Clerk B2B (Organizations)
 Validation   : Zod (client & server, .strict() di API)
 Markdown     : react-markdown + remark-gfm + rehype-sanitize
+Knowledge    : Busboy + file-type + mammoth + pdf-parse + xlsx + cheerio
 ```
 
 #### Backend
@@ -132,7 +138,7 @@ Framework    : Express + TypeScript (apps/api — Section 2+)
 Database     : Neon PostgreSQL (pooled + direct URL)
 ORM          : Prisma 6 (packages/db)
 Auth         : Clerk B2B (JWT verify via @clerk/backend)
-AI           : Claude (sonnet training/guide, haiku chat) via OpenRouter API
+AI           : OpenRouter (default **`openrouter/free`** — gratis; dapat dipin via `OPENROUTER_MODEL`, mis. `anthropic/claude-sonnet-4.5`)
 Cache/RL     : Upstash Redis
 ```
 
@@ -151,7 +157,7 @@ Redis        : Upstash
 | **Next.js 15 + Express split** | UI di Next; AI endpoints butuh rate-limit/cooldown/cache konsisten di proses Node panjang (Express) |
 | **Clerk B2B Organizations** | Multi-tenant org/role/invite/session tanpa custom auth — kurangi attack surface |
 | **Prisma + Neon** | Schema typed, migrasi jelas; Neon pooled untuk runtime, direct URL untuk migrate |
-| **Claude via OpenRouter + Upstash** | Model sesuai beban (sonnet vs haiku), satu gateway API untuk akses model; Redis untuk rate limit & cache guide |
+| **OpenRouter (free model) + Upstash** | AI trainer/tutor default ke `openrouter/free` (gratis) — bisa dipin ke model berbayar via `OPENROUTER_MODEL`; satu gateway API untuk akses model, Redis untuk rate limit & cache guide |
 
 ### Dependencies Utama
 
@@ -192,6 +198,7 @@ flowchart TB
     RL["Rate limit & cooldown<br/>(Upstash / in-memory)"]
     TR["Training Room<br/>(lock · heartbeat · AI scoring)"]
     GG["Guide Generation<br/>(structured JSON · Zod)"]
+    KB["Knowledge Library<br/>(upload · manual edit · chunking)"]
     EMP["Employee Learning<br/>(chapters · quiz grading)"]
     CH["AI Tutor Chat<br/>(grounded on SOP)"]
     DBX["Dashboard summary<br/>(cache 60s)"]
@@ -200,7 +207,7 @@ flowchart TB
   subgraph Data["Data & AI"]
     DB[("Neon PostgreSQL<br/>via packages/db (Prisma)")]
     RC[("Upstash Redis<br/>guide 10m · role-status 30s")]
-    AI["Claude via OpenRouter<br/>sonnet: training/guide · haiku: chat"]
+    AI["OpenRouter API<br/>default openrouter/free · dapat dipin via env"]
   end
 
   W -->|Clerk session JWT| A
@@ -211,8 +218,9 @@ flowchart TB
   TR --> AI
   GG --> AI
   CH --> AI
+  KB --> AI
   TR & GG & CH --> DBX
-  TR & GG & EMP & CH --> DB
+  TR & GG & EMP & CH & KB --> DB
   GG & TR --> RC
   DBX --> RC
 ```
@@ -222,9 +230,14 @@ menilai completeness (≥75 → READY) → guide di-generate terstruktur + kuis 
 employee membaca chapter, mengerjakan kuis, dan bertanya ke AI tutor yang
 hanya menjawab dari materi yang diajarkan admin.
 
+**Knowledge Library:** admin dapat mengunggah SOP/notes ke knowledge base org,
+memeriksa hasil ekstraksi, dan mengedit konten manual. AI training, guide
+generation, dan tutor chat membaca knowledge chunks org-wide sebagai context
+tambahan yang tetap dibatasi oleh tenant dan role yang sedang aktif.
+
 ### Database Schema
 
-Lihat `packages/db/prisma/schema.prisma`. Model inti: `User` (mirror Clerk), `TrainingRole`, `TrainingMessage`, `Guide`/`Chapter`, `Quiz`/`QuizQuestion`/`QuizAttempt`, `EmployeeModule`, `ChapterProgress`, `ChatSession`/`ChatMessage`, `AiUsageLog`. Setiap model tenant-owned punya kolom `orgId`.
+Lihat `packages/db/prisma/schema.prisma`. Model inti: `User` (mirror Clerk), `TrainingRole`, `TrainingMessage`, `Guide`/`Chapter`, `Quiz`/`QuizQuestion`/`QuizAttempt`, `EmployeeModule`, `ChapterProgress`, `ChatSession`/`ChatMessage`, `AiUsageLog`, `KnowledgeQuota`, `KnowledgeDocument`, `KnowledgeChunk`. Setiap model tenant-owned punya kolom `orgId`.
 
 ### Folder Structure
 
@@ -311,6 +324,8 @@ DIRECT_URL="..."
 CLERK_SECRET_KEY="sk_test_xxx"
 CLERK_PUBLISHABLE_KEY="pk_test_xxx"
 CLERK_WEBHOOK_SECRET="whsec_xxx"
+OPENROUTER_API_KEY="sk-or-xxx"
+OPENROUTER_MODEL="openrouter/free"   # default: model free OpenRouter; pin dengan "anthropic/claude-sonnet-4.5" dst.
 WEB_APP_ORIGIN="http://localhost:3000"
 PORT="4000"
 ```
@@ -470,9 +485,11 @@ sekali penuh terhadap deployment live sebelum submit.
 1. **Dashboard**: `/app` menampilkan header sapaan + aksi cepat, bento grid metrik (total role, karyawan, rata-rata kuis, AI usage), tabel **Brain Readiness** (status badge, progress bar knowledge completeness, aksi edit per role) dan timeline **Recent Activity**.
 2. **Roles**: buka `/app/roles` → buat role (nama + deskripsi opsional) → lihat detail di `/app/roles/[id]` (right rail berisi ring readiness + knowledge gaps).
 3. **Employee Directory**: `/app/employees`: search, filter pill per role, metrik workforce/completion + kartu AI Insight, tabel progress per karyawan.
-4. **Training Room**: Buka `/app/training` (halaman terpusat, bisa pilih role) atau `/app/training/[id]` untuk langsung ke role tertentu — layout 3 kolom (Roles Context / chat dengan ai-bubble & user-bubble / right rail Brain Readiness ring + Knowledge Gaps + tombol Generate Guide). Sistem mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin. Jika admin lain memegang kunci, room terbuka dalam **mode observer** (baca-saja dengan nama pemegang kunci, plus tombol ambil alih saat kunci bebas), dan badge status/completeness diperbarui otomatis tiap 30 detik via polling cache.
+4. **Training Room**: Buka `/app/training` (halaman terpusat, bisa pilih role) atau `/app/training/[id]` untuk langsung ke role tertentu — layout 3 kolom (Roles Context / chat dengan ai-bubble & user-bubble / right rail Brain Readiness ring + Knowledge Gaps + tombol Generate Guide). Sistem mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin. Jika admin lain memegang kunci, room terbuka dalam **mode observer** (baca-saja dengan nama pemegang kunci, plus tombol ambil alih saat kunci bebas), dan badge status/completeness diperbarui otomatis tiap 30 detik via polling cache. Di panel Knowledge Library kanan, file yang masih DRAFT ditampilkan dengan badge + tombol **KONFIRMASI** untuk mengaktifkannya sebagai materi training dan tombol **HAPUS** per file untuk membuangnya; maksimal 5 file DRAFT dapat menunggu konfirmasi sekaligus (unggahan berikutnya ditolak 409 sampai yang lama dikonfirmasi/dihapus).
 5. **Generate Guide**: saat status role `READY` (completeness ≥ 75), klik **Generate Guide** → AI menyusun panduan berstruktur (chapter markdown + kuis) dari seluruh transcript training, divalidasi Zod, lalu ditulis atomik ke DB; status berubah jadi `PUBLISHED`. Maksimal 3 generasi per jam per role.
 6. **Assign Karyawan**: setelah `PUBLISHED`, pilih karyawan (`org:member`) dari panel assignment di halaman detail role untuk memberi akses modul. Di halaman Karyawan (`/app/employees`), chip role di tiap baris menampilkan status assignment karyawan tersebut (baca-saja).
+7. **Edit Konten Guide**: dari card role (`/app/roles`) atau halaman detail, klik **EDIT KONTEN** → `/app/content/[roleId]`: rail chapter (tambah/pindah/hapus), editor markdown + tab pratinjau, dan builder kuis (pilihan jawaban + tandai jawaban benar). Klik **SIMPAN** untuk menulis atomik ke DB (versi bertambah, cache guide di-invalidate) — perubahan langsung dilihat karyawan.
+8. **Knowledge Library & Konfirmasi DRAFT**: `/app/knowledge` menampilkan metrik (dokumen aktif, draft menunggu konfirmasi, chunk AI aktif), daftar dokumen dengan badge status, dan detail dokumen. Upload/catatan baru berstatus **DRAFT**; klik **KONFIRMASI** untuk mengaktifkannya, atau **HAPUS** untuk membuangnya. Kuota DRAFT dibatasi maksimal 5 dokumen per org — dashboard menampilkan `x/5 DRAFT`.
 
 #### Untuk Karyawan (`org:member`)
 
@@ -537,6 +554,24 @@ POST   /api/my/chat/sessions              # create chat session (rate-limited; a
 GET    /api/my/chat/sessions              # list chat sessions for assigned role
 GET    /api/my/chat/sessions/:id/messages # fetch session transcript (ownership verified)
 POST   /api/my/chat/sessions/:id/messages # send question, get grounded AI tutor answer (cooldown 2s, rate-limited)
+
+# Section 3.5 — Knowledge Library (requireAdmin; org-scoped, chunk server-side)
+GET    /api/knowledge                      # quota(+draft) + documents (AKTIF & DRAFT)
+GET    /api/knowledge/:id                  # document detail + chunks
+POST   /api/knowledge/documents            # create manual note (status DRAFT; 409 bila 5 DRAFT penuh)
+POST   /api/knowledge/upload               # upload file (busboy, DRAFT, extract → chunk; 409 bila 5 DRAFT penuh)
+PATCH  /api/knowledge/:id                  # update title/description/content (re-chunk)
+POST   /api/knowledge/:id/approve          # approve DRAFT → AKTIF (dipakai AI)
+DELETE /api/knowledge/:id                  # soft-delete (ARCHIVED)
+
+# AI model — semua panggilan AI (training, scoring, guide, tutor) memakai slug
+# env OPENROUTER_MODEL (default "openrouter/free", gratis). Untuk biaya nol
+# pastikan key WAJIB ada di prod; opsional di dev (fallback canned reply).
+
+# Section 3.6 — Manual Content Editor (requireAdmin; atomic save + version bump)
+GET    /api/content                        # hub: published roles + guide stats
+GET    /api/content/:roleId                # full editable guide (chapters + quiz + correctIndex, admin-only)
+POST   /api/content/:roleId                # save full guide atomically ($transaction, id preservation, cache invalidate)
 
 # Section 9 — Admin Dashboard & Employee Directory (requireAdmin)
 GET    /api/dashboard/summary             # counts, avg quiz score, per-role completion, AI usage 30d, recentActivity timeline
@@ -614,8 +649,8 @@ per Section tersedia di bagian [User Guide](#-penggunaan) (Step 1–12 sudah akt
 seluruh fitur inti sampai AI Tutor grounded, polish UI/UX — design system
 "Institutional Intelligence" (Forest Green/Inter/JetBrains Mono + Material
 Symbols) konsisten di landing, dashboard, employee directory, training room,
-guide reader, quiz, AI tutor, learning center, docs, dan halaman legal — serta
-checklist keamanan Section 8 terverifikasi: tenant scoping (orgId di semua query),
+guide reader, quiz, AI tutor, learning center, content editor, docs, dan
+halaman legal — serta checklist keamanan Section 8 terverifikasi: tenant scoping (orgId di semua query),
 scoping employee per userId, ownership ChatSession dicek ulang tiap pesan
 (anti-IDOR), correctIndex tidak pernah bocor ke payload employee, sanitasi input
 `<business_data>` + strip tag penutup, rate limit & cooldown di semua endpoint

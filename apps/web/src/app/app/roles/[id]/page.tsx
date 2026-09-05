@@ -84,13 +84,24 @@ export default async function RoleDetailPage({ params }: PageProps) {
             </p>
           ) : null}
         </div>
-        <Link
-          href={`/app/training/${role.id}`}
-          className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
-        >
-          <span className="material-symbols-outlined text-[18px]">school</span>
-          BUKA TRAINING ROOM
-        </Link>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {guide ? (
+            <Link
+              href={`/app/content/${role.id}`}
+              className="inline-flex items-center gap-2 rounded-lg border border-primary px-4 py-2.5 font-label-caps text-label-caps text-primary transition-colors hover:bg-primary-fixed-dim/40"
+            >
+              <span className="material-symbols-outlined text-[18px]">edit_note</span>
+              EDIT KONTEN
+            </Link>
+          ) : null}
+          <Link
+            href={`/app/training/${role.id}`}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
+          >
+            <span className="material-symbols-outlined text-[18px]">school</span>
+            BUKA TRAINING ROOM
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -172,7 +183,7 @@ export default async function RoleDetailPage({ params }: PageProps) {
             </p>
             <p className="mt-1 font-body-sm text-[12px] leading-5 text-secondary">
               Admin melatih AI di Training Room sampai materi dirasa cukup. AI
-              mengevaluasi skor kelengkapan (0–100) dan menyarankan kapan
+              mengevaluasi skor kelengkapan (0-100) dan menyarankan kapan
               panduan siap dibuat. Mulai 75%, status berubah menjadi READY.
             </p>
           </div>

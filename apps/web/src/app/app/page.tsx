@@ -30,6 +30,15 @@ export default async function AppHomePage() {
         {isAdmin ? (
           <div className="flex flex-wrap items-center gap-3">
             <Link
+              href="/app/knowledge"
+              className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-surface-container-lowest px-4 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                database
+              </span>
+              KNOWLEDGE
+            </Link>
+            <Link
               href="/app/employees"
               className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-surface-container-lowest px-4 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
             >

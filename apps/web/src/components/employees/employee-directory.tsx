@@ -160,7 +160,7 @@ export function EmployeeDirectory() {
     <div className="space-y-6">
       {/* ── Metrics bento ─────────────────────────────────────────────── */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
+        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
           <p className="font-label-caps text-label-caps text-secondary">
             TOTAL KARYAWAN
           </p>
@@ -172,7 +172,7 @@ export function EmployeeDirectory() {
           </p>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
+        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
           <p className="font-label-caps text-label-caps text-secondary">
             PROGRES PELATIHAN
           </p>

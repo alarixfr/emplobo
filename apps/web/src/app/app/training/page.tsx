@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { TrainingRoom } from "@/components/roles/training-room";
@@ -34,15 +35,29 @@ export default async function TrainingIndexPage() {
   }
 
   return (
-    <div className="mx-auto h-full w-full max-w-container space-y-6">
-      <div>
-        <h1 className="font-headline-md text-headline-md text-on-surface">
-          Training Room
-        </h1>
-        <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
-          Halaman training terpusat. Pilih role di sisi kiri lalu latih AI
-          dengan format chat.
-        </p>
+    <div className="mx-auto h-full w-full max-w-container space-y-8">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <h1 className="font-headline-md text-headline-md text-on-surface">
+            Training Room
+          </h1>
+          <p className="mt-1 max-w-2xl font-body-md text-body-md text-on-surface-variant">
+            Latih AI dengan SOP dan pengetahuan bisnis Anda per role. Pilih role
+            dari rail kiri, atau lampirkan file SOP dari Knowledge Library
+            sebagai bahan tambahan.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/app/knowledge"
+            className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-surface-container-lowest px-4 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              database
+            </span>
+            KNOWLEDGE
+          </Link>
+        </div>
       </div>
 
       {loadError ? (
@@ -50,9 +65,18 @@ export default async function TrainingIndexPage() {
           {loadError}
         </div>
       ) : roles.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-outline-variant bg-surface-container-lowest p-6 font-body-md text-body-md text-on-surface-variant">
-          Belum ada role. Buat role baru dulu di halaman Roles.
-        </div>
+        <section className="rounded-lg border border-dashed border-outline-variant bg-surface-container-lowest p-8 text-center">
+          <p className="font-body-md text-body-md text-on-surface-variant">
+            Belum ada role untuk dilatih. Buat role baru terlebih dahulu.
+          </p>
+          <Link
+            href="/app/roles#new-role"
+            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            BUAT ROLE
+          </Link>
+        </section>
       ) : (
         <TrainingRoom roles={roles} />
       )}

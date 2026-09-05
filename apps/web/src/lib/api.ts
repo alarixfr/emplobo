@@ -17,7 +17,7 @@ export class ApiError extends Error {
 
 type ApiFetchOptions = {
   method?: string;
-  body?: unknown;
+  body?: unknown | FormData;
   token: string;
 };
 
@@ -29,13 +29,20 @@ export async function apiFetch<T>(
     throw new Error("NEXT_PUBLIC_API_URL is not configured");
   }
 
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers: {
       Authorization: `Bearer ${token}`,
-      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(body !== undefined && !isFormData ? { "Content-Type": "application/json" } : {}),
     },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body:
+      body === undefined
+        ? undefined
+        : isFormData
+          ? body
+          : JSON.stringify(body),
   });
 
   let data: unknown = null;
@@ -54,7 +61,9 @@ export async function apiFetch<T>(
       data !== null &&
       "error" in data &&
       typeof (data as { error: unknown }).error === "string"
-        ? (data as { error: string }).error
+        ? ((data as { error: string }).error === "database request failed"
+            ? "Database sedang tidak tersedia. Coba lagi beberapa saat."
+            : (data as { error: string }).error)
         : `Request failed (${res.status})`;
     throw new ApiError(res.status, message, data);
   }

@@ -204,7 +204,7 @@ export function createMyRouter(requireAuth: AuthMiddleware): Router {
                   select: {
                     id: true,
                     questions: {
-                      orderBy: { id: "asc" },
+                      orderBy: [{ order: "asc" }, { id: "asc" }],
                       select: {
                         id: true,
                         question: true,
@@ -417,7 +417,7 @@ export function createMyRouter(requireAuth: AuthMiddleware): Router {
               select: {
                 id: true,
                 questions: {
-                  orderBy: { id: "asc" },
+                  orderBy: [{ order: "asc" }, { id: "asc" }],
                   select: {
                     id: true,
                     question: true,

@@ -17,6 +17,11 @@ const envSchema = z
     // Claude models are routed through OpenRouter (raw fetch), so this is an
     // OpenRouter key despite the Claude model names used in code.
     OPENROUTER_API_KEY: z.string().optional(),
+    // Which OpenRouter model slug powers the AI trainer/tutor. Defaults to
+    // OpenRouter's free auto-router (routes to available :free models, no
+    // cost). Set a specific slug (e.g. "anthropic/claude-sonnet-4.5") to
+    // pin a paid model instead.
+    OPENROUTER_MODEL: z.string().min(1).default("openrouter/free"),
     UPSTASH_REDIS_REST_URL: z.string().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
   })
@@ -47,6 +52,7 @@ export function loadEnv(): Env {
     CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
     WEB_APP_ORIGIN: process.env.WEB_APP_ORIGIN,
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
   };

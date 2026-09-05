@@ -7,8 +7,10 @@ import { createAuthMiddleware } from "./middleware/auth.js";
 import { errorHandler, notFound } from "./middleware/error.js";
 import { healthRouter } from "./routes/health.js";
 import { createChatRouter } from "./routes/chat.js";
+import { createContentRouter } from "./routes/content.js";
 import { createDashboardRouter } from "./routes/dashboard.js";
 import { createEmployeesRouter } from "./routes/employees.js";
+import { createKnowledgeRouter } from "./routes/knowledge.js";
 import { createMyRouter } from "./routes/my.js";
 import { createRolesRouter } from "./routes/roles.js";
 import { createClerkWebhookRouter } from "./routes/webhooks/clerk.js";
@@ -93,6 +95,17 @@ export function createApp(env: Env): Express {
 
   // Section 3 — Admin Role CRUD
   app.use("/api/roles", createRolesRouter(requireAdmin, env));
+
+  // Section 3.5 — Org knowledge library (files + manual editing)
+  app.use("/api/knowledge", createKnowledgeRouter(requireAdmin, env));
+
+  // Manual guide content editor — full guides can exceed the 1mb default JSON
+  // body limit, so the route gets its own larger parser.
+  app.use(
+    "/api/content",
+    express.json({ limit: "15mb" }),
+    createContentRouter(requireAdmin, env),
+  );
 
   // Section 9 — Admin usage dashboard (counts, quiz scores, per-role completion)
   app.use("/api/dashboard", createDashboardRouter(requireAdmin, env));

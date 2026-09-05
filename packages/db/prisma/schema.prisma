@@ -19,6 +19,17 @@ enum RoleStatus {
   PUBLISHED
 }
 
+enum KnowledgeSourceType {
+  UPLOAD
+  MANUAL
+}
+
+enum KnowledgeDocumentStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
 // Local mirror of Clerk users — synced via Clerk webhook, not app routes.
 model User {
   id        String   @id // Clerk user.id
@@ -33,6 +44,8 @@ model User {
   chapterProgress ChapterProgress[]
   chatSessions    ChatSession[]
   quizAttempts    QuizAttempt[]
+  knowledgeDocumentsCreated KnowledgeDocument[] @relation("KnowledgeDocumentCreatedBy")
+  knowledgeDocumentsUpdated KnowledgeDocument[] @relation("KnowledgeDocumentUpdatedBy")
 
   @@index([orgId, role])
 }
@@ -128,13 +141,14 @@ model QuizQuestion {
   id           String @id @default(cuid())
   quizId       String
   orgId        String
+  order        Int    @default(0) // authored order (editor & quiz taker)
   question     String @db.Text
   options      Json // string[4]
   correctIndex Int // NEVER send to client before submission
 
   quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
-  @@index([quizId])
+  @@index([quizId, order])
 }
 
 model QuizAttempt {
@@ -228,4 +242,57 @@ model AiUsageLog {
 
   @@index([orgId, createdAt])
   @@index([userId, createdAt])
+}
+
+// ── KNOWLEDGE LIBRARY ────────────────────────────────────────────────────────
+
+model KnowledgeQuota {
+  orgId         String   @id
+  usedBytes     Int      @default(0)
+  documentCount Int      @default(0)
+  updatedAt     DateTime @updatedAt
+}
+
+model KnowledgeDocument {
+  id           String                 @id @default(cuid())
+  orgId        String
+  title        String                 @db.VarChar(200)
+  description  String?                @db.VarChar(500)
+  status       KnowledgeDocumentStatus @default(DRAFT)
+  sourceType   KnowledgeSourceType
+  fileName     String?                @db.VarChar(255)
+  mimeType     String?                @db.VarChar(120)
+  sourceBytes  Int
+  contentHash  String?                @db.VarChar(128)
+  content      String                 @db.Text
+  version      Int                    @default(1)
+  createdBy    String?
+  updatedBy    String?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  createdByUser User? @relation("KnowledgeDocumentCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+  updatedByUser User? @relation("KnowledgeDocumentUpdatedBy", fields: [updatedBy], references: [id], onDelete: SetNull)
+  chunks        KnowledgeChunk[]
+
+  @@index([orgId])
+  @@index([orgId, status])
+  @@index([orgId, updatedAt])
+  @@index([sourceType])
+}
+
+model KnowledgeChunk {
+  id          String   @id @default(cuid())
+  documentId  String
+  orgId       String
+  order       Int
+  heading     String?  @db.VarChar(200)
+  content     String   @db.Text
+  tokenEst    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  document KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, order])
+  @@index([orgId])
 }

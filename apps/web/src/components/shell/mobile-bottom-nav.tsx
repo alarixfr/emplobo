@@ -12,7 +12,8 @@ type NavItem = {
 const ADMIN_NAV: NavItem[] = [
   { href: "/app", label: "Home", icon: "dashboard" },
   { href: "/app/training", label: "Training", icon: "school" },
-  { href: "/app/employees", label: "Karyawan", icon: "group" },
+  { href: "/app/knowledge", label: "Knowledge", icon: "database" },
+  { href: "/app/content", label: "Konten", icon: "edit_note" },
   { href: "/app/roles", label: "Roles", icon: "menu_book" },
 ];
 

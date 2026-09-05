@@ -41,7 +41,7 @@ const STEPS = [
     num: "02",
     tone: "ai" as const,
     title: "AI mengekstrak pengetahuan",
-    desc: "Chat dengan AI Brain. Ia mengajukan pertanyaan yang tepat, menilai kelengkapan 0–100 secara mandiri.",
+    desc: "Chat dengan AI Brain untuk menuangkan SOP dan prosedur role tersebut. AI menilai kelengkapan materi (0-100) dan bilang saat materi sudah cukup.",
   },
   {
     num: "03",
@@ -239,7 +239,7 @@ export default function HomePage() {
             KEUNGGULAN EMPLOBO
           </p>
           <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
-            Dibangun untuk pertumbuhan jangka panjang
+            Satu kali latih, semua karyawan siap
           </h2>
           <div className="mt-12 grid gap-8 md:grid-cols-3">
             {ADVANTAGES.map((adv) => (

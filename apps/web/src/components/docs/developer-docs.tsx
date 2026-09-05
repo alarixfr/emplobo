@@ -60,7 +60,7 @@ const { role } = await res.json();`,
       {
         method: "POST",
         path: "/api/roles/:id/training/messages",
-        desc: "Mengirim pesan training admin → AI. Setiap 5 pesan, AI menilai ulang completeness (0–100).",
+        desc: "Mengirim pesan training admin → AI. Setiap 5 pesan, AI menilai ulang completeness (0-100).",
         params: [
           { name: "content", type: "string", required: true, desc: "Teks SOP / know-how (max 4000)" },
         ],

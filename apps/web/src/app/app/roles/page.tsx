@@ -147,6 +147,17 @@ export default async function RolesPage() {
                         </span>
                         LIHAT
                       </Link>
+                      {role.status === "PUBLISHED" ? (
+                        <Link
+                          href={`/app/content/${role.id}`}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-primary px-3.5 py-2 font-label-caps text-label-caps text-primary transition-colors hover:bg-primary-fixed-dim/40"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">
+                            edit_note
+                          </span>
+                          EDIT KONTEN
+                        </Link>
+                      ) : null}
                     </div>
                   </div>
                 </li>
