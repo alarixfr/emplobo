@@ -83,7 +83,7 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
           id="training-role-mobile"
           value={selectedRole.id}
           onChange={(e) => selectRole(e.target.value)}
-          className="mt-1.5 w-full rounded-lg border border-slate-200 bg-surface-container-lowest px-3 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+          className="mt-1.5 w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
         >
           {roles.map((role) => (
             <option key={role.id} value={role.id}>
@@ -94,8 +94,8 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
       </div>
 
       {/* ── Roles Context (left rail) ─────────────────────────────────── */}
-      <aside className="hidden h-[calc(100vh-14rem)] min-h-[560px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm lg:col-span-3 lg:flex">
-        <div className="border-b border-slate-200 bg-surface-container-lowest p-4">
+      <aside className="hidden h-[calc(100vh-14rem)] min-h-[560px] flex-col overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm lg:col-span-3 lg:flex">
+        <div className="border-b border-outline-variant bg-surface-container-lowest p-4">
           <h2 className="font-headline-sm text-[18px] text-on-surface">
             Roles Context
           </h2>
@@ -119,7 +119,7 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
                 className={`flex items-center justify-between rounded-lg border p-3 text-left transition-colors ${
                   active
                     ? "border-primary bg-primary-fixed-dim/40 shadow-sm ring-1 ring-primary"
-                    : "border-slate-200 bg-white shadow-sm hover:border-slate-300"
+                    : "border-outline-variant bg-surface-container-lowest shadow-sm hover:border-outline"
                 }`}
               >
                 <div className="min-w-0">
@@ -145,7 +145,7 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
         </div>
 
         {/* Celah Pengetahuan — pinned to the bottom of the Roles Context rail */}
-        <div className="scroll-slim flex max-h-[40%] min-h-[96px] flex-col overflow-y-auto border-t border-slate-200 bg-surface-container-lowest p-4">
+        <div className="scroll-slim flex max-h-[40%] min-h-[96px] flex-col overflow-y-auto border-t border-outline-variant bg-surface-container-lowest p-4">
           <KnowledgeGaps gaps={missingAreas} size="sm" />
         </div>
       </aside>
@@ -657,9 +657,9 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
   return (
     <>
       {/* ── Main chat column (center) ─────────────────────────────────── */}
-      <section className="flex h-[calc(100vh-14rem)] min-h-[560px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm lg:col-span-6">
+      <section className="flex h-[calc(100vh-14rem)] min-h-[560px] flex-col overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm lg:col-span-6">
         {/* Header */}
-        <div className="border-b border-slate-200 bg-surface-container-lowest p-5">
+        <div className="border-b border-outline-variant bg-surface-container-lowest p-5">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
             <div className="max-w-2xl">
               <div className="mb-2 flex flex-wrap items-center gap-3">
@@ -700,7 +700,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
         ) : null}
 
         {observerName ? (
-          <div className="mx-5 mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-surface-container-low p-4">
+          <div className="mx-5 mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-outline-variant bg-surface-container-low p-4">
             <span className="font-body-sm text-body-sm text-on-surface-variant">
               Mode observer. Role ini sedang dilatih oleh{" "}
               <strong className="text-on-surface">{observerName}</strong>. Anda
@@ -763,7 +763,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
                     className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-bold ${
                       isAI
                         ? "bg-ai-border text-primary"
-                        : "bg-slate-300 text-on-surface-variant"
+                        : "bg-surface-container-high text-on-surface-variant"
                     }`}
                   >
                     <span className="material-symbols-outlined text-sm">
@@ -832,7 +832,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
         </div>
 
         {/* Input area */}
-        <div className="border-t border-slate-200 bg-surface-container-lowest p-4">
+        <div className="border-t border-outline-variant bg-surface-container-lowest p-4">
           {sendError ? (
             <p className="mb-2 font-body-sm text-body-sm text-error">
               {sendError}
@@ -849,7 +849,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
                 ? "border-primary bg-primary/5 ring-2 ring-primary-fixed-dim/40"
                 : uploadingFile
                   ? "border-outline-variant bg-surface-container-low"
-                  : "border-slate-200 bg-surface-container-lowest focus-within:border-primary focus-within:ring-2 focus-within:ring-primary-fixed-dim/50"
+                  : "border-outline-variant bg-surface-container-lowest focus-within:border-primary focus-within:ring-2 focus-within:ring-primary-fixed-dim/50"
             }`}
             onDragEnter={(event) => {
               event.preventDefault();
@@ -952,12 +952,12 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
       {/* ── Sidebar (right rail) ──────────────────────────────────────── */}
       <aside className="flex flex-col gap-4 lg:col-span-3">
         {/* Celah Pengetahuan — mobile only (desktop shows it in Roles Context) */}
-        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm lg:hidden">
+        <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm lg:hidden">
           <KnowledgeGaps gaps={missingAreas} />
         </div>
 
         {/* Kesiapan AI + Guide Generation */}
-        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 text-center shadow-sm">
+        <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 text-center shadow-sm">
           <h3 className="mb-4 font-headline-sm text-[18px] text-on-surface">
             Kesiapan AI
           </h3>
@@ -967,7 +967,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
           </p>
 
           {/* Guide Generation — below Kelengkapan */}
-          <div className="mt-4 border-t border-slate-200 pt-4">
+          <div className="mt-4 border-t border-outline-variant pt-4">
             {generateError ? (
               <p className="mb-2 font-body-sm text-body-sm text-error">
                 {generateError}
@@ -998,7 +998,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
                   className={`flex w-full items-center justify-center gap-2 rounded-lg py-3 px-4 font-label-caps text-label-caps transition-colors ${
                     canGenerate
                       ? "bg-status-ready text-white hover:brightness-95"
-                      : "cursor-not-allowed border border-slate-300 bg-slate-200 text-slate-400"
+                      : "cursor-not-allowed border border-outline-variant bg-surface-container-high text-outline"
                   }`}
                 >
                   <span className="material-symbols-outlined">
@@ -1011,7 +1011,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
                       : "GENERATE GUIDE"}
                 </button>
                 {!canGenerate && !isGenerating ? (
-                  <p className="mt-2 text-center text-[11px] uppercase tracking-wider text-slate-400">
+                  <p className="mt-2 text-center text-[11px] uppercase tracking-wider text-outline">
                     Butuh status READY (≥ 75% completeness)
                   </p>
                 ) : null}
@@ -1028,7 +1028,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
+        <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="font-label-caps text-label-caps text-secondary">

@@ -170,7 +170,7 @@ export function FileDropzone({
             compact ? "h-9 w-9" : "h-11 w-11"
           } ${isDragging ? "bg-primary text-white" : "bg-primary-fixed text-on-primary-fixed-variant"}`}
         >
-          <span className="material-symbols-outlined text-[22px]">
+          <span className={`material-symbols-outlined text-[22px]${busy ? " animate-spin" : ""}`}>
             {busy ? "progress_activity" : "upload_file"}
           </span>
         </div>

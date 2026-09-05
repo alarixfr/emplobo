@@ -686,7 +686,7 @@ export function DeveloperDocs() {
                       <div
                         key={key}
                         id={domId}
-                        className="scroll-mt-24 rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:border-outline-variant md:p-6"
+                        className="scroll-mt-24 rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm transition-colors hover:border-outline-variant md:p-6"
                       >
                         <div className="flex flex-wrap items-center gap-2.5">
                           <MethodBadge method={ep.method} />
@@ -782,7 +782,7 @@ export function DeveloperDocs() {
                               <span className="material-symbols-outlined text-[13px]">
                                 {copiedKey === "sample" ? "check" : "content_copy"}
                               </span>
-                              {copiedKey === "sample" ? "SALIN" : "SALIN"}
+                              {copiedKey === "sample" ? "TERSALIN" : "SALIN"}
                             </button>
                           </div>
                         </details>

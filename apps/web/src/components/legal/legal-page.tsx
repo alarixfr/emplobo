@@ -105,7 +105,7 @@ export function LegalPage({
 
         {/* ── Article column ───────────────────────────────────────────── */}
         <article className="mx-auto w-full max-w-[720px]">
-          <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-6 shadow-sm md:p-10">
+          <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-6 shadow-sm md:p-10">
             {/* Mobile back + section pills (outline is hidden on mobile) */}
             <div className="flex flex-wrap items-center justify-between gap-3 lg:hidden">
               <Link

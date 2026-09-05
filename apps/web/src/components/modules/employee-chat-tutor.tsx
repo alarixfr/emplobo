@@ -289,7 +289,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
   return (
     <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
       {/* Sessions sidebar */}
-      <aside className="flex flex-col rounded-lg border border-slate-200 bg-surface-container-lowest p-3 shadow-sm">
+      <aside className="flex flex-col rounded-lg border border-outline-variant bg-surface-container-lowest p-3 shadow-sm">
         <div className="flex items-center justify-between border-b border-outline-variant pb-3">
           <p className="font-label-caps text-label-caps text-secondary">
             RIWAYAT CHAT
@@ -348,7 +348,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
       </aside>
 
       {/* Main chat column */}
-      <section className="flex h-[72vh] max-h-[680px] min-h-[440px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm">
+      <section className="flex h-[72vh] max-h-[680px] min-h-[440px] flex-col overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm">
         {/* Chat header */}
         <div className="flex items-center justify-between border-b border-outline-variant px-4 py-3">
           <div className="flex items-center gap-3">
@@ -429,7 +429,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
                     <div
                       className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
                         isUser
-                          ? "bg-slate-300 text-on-surface-variant"
+                          ? "bg-surface-container-high text-on-surface-variant"
                           : "bg-ai-border text-primary"
                       }`}
                     >
@@ -481,7 +481,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
         </div>
 
         {/* Input zone */}
-        <div className="border-t border-outline-variant bg-white p-4">
+        <div className="border-t border-outline-variant bg-surface-container-lowest p-4">
           {error ? (
             <p className="mb-2 font-body-sm text-body-sm text-error">{error}</p>
           ) : null}
@@ -514,7 +514,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
               placeholder="Tanyakan SOP, aturan, atau cara kerja peran ini..."
               rows={2}
               maxLength={4000}
-              className="flex-1 resize-none rounded-lg border border-slate-300 bg-surface-muted px-4 py-3 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary"
+              className="flex-1 resize-none rounded-lg border border-outline-variant bg-surface-muted px-4 py-3 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-1 focus:ring-primary"
             />
 
             <button

@@ -83,7 +83,7 @@ export default async function RolesPage() {
             <ul className="mt-4 space-y-3">
               {roles.map((role) => (
                 <li key={role.id}>
-                  <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
+                  <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-fixed">

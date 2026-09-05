@@ -106,7 +106,7 @@ export function ModuleQuizCard({
   }
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-surface-container-lowest p-6 shadow-sm md:p-10">
+    <section className="rounded-lg border border-outline-variant bg-surface-container-lowest p-6 shadow-sm md:p-10">
       {/* Header: chapter title + question counter + progress */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-headline-sm text-[18px] text-on-surface">
@@ -191,7 +191,7 @@ export function ModuleQuizCard({
               return (
                 <div
                   key={q.id}
-                  className="rounded-lg border border-slate-200 bg-surface-bright p-5"
+                  className="rounded-lg border border-outline-variant bg-surface-bright p-5"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-body-md text-body-md font-medium text-on-surface">

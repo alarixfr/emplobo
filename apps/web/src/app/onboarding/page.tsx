@@ -28,7 +28,7 @@ export default async function OnboardingPage() {
       </header>
 
       <main className="flex flex-1 items-center justify-center px-4 py-12">
-        <div className="w-full max-w-lg rounded-lg border border-slate-200 bg-surface-container-lowest p-8 text-center shadow-sm md:p-10">
+        <div className="w-full max-w-lg rounded-lg border border-outline-variant bg-surface-container-lowest p-8 text-center shadow-sm md:p-10">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary-container">
             <span className="material-symbols-outlined ms-fill text-[28px] text-on-primary-container">
               storefront

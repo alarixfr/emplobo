@@ -23,7 +23,7 @@ function DirectorySkeleton() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm"
+            className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm"
           >
             <Skeleton className="h-3 w-32" />
             <Skeleton className="mt-2 h-8 w-16" />
@@ -32,11 +32,11 @@ function DirectorySkeleton() {
         ))}
       </div>
       <Skeleton className="h-10 w-full md:w-72" />
-      <div className="rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm">
+      <div className="rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm">
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="flex items-center gap-4 border-b border-slate-100 p-4 last:border-0"
+            className="flex items-center gap-4 border-b border-outline-variant p-4 last:border-0"
           >
             <Skeleton className="h-9 w-9 rounded-full" />
             <div className="flex-1 space-y-2">
@@ -143,7 +143,7 @@ export function EmployeeDirectory() {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-6 shadow-sm">
+      <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-6 shadow-sm">
         <p className="font-body-sm text-body-sm text-error">{error}</p>
         <button
           type="button"
@@ -160,7 +160,7 @@ export function EmployeeDirectory() {
     <div className="space-y-6">
       {/* ── Metrics bento ─────────────────────────────────────────────── */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
+        <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
           <p className="font-label-caps text-label-caps text-secondary">
             TOTAL KARYAWAN
           </p>
@@ -172,7 +172,7 @@ export function EmployeeDirectory() {
           </p>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
+        <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
           <p className="font-label-caps text-label-caps text-secondary">
             PROGRES PELATIHAN
           </p>
@@ -230,7 +230,7 @@ export function EmployeeDirectory() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Cari nama atau email…"
-            className="w-full rounded-xl border border-slate-300 bg-surface-container-lowest py-2.5 pl-10 pr-4 font-body-sm text-body-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50"
+            className="w-full rounded-xl border border-outline-variant bg-surface-container-lowest py-2.5 pl-10 pr-4 font-body-sm text-body-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50"
           />
         </div>
 
@@ -238,10 +238,11 @@ export function EmployeeDirectory() {
           <button
             type="button"
             onClick={() => setActiveRoleFilter(null)}
+            aria-pressed={activeRoleFilter === null}
             className={`rounded-full px-4 py-1.5 font-label-caps text-label-caps transition-colors ${
               activeRoleFilter === null
                 ? "border border-secondary bg-surface-container-lowest text-on-surface"
-                : "text-secondary hover:text-on-surface"
+                : "border border-transparent text-secondary hover:border-outline-variant hover:text-on-surface"
             }`}
           >
             SEMUA ROLE
@@ -253,10 +254,11 @@ export function EmployeeDirectory() {
               onClick={() =>
                 setActiveRoleFilter(activeRoleFilter === roleName ? null : roleName)
               }
+              aria-pressed={activeRoleFilter === roleName}
               className={`rounded-full px-4 py-1.5 font-label-caps text-label-caps transition-colors ${
                 activeRoleFilter === roleName
                   ? "border border-secondary bg-surface-container-lowest text-on-surface"
-                  : "text-secondary hover:text-on-surface"
+                  : "border border-transparent text-secondary hover:border-outline-variant hover:text-on-surface"
               }`}
             >
               {roleName.toUpperCase()}
@@ -266,7 +268,7 @@ export function EmployeeDirectory() {
       </div>
 
       {/* ── Directory table ───────────────────────────────────────────── */}
-      <section className="rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm">
+      <section className="rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm">
         {filtered.length === 0 ? (
           <p className="p-6 font-body-md text-body-md text-on-surface-variant">
             Tidak ada karyawan yang cocok dengan filter.
@@ -275,7 +277,7 @@ export function EmployeeDirectory() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left">
               <thead>
-                <tr className="border-b border-slate-200">
+                <tr className="border-b border-outline-variant">
                   <th className="px-5 py-3 font-label-caps text-label-caps text-secondary">
                     KARYAWAN
                   </th>
@@ -294,7 +296,7 @@ export function EmployeeDirectory() {
                 {filtered.map((employee) => (
                   <tr
                     key={employee.id}
-                    className="border-b border-slate-100 transition-colors last:border-0 hover:bg-surface-bright"
+                    className="border-b border-outline-variant transition-colors last:border-0 hover:bg-surface-bright"
                   >
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
@@ -357,7 +359,7 @@ export function EmployeeDirectory() {
             </table>
           </div>
         )}
-        <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3">
+        <div className="flex items-center justify-between border-t border-outline-variant px-5 py-3">
           <p className="font-data-point text-data-point text-secondary">
             {filtered.length} dari {employees.length} karyawan
           </p>

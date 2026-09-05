@@ -125,7 +125,7 @@ export function AssignmentPanel({ roleId, roleStatus }: AssignmentPanelProps) {
   }, [roleStatus]);
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm md:p-6">
+    <section className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-headline-sm text-headline-sm text-on-surface">
@@ -195,7 +195,7 @@ export function AssignmentPanel({ roleId, roleStatus }: AssignmentPanelProps) {
                       checked={checked}
                       disabled={disabled || status !== "PUBLISHED"}
                       onChange={() => toggleUser(user.id)}
-                      className="h-4 w-4 rounded border-outline-variant accent-[#144225]"
+                      className="h-4 w-4 rounded border-outline-variant accent-primary"
                     />
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-fixed font-label-caps text-[10px] text-on-primary-fixed-variant">
                       {initialsOf(user.name)}

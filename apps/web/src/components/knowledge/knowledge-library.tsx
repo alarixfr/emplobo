@@ -68,7 +68,7 @@ function KnowledgeSkeleton() {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm"
+            className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm"
           >
             <Skeleton className="h-3 w-32" />
             <Skeleton className="mt-2 h-8 w-16" />
@@ -77,8 +77,8 @@ function KnowledgeSkeleton() {
         ))}
       </div>
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm">
-          <div className="border-b border-slate-200 p-5">
+        <div className="rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm">
+          <div className="border-b border-outline-variant p-5">
             <Skeleton className="h-4 w-40" />
             <Skeleton className="mt-2 h-3 w-72" />
           </div>
@@ -90,7 +90,7 @@ function KnowledgeSkeleton() {
           {Array.from({ length: 2 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm"
+              className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm"
             >
               <Skeleton className="h-4 w-36" />
               <Skeleton className="mt-4 h-32 w-full rounded-lg" />
@@ -446,13 +446,13 @@ export function KnowledgeLibrary() {
   const usedPct = quota?.usedPct ?? 0;
   const selectedChunkCount = selectedDocument?.chunks.length ?? 0;
   const fieldClass =
-    "w-full rounded-lg border border-slate-300 bg-surface-container-lowest px-3.5 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:cursor-not-allowed disabled:opacity-60";
+    "w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-3.5 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
     <div className="space-y-8">
       {/* ── Metrics ───────────────────────────────────────────────────── */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
+        <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
           <p className="font-label-caps text-label-caps text-secondary">
             TOTAL DOKUMEN
           </p>
@@ -471,7 +471,7 @@ export function KnowledgeLibrary() {
           ) : null}
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
+        <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
           <p className="font-label-caps text-label-caps text-secondary">
             PEMAKAIAN PENYIMPANAN
           </p>
@@ -486,7 +486,7 @@ export function KnowledgeLibrary() {
           </p>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
+        <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
           <p className="font-label-caps text-label-caps text-secondary">
             CHUNK AI AKTIF
           </p>
@@ -519,7 +519,7 @@ export function KnowledgeLibrary() {
       {/* ── Workspace: detail (left) + action rail (right) ────────────── */}
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         {/* Detail / editor panel */}
-        <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm lg:order-1">
+        <section className="min-w-0 overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm lg:order-1">
           {detailLoading ? (
             <div className="space-y-5 p-5 md:p-6" aria-busy="true" aria-label="Memuat detail dokumen">
               <Skeleton className="h-7 w-64" />
@@ -529,7 +529,7 @@ export function KnowledgeLibrary() {
             </div>
           ) : selectedDocument ? (
             <>
-              <div className="border-b border-slate-200 p-5 md:p-6">
+              <div className="border-b border-outline-variant p-5 md:p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div className="min-w-0">
                     <p className="font-label-caps text-label-caps text-secondary">
@@ -570,7 +570,7 @@ export function KnowledgeLibrary() {
                         className="inline-flex items-center gap-2 rounded-lg border border-status-ready bg-surface-container-lowest px-4 py-2.5 font-label-caps text-label-caps text-status-ready transition-colors hover:bg-status-ready/10 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <span className="material-symbols-outlined text-[18px]">
-                          {approving ? "progress_activity" : "check_circle"}
+                          {approving ? "progress_activity animate-spin" : "check_circle"}
                         </span>
                         {approving ? "MENGONFIRMASI…" : "KONFIRMASI"}
                       </button>
@@ -582,7 +582,7 @@ export function KnowledgeLibrary() {
                       className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <span className="material-symbols-outlined text-[18px]">
-                        {saving ? "progress_activity" : "save"}
+                        {saving ? "progress_activity animate-spin" : "save"}
                       </span>
                       SIMPAN
                     </button>
@@ -593,7 +593,7 @@ export function KnowledgeLibrary() {
                       className="inline-flex items-center gap-2 rounded-lg border border-error px-4 py-2.5 font-label-caps text-label-caps text-error transition-colors hover:bg-error-container/20 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <span className="material-symbols-outlined text-[18px]">
-                        {deleting ? "progress_activity" : "delete"}
+                        {deleting ? "progress_activity animate-spin" : "delete"}
                       </span>
                       HAPUS
                     </button>
@@ -727,7 +727,7 @@ export function KnowledgeLibrary() {
         {/* Action rail */}
         <aside className="order-first space-y-6 lg:order-2">
           {/* Upload file */}
-          <section className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
+          <section className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-fixed">
                 <span className="material-symbols-outlined text-[20px] text-on-primary-fixed-variant">
@@ -797,7 +797,7 @@ export function KnowledgeLibrary() {
                     className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <span className="material-symbols-outlined text-[18px]">
-                      {uploading ? "progress_activity" : "upload"}
+                      {uploading ? "progress_activity animate-spin" : "upload"}
                     </span>
                     {uploading ? "MEMPROSES…" : "UPLOAD FILE"}
                   </button>
@@ -813,7 +813,7 @@ export function KnowledgeLibrary() {
           </section>
 
           {/* Manual note */}
-          <section className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
+          <section className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-tertiary-fixed">
                 <span className="material-symbols-outlined text-[20px] text-on-tertiary-fixed-variant">
@@ -871,8 +871,8 @@ export function KnowledgeLibrary() {
           </section>
 
           {/* Document list */}
-          <section className="rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm">
-            <div className="border-b border-slate-200 p-4">
+          <section className="rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm">
+            <div className="border-b border-outline-variant p-4">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-headline-sm text-[18px] text-on-surface">
                   Daftar Dokumen
@@ -890,7 +890,7 @@ export function KnowledgeLibrary() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Cari dokumen…"
-                  className="w-full rounded-lg border border-slate-300 bg-surface-container-lowest py-2 pl-9 pr-3 font-body-sm text-body-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50"
+                  className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest py-2 pl-9 pr-3 font-body-sm text-body-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50"
                 />
               </div>
             </div>
@@ -913,7 +913,7 @@ export function KnowledgeLibrary() {
                       className={`w-full rounded-lg border p-3 text-left transition-colors ${
                         active
                           ? "border-primary bg-primary-fixed-dim/40 shadow-sm ring-1 ring-primary"
-                          : "border-slate-200 bg-surface-container-lowest shadow-sm hover:border-primary/40 hover:bg-surface-container-low"
+                          : "border-outline-variant bg-surface-container-lowest shadow-sm hover:border-primary/40 hover:bg-surface-container-low"
                       }`}
                     >
                       <div className="flex items-start gap-3">

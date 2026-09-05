@@ -6,9 +6,9 @@ import type { RoleStatus } from "@/lib/roles";
  */
 export function StatusBadge({ status }: { status: RoleStatus }) {
   const styles: Record<RoleStatus, string> = {
-    DRAFT: "bg-gray-100 text-gray-700 border-gray-200",
-    READY: "bg-blue-100 text-blue-700 border-blue-200",
-    PUBLISHED: "bg-green-100 text-primary border-green-200",
+    DRAFT: "bg-surface-container-high text-on-surface-variant border-outline-variant",
+    READY: "bg-status-ready/10 text-status-ready border-status-ready/40",
+    PUBLISHED: "bg-primary-fixed/40 text-on-primary-fixed-variant border-primary-fixed-dim",
   };
 
   const labels: Record<RoleStatus, string> = {

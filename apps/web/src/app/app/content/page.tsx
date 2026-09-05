@@ -70,7 +70,7 @@ export default async function ContentHubPage() {
               <li key={role.id}>
                 <Link
                   href={`/app/content/${role.id}`}
-                  className="group flex h-full flex-col rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:border-primary/40 hover:bg-surface-bright"
+                  className="group flex h-full flex-col rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm transition-colors hover:border-primary/40 hover:bg-surface-bright"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">

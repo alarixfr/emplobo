@@ -89,7 +89,7 @@ export function GuideGeneratorPanel({
   }
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm md:p-6">
+    <section className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-headline-sm text-headline-sm text-on-surface">
@@ -108,17 +108,13 @@ export function GuideGeneratorPanel({
           className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 font-label-caps text-label-caps transition-colors ${
             canGenerate
               ? "bg-status-ready text-white hover:brightness-95"
-              : "cursor-not-allowed border border-slate-300 bg-slate-200 text-slate-400"
+              : "cursor-not-allowed border border-outline-variant bg-surface-container-high text-outline"
           }`}
         >
           <span className="material-symbols-outlined text-[18px]">
-            {isGenerating ? "progress_activity" : "auto_awesome"}
+            {isGenerating ? "progress_activity animate-spin" : "auto_awesome"}
           </span>
-          {isGenerating
-            ? "MEMBUAT…"
-            : guide
-              ? "PERBARUI PANDUAN"
-              : "HASILKAN PANDUAN"}
+          {isGenerating ? "MENGHASILKAN…" : guide ? "PERBARUI GUIDE" : "GENERATE GUIDE"}
         </button>
       </div>
 
@@ -156,7 +152,7 @@ export function GuideGeneratorPanel({
             {guide.chapters.map((chapter) => (
               <article
                 key={chapter.id}
-                className="rounded-lg border border-slate-200 bg-surface-bright p-5"
+                className="rounded-lg border border-outline-variant bg-surface-bright p-5"
               >
                 <p className="font-label-caps text-label-caps text-secondary">
                   BAB {chapter.order}

@@ -69,7 +69,7 @@ function EditorSkeleton() {
 }
 
 const fieldClass =
-  "w-full rounded-lg border border-slate-300 bg-surface-container-lowest px-3.5 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:cursor-not-allowed disabled:opacity-60";
+  "w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-3.5 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:cursor-not-allowed disabled:opacity-60";
 
 export function ContentEditor({ roleId }: { roleId: string }) {
   const { getToken, isLoaded } = useAuth();
@@ -424,7 +424,7 @@ export function ContentEditor({ roleId }: { roleId: string }) {
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-[18px]">
-              {saving ? "progress_activity" : "save"}
+              {saving ? "progress_activity animate-spin" : "save"}
             </span>
             {saving ? "MENYIMPAN…" : "SIMPAN"}
           </button>
@@ -440,8 +440,8 @@ export function ContentEditor({ roleId }: { roleId: string }) {
       {/* Workspace */}
       <div className="grid items-start gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         {/* Chapter rail */}
-        <aside className="rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm lg:sticky lg:top-24">
-          <div className="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
+        <aside className="rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm lg:sticky lg:top-24">
+          <div className="flex items-center justify-between gap-3 border-b border-outline-variant p-4">
             <h2 className="font-label-caps text-label-caps text-secondary">
               CHAPTER {chaptersCount}
             </h2>
@@ -470,7 +470,7 @@ export function ContentEditor({ roleId }: { roleId: string }) {
                     className={`rounded-lg border transition-colors ${
                       selected
                         ? "border-primary bg-primary-fixed-dim/40 ring-1 ring-primary"
-                        : "border-slate-200 bg-surface-container-lowest hover:border-primary/40"
+                        : "border-outline-variant bg-surface-container-lowest hover:border-primary/40"
                     }`}
                   >
                     <div className="flex items-start gap-2 p-3">
@@ -493,7 +493,7 @@ export function ContentEditor({ roleId }: { roleId: string }) {
                         </p>
                       </button>
                     </div>
-                    <div className="flex items-center justify-end gap-1 border-t border-slate-200/70 px-2 py-1.5">
+                    <div className="flex items-center justify-end gap-1 border-t border-outline-variant/70 px-2 py-1.5">
                       <button
                         type="button"
                         onClick={() => moveChapter(index, -1)}
@@ -534,7 +534,7 @@ export function ContentEditor({ roleId }: { roleId: string }) {
         {/* Editor pane */}
         <section className="min-w-0 space-y-6">
           {/* Guide title */}
-          <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
+          <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm">
             <label
               htmlFor="guide-title"
               className="font-label-caps text-label-caps text-secondary"
@@ -556,7 +556,7 @@ export function ContentEditor({ roleId }: { roleId: string }) {
           {activeChapter ? (
             <>
               {/* Chapter header */}
-              <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
+              <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm">
                 <label
                   htmlFor="chapter-title"
                   className="font-label-caps text-label-caps text-secondary"
@@ -604,7 +604,7 @@ export function ContentEditor({ roleId }: { roleId: string }) {
               </div>
 
               {/* Chapter content */}
-              <div className="overflow-hidden rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm">
+              <div className="overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm">
                 {previewMode ? (
                   <div className="chat-markdown max-h-[36rem] overflow-y-auto p-6 md:p-8">
                     <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
@@ -623,7 +623,7 @@ export function ContentEditor({ roleId }: { roleId: string }) {
               </div>
 
               {/* Quiz builder */}
-              <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
+              <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="font-label-caps text-label-caps text-secondary">
@@ -725,7 +725,7 @@ export function ContentEditor({ roleId }: { roleId: string }) {
                                     updateQuestion(qIndex, { correctIndex: optionIndex });
                                   }
                                 }}
-                                className="h-4 w-4 accent-[#2e7d32]"
+                                className="h-4 w-4 accent-primary"
                               />
                               <span className="font-data-point text-[11px] text-secondary">
                                 {String.fromCharCode(65 + optionIndex)}

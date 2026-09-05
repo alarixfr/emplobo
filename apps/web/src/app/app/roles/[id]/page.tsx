@@ -118,7 +118,7 @@ export default async function RoleDetailPage({ params }: PageProps) {
 
         {/* Right rail: readiness + gaps */}
         <aside className="space-y-4">
-          <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 text-center shadow-sm">
+          <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 text-center shadow-sm">
             <h2 className="mb-4 font-headline-sm text-[18px] text-on-surface">
               Kesiapan AI
             </h2>
@@ -129,7 +129,7 @@ export default async function RoleDetailPage({ params }: PageProps) {
           </div>
 
           <dl className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-4 shadow-sm">
+            <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4 shadow-sm">
               <dt className="font-label-caps text-[10px] text-secondary">
                 PESAN TRAINING
               </dt>
@@ -137,7 +137,7 @@ export default async function RoleDetailPage({ params }: PageProps) {
                 {role.trainingMessageCount}
               </dd>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-4 shadow-sm">
+            <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4 shadow-sm">
               <dt className="font-label-caps text-[10px] text-secondary">
                 CHAPTER GUIDE
               </dt>
@@ -147,7 +147,7 @@ export default async function RoleDetailPage({ params }: PageProps) {
             </div>
           </dl>
 
-          <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
+          <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm">
             <KnowledgeGaps gaps={missingAreas} />
           </div>
 

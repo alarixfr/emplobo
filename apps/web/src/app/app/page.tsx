@@ -61,7 +61,7 @@ export default async function AppHomePage() {
       {isAdmin ? (
         <AdminDashboard />
       ) : (
-        <section className="rounded-xl border border-slate-200 bg-surface-container-lowest p-6 shadow-sm md:p-8">
+        <section className="rounded-xl border border-outline-variant bg-surface-container-lowest p-6 shadow-sm md:p-8">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-fixed">
               <span className="material-symbols-outlined ms-fill text-on-primary-fixed-variant">

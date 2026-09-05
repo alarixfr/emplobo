@@ -110,7 +110,7 @@ function StatCard({
   iconClass: string;
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
+    <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
       <div className="flex items-start justify-between">
         <p className="font-label-caps text-label-caps text-secondary">
           {label}
@@ -145,7 +145,7 @@ function DashboardSkeleton() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm"
+            className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm"
           >
             <div className="flex items-start justify-between">
               <Skeleton className="h-3 w-28" />
@@ -157,7 +157,7 @@ function DashboardSkeleton() {
         ))}
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm lg:col-span-2">
+        <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm lg:col-span-2">
           <Skeleton className="h-4 w-40" />
           <Skeleton className="mt-2 h-3 w-64" />
           <div className="mt-6 space-y-4">
@@ -172,7 +172,7 @@ function DashboardSkeleton() {
             ))}
           </div>
         </div>
-        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm">
+        <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm">
           <Skeleton className="h-4 w-36" />
           <div className="mt-6 space-y-5">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -226,7 +226,7 @@ export function AdminDashboard() {
 
   if (error && !summary) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-6 shadow-sm">
+      <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-6 shadow-sm">
         <p className="font-body-sm text-body-sm text-error">{error}</p>
         <button
           type="button"
@@ -289,8 +289,8 @@ export function AdminDashboard() {
 
       {/* ── Kesiapan AI table + Aktivitas Terbaru ────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <section className="min-w-0 rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm lg:col-span-2">
-          <div className="border-b border-slate-200 p-5">
+        <section className="min-w-0 rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm lg:col-span-2">
+          <div className="border-b border-outline-variant p-5">
             <h2 className="font-headline-sm text-[18px] text-on-surface">
               Kesiapan AI
             </h2>
@@ -308,7 +308,7 @@ export function AdminDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] text-left">
                 <thead>
-                  <tr className="border-b border-slate-200">
+                  <tr className="border-b border-outline-variant">
                     <th className="px-5 py-3 font-label-caps text-label-caps text-secondary">
                       ROLE
                     </th>
@@ -327,7 +327,7 @@ export function AdminDashboard() {
                     return (
                       <tr
                         key={role.roleId}
-                        className="border-b border-slate-100 transition-colors last:border-0 hover:bg-surface-bright"
+                        className="border-b border-outline-variant transition-colors last:border-0 hover:bg-surface-bright"
                       >
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
@@ -392,8 +392,8 @@ export function AdminDashboard() {
         </section>
 
         {/* Recent activity timeline */}
-        <section className="min-w-0 rounded-lg border border-slate-200 bg-surface-container-lowest shadow-sm">
-          <div className="border-b border-slate-200 p-5">
+        <section className="min-w-0 rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm">
+          <div className="border-b border-outline-variant p-5">
             <h2 className="font-headline-sm text-[18px] text-on-surface">
               Aktivitas Terbaru
             </h2>

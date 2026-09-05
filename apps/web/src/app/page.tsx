@@ -262,7 +262,7 @@ export default function HomePage() {
               <span className="h-2.5 w-2.5 rounded-full bg-surface-container-highest" />
             </div>
             <div className="grid gap-4 p-4 text-left md:grid-cols-12 md:p-6">
-              <div className="hidden rounded-xl border border-slate-200 bg-surface-container-lowest p-4 md:col-span-3 md:block">
+              <div className="hidden rounded-xl border border-outline-variant bg-surface-container-lowest p-4 md:col-span-3 md:block">
                 <p className="font-label-caps text-label-caps text-secondary">
                   ROLES CONTEXT
                 </p>
@@ -273,7 +273,7 @@ export default function HomePage() {
                       className={`rounded-lg border p-3 ${
                         i === 0
                           ? "border-primary ring-1 ring-primary"
-                          : "border-slate-200"
+                          : "border-outline-variant"
                       }`}
                     >
                       <p className="font-data-point text-data-point font-bold text-on-surface">
@@ -286,12 +286,12 @@ export default function HomePage() {
                   ))}
                 </div>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-surface-container-lowest p-4 md:col-span-6">
+              <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 md:col-span-6">
                 <div className="flex items-center gap-2">
                   <p className="font-headline-sm text-[18px] text-on-surface">
                     Training Room
                   </p>
-                  <span className="rounded-full border border-gray-200 bg-gray-100 px-2 py-0.5 font-label-caps text-label-caps text-gray-700">
+                  <span className="rounded-full border border-outline-variant bg-surface-container-low px-2 py-0.5 font-label-caps text-label-caps text-on-surface-variant">
                     DRAFT
                   </span>
                 </div>
@@ -300,7 +300,7 @@ export default function HomePage() {
                     Bagaimana urutan prosedur menutup espresso machine di akhir
                     shift?
                   </div>
-                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm border border-slate-200 bg-white p-3 text-sm text-on-surface">
+                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm border border-outline-variant bg-surface-container-lowest p-3 text-sm text-on-surface">
                     Backflush tiap group head dengan cafiza 10 detik, ulangi 5x…
                   </div>
                   <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-ai-border bg-ai-accent p-3 text-sm text-on-surface">
@@ -308,7 +308,7 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-surface-container-lowest p-4 text-center md:col-span-3">
+              <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 text-center md:col-span-3">
                 <p className="font-label-caps text-label-caps text-secondary">
                   BRAIN READINESS
                 </p>
@@ -319,7 +319,7 @@ export default function HomePage() {
                       viewBox="0 0 100 100"
                     >
                       <circle
-                        className="text-slate-200"
+                        className="text-outline-variant"
                         cx="50"
                         cy="50"
                         fill="transparent"

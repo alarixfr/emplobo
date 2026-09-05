@@ -12,7 +12,7 @@ export function ReadinessRing({ percent }: { percent: number }) {
     <div className="relative inline-flex h-32 w-32 items-center justify-center">
       <svg className="h-full w-full -rotate-90 transform" viewBox="0 0 100 100">
         <circle
-          className="text-slate-200"
+          className="text-outline-variant"
           cx="50"
           cy="50"
           fill="transparent"

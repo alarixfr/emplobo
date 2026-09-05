@@ -27,7 +27,7 @@ function ReaderSkeleton() {
       aria-label="Memuat modul"
     >
       <div className="mx-auto w-full max-w-[720px]">
-        <div className="rounded-lg border border-slate-200 bg-surface-container-lowest p-6 shadow-sm md:p-10">
+        <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-6 shadow-sm md:p-10">
           <div className="flex gap-2">
             <Skeleton className="h-5 w-16 rounded-full" />
             <Skeleton className="h-5 w-24 rounded-full" />
@@ -201,7 +201,7 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
       {/* ── Article column (720px) ────────────────────────────────────── */}
       <div className="mx-auto w-full max-w-[720px]">
         {/* Mobile chapter stepper — desktop has the sticky TOC instead */}
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-surface-container-lowest p-2 shadow-sm lg:hidden">
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-outline-variant bg-surface-container-lowest p-2 shadow-sm lg:hidden">
           <button
             type="button"
             onClick={() =>
@@ -233,7 +233,7 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
           </button>
         </div>
 
-        <article className="relative rounded-lg border border-slate-200 bg-surface-container-lowest p-6 shadow-sm md:p-10">
+        <article className="relative rounded-lg border border-outline-variant bg-surface-container-lowest p-6 shadow-sm md:p-10">
           {/* Floating AI Verified badge */}
           <div className="absolute -top-3 right-4 flex items-center gap-1.5 rounded-full border border-ai-border bg-ai-accent px-3 py-1 shadow-sm md:-right-3">
             <span className="material-symbols-outlined ms-fill text-[16px] text-primary">

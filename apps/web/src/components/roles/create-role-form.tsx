@@ -74,7 +74,7 @@ export function CreateRoleForm({ onCreated }: CreateRoleFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm"
+      className="space-y-4 rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm"
     >
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-fixed">
@@ -109,7 +109,7 @@ export function CreateRoleForm({ onCreated }: CreateRoleFormProps) {
           required
           disabled={isPending}
           placeholder="Kasir"
-          className="w-full rounded-lg border border-slate-300 bg-surface-muted px-3 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg border border-outline-variant bg-surface-muted px-3 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:cursor-not-allowed disabled:opacity-60"
         />
       </div>
 
@@ -128,7 +128,7 @@ export function CreateRoleForm({ onCreated }: CreateRoleFormProps) {
           rows={3}
           disabled={isPending}
           placeholder="Melayani pembayaran, mengoperasikan POS, menangani refund…"
-          className="w-full resize-y rounded-lg border border-slate-300 bg-surface-muted px-3 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full resize-y rounded-lg border border-outline-variant bg-surface-muted px-3 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50 disabled:cursor-not-allowed disabled:opacity-60"
         />
       </div>
 

@@ -28,7 +28,7 @@ function ModulesSkeleton() {
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm"
+              className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm"
             >
               <div className="flex items-start gap-4">
                 <Skeleton className="h-16 w-16" />
@@ -49,7 +49,7 @@ function ModulesSkeleton() {
           {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm"
+              className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm"
             >
               <Skeleton className="mx-auto h-12 w-12 rounded-full" />
               <Skeleton className="mx-auto mt-3 h-3 w-2/3" />
@@ -165,7 +165,7 @@ export function MyModulesList() {
             return (
               <div
                 key={module.id}
-                className="rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright"
+                className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright"
               >
                 <div className="flex items-start gap-4">
                   <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-primary-fixed">
@@ -238,7 +238,7 @@ export function MyModulesList() {
           {certifications.map((cert) => (
             <div
               key={cert.roleId}
-              className={`flex flex-col items-center rounded-lg border border-slate-200 bg-surface-container-lowest p-5 text-center shadow-sm ${
+              className={`flex flex-col items-center rounded-lg border border-outline-variant bg-surface-container-lowest p-5 text-center shadow-sm ${
                 cert.passed ? "" : "opacity-50 grayscale"
               }`}
             >
