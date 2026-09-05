@@ -205,6 +205,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
   const [observerName, setObserverName] = useState<string | null>(null);
   const [lockFree, setLockFree] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -420,9 +421,26 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
 
   async function submitMessage() {
     if (!canSend) return;
+    const content = input.trim();
     setSendError(null);
     setRetryAfter(null);
     setIsSending(true);
+    setInput("");
+
+    // Optimistic render — show the admin message immediately and a
+    // "thinking" bubble while the AI reply is generated server-side.
+    const optimisticId = `pending-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 7)}`;
+    const optimisticAdmin: TrainingMessage = {
+      id: optimisticId,
+      sender: "admin",
+      content,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimisticAdmin]);
+    setIsThinking(true);
+
     try {
       const data = await withToken((token) =>
         apiFetch<{
@@ -433,15 +451,22 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
         }>(`/api/roles/${role.id}/training/messages`, {
           method: "POST",
           token,
-          body: { content: input.trim() },
+          body: { content },
         }),
       );
 
-      setInput("");
-      setMessages((prev) => [...prev, data.adminMessage, data.aiMessage]);
+      setMessages((prev) => [
+        ...prev.filter((message) => message.id !== optimisticId),
+        data.adminMessage,
+        data.aiMessage,
+      ]);
       setStatus(data.role.status);
       setCompleteness(data.role.completenessScore);
     } catch (err) {
+      // The server rolled the admin message back on AI failure — remove the
+      // optimistic copy and restore the text so nothing is lost.
+      setMessages((prev) => prev.filter((message) => message.id !== optimisticId));
+      setInput(content);
       if (err instanceof ApiError && err.status === 423) {
         setIsLocked(false);
         lockedRef.current = false;
@@ -462,6 +487,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
         setSendError(err instanceof Error ? err.message : "Gagal mengirim pesan.");
       }
     } finally {
+      setIsThinking(false);
       setIsSending(false);
     }
   }
@@ -643,9 +669,10 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
   }, []);
 
   useEffect(() => {
-    // Jump to the newest message whenever new ones arrive.
+    // Jump to the newest message whenever new ones arrive (including the
+    // optimistic "thinking" bubble).
     endOfMessagesRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages]);
+  }, [messages, isThinking]);
 
   // On first open, place the chat at the newest message without an animation,
   // so the user never lands mid-conversation and has to scroll down.
@@ -795,6 +822,40 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
               );
             })
           )}
+          {isThinking ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex max-w-[85%] items-start gap-4 self-start"
+            >
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ai-border text-primary">
+                <span className="material-symbols-outlined text-sm">
+                  psychology
+                </span>
+              </div>
+              <div className="ai-bubble rounded-tl-sm rounded-2xl px-4 py-3 shadow-sm">
+                <div className="flex items-center gap-2.5">
+                  <span aria-hidden className="flex items-center gap-1">
+                    <span
+                      className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary"
+                      style={{ animationDelay: "0ms" }}
+                    />
+                    <span
+                      className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary"
+                      style={{ animationDelay: "150ms" }}
+                    />
+                    <span
+                      className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary"
+                      style={{ animationDelay: "300ms" }}
+                    />
+                  </span>
+                  <span className="font-body-sm text-[12px] text-secondary">
+                    AI sedang berpikir...
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : null}
           <div ref={endOfMessagesRef} />
         </div>
 
@@ -880,11 +941,13 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
               maxLength={4000}
               disabled={!isLocked || isSending}
               placeholder={
-                isLocked
-                  ? "Jelaskan prosedurnya di sini..."
-                  : observerName
-                    ? "Mode observer. Baca saja"
-                    : "Training Room terkunci"
+                isThinking
+                  ? "AI sedang memproses pesan..."
+                  : isLocked
+                    ? "Jelaskan prosedurnya di sini..."
+                    : observerName
+                      ? "Mode observer. Baca saja"
+                      : "Training Room terkunci"
               }
               className="w-full resize-none rounded-lg border-0 bg-transparent px-2 py-3 font-body-md text-body-md text-on-surface outline-none transition-colors placeholder:text-outline disabled:opacity-60"
             />
@@ -895,7 +958,9 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
               aria-label="Kirim pesan"
               className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-lg bg-primary p-3 text-white transition-colors hover:bg-primary-container disabled:opacity-50"
             >
-              <span className="material-symbols-outlined">send</span>
+              <span className="material-symbols-outlined">
+                {isSending ? "progress_activity animate-spin" : "send"}
+              </span>
             </button>
           </div>
           <p className="mt-2 flex items-start gap-1.5 font-body-sm text-[12px] text-secondary">
