@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useScrollSpy } from "@/lib/use-scroll-spy";
 
 type Lang = "curl" | "node";
 
@@ -27,7 +28,7 @@ const SECTIONS = [
   },
   {
     id: "roles",
-    title: "Training Endpoints",
+    title: "Training & Role",
     endpoints: [
       {
         method: "POST",
@@ -146,6 +147,36 @@ const { role } = await res.json();`,
 // 423 → sedang dikunci admin lain; body berisi activeTrainerName`,
       },
       {
+        method: "PATCH",
+        path: "/api/roles/:id/training/heartbeat",
+        desc: "Denyut jantung dari admin pemegang lock (setiap 60 detik). Lock dianggap basi setelah 30 menit tanpa denyut.",
+        params: [],
+        response: 200,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl -X PATCH "$API/roles/$ROLE_ID/training/heartbeat" \\
+  -H "Authorization: Bearer $CLERK_TOKEN"`
+            : `const res = await fetch(
+  \`\${API}/roles/\${roleId}/training/heartbeat\`,
+  { method: "PATCH", headers: { Authorization: \`Bearer \${token}\` } },
+);`,
+      },
+      {
+        method: "DELETE",
+        path: "/api/roles/:id/training/lock",
+        desc: "Melepas kunci Training Room secara eksplisit (saat menutup panel).",
+        params: [],
+        response: 200,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl -X DELETE "$API/roles/$ROLE_ID/training/lock" \\
+  -H "Authorization: Bearer $CLERK_TOKEN"`
+            : `const res = await fetch(
+  \`\${API}/roles/\${roleId}/training/lock\`,
+  { method: "DELETE", headers: { Authorization: \`Bearer \${token}\` } },
+);`,
+      },
+      {
         method: "GET",
         path: "/api/roles/:id/training/messages",
         desc: "Transkrip percakapan training + status role.",
@@ -196,6 +227,60 @@ const { role, users } = await res.json();`,
     ],
   },
   {
+    id: "knowledge",
+    title: "Knowledge Library",
+    endpoints: [
+      {
+        method: "GET",
+        path: "/api/knowledge",
+        desc: "Daftar dokumen knowledge org + kuota (draft, storage, limit). " +
+          "Dokumen DRAFT tidak pernah dipakai AI.",
+        params: [
+          { name: "q", type: "string", required: false, desc: "Filter pencarian (max 200)" },
+        ],
+        response: 200,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl "$API/knowledge?q=espresso" \\
+  -H "Authorization: Bearer $CLERK_TOKEN"`
+            : `const res = await fetch(\`\${API}/knowledge?q=espresso\`, {
+  headers: { Authorization: \`Bearer \${token}\` },
+});
+const { documents, quota } = await res.json();`,
+      },
+      {
+        method: "POST",
+        path: "/api/knowledge/documents",
+        desc: "Membuat dokumen knowledge manual (DRAFT; perlu dikonfirmasi sebelum dipakai AI). " +
+          "Batas draft 5 dokumen — 409 jika penuh.",
+        params: [
+          { name: "title", type: "string", required: true, desc: "Judul (max 200)" },
+          { name: "content", type: "string", required: true, desc: "Teks dokumen (max 400.000)" },
+          { name: "description", type: "string", required: false, desc: "Deskripsi (max 500)" },
+        ],
+        response: 201,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl -X POST "$API/knowledge/documents" \\
+  -H "Authorization: Bearer $CLERK_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{"title":"Prosedur Jam Buka","content":"1. Nyalakan mesin. 2. Kalibrasi espresso…"}'`
+            : `const res = await fetch(\`\${API}/knowledge/documents\`, {
+  method: "POST",
+  headers: {
+    Authorization: \`Bearer \${token}\`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    title: "Prosedur Jam Buka",
+    content: "1. Nyalakan mesin. 2. Kalibrasi espresso…",
+  }),
+});
+const { document } = await res.json();`,
+      },
+    ],
+  },
+  {
     id: "employee",
     title: "Employee Learning",
     endpoints: [
@@ -213,6 +298,38 @@ const { role, users } = await res.json();`,
   headers: { Authorization: \`Bearer \${token}\` },
 });
 const { modules } = await res.json();`,
+      },
+      {
+        method: "GET",
+        path: "/api/my/modules/:roleId/chapters",
+        desc: "Chapter guide + quiz (tanpa kunci jawaban) untuk modul yang ditugaskan.",
+        params: [],
+        response: 200,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl "$API/my/modules/$ROLE_ID/chapters" \\
+  -H "Authorization: Bearer $CLERK_TOKEN"`
+            : `const res = await fetch(
+  \`\${API}/my/modules/\${roleId}/chapters\`,
+  { headers: { Authorization: \`Bearer \${token}\` } },
+);
+const { guide, chapters } = await res.json();`,
+      },
+      {
+        method: "POST",
+        path: "/api/my/chapters/:id/complete",
+        desc: "Menandai chapter selesai (upsert ChapterProgress untuk pengguna).",
+        params: [],
+        response: 201,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl -X POST "$API/my/chapters/$CHAPTER_ID/complete" \\
+  -H "Authorization: Bearer $CLERK_TOKEN"`
+            : `const res = await fetch(
+  \`\${API}/my/chapters/\${chapterId}/complete\`,
+  { method: "POST", headers: { Authorization: \`Bearer \${token}\` } },
+);
+const { progress } = await res.json();`,
       },
       {
         method: "POST",
@@ -241,6 +358,28 @@ const { score, passed, results } = await res.json();`,
       },
       {
         method: "POST",
+        path: "/api/my/chat/sessions",
+        desc: "Membuat sesi chat AI Tutor untuk role tertentu. Kapasitas 10 sesi/role — sesi tertua otomatis dibersihkan.",
+        params: [{ name: "roleId", type: "string", required: true, desc: "Role yang ditugaskan ke pengguna" }],
+        response: 201,
+        code: (lang: Lang) =>
+          lang === "curl"
+            ? `curl -X POST "$API/my/chat/sessions" \\
+  -H "Authorization: Bearer $CLERK_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{"roleId":"$ROLE_ID"}'`
+            : `const res = await fetch(\`\${API}/my/chat/sessions\`, {
+  method: "POST",
+  headers: {
+    Authorization: \`Bearer \${token}\`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ roleId }),
+});
+const { session } = await res.json();`,
+      },
+      {
+        method: "POST",
         path: "/api/my/chat/sessions/:id/messages",
         desc: "Mengirim pesan ke AI Tutor. Dibatasi rate limit (15/5 menit) + cooldown 2 detik per sesi.",
         params: [{ name: "content", type: "string", required: true, desc: "Pertanyaan karyawan" }],
@@ -263,22 +402,6 @@ const { score, passed, results } = await res.json();`,
   },
 );
 const { aiMessage } = await res.json();`,
-      },
-      {
-        method: "GET",
-        path: "/api/my/modules/:roleId/chapters",
-        desc: "Chapter guide + quiz (tanpa kunci jawaban) untuk modul yang ditugaskan.",
-        params: [],
-        response: 200,
-        code: (lang: Lang) =>
-          lang === "curl"
-            ? `curl "$API/my/modules/$ROLE_ID/chapters" \\
-  -H "Authorization: Bearer $CLERK_TOKEN"`
-            : `const res = await fetch(
-  \`\${API}/my/modules/\${roleId}/chapters\`,
-  { headers: { Authorization: \`Bearer \${token}\` } },
-);
-const { guide, chapters } = await res.json();`,
       },
       {
         method: "GET",
@@ -337,6 +460,7 @@ const { summary } = await res.json();`,
         <li>Setiap model tenant-owned di-scope dengan <code className="font-data-point">orgId</code> dari token sesi.</li>
         <li>Kuis digrading di server; kunci jawaban tidak pernah bocor sebelum submit.</li>
         <li>Semua teks user dibungkus <code className="font-data-point">&lt;business_data&gt;</code> sebagai data, bukan instruksi.</li>
+        <li>Dokumen Knowledge Library hanya dipakai AI setelah dikonfirmasi (AKTIF); dokumen DRAFT dibatasi 5 per org.</li>
         <li>Rate limit: training 20 pesan/10 menit · guide 3/jam · chat 15 pesan/5 menit + cooldown 2 detik.</li>
         <li>Lock training tunggal per role, staleness 30 menit.</li>
       </ul>
@@ -359,112 +483,195 @@ function MethodBadge({ method }: { method: string }) {
   );
 }
 
+function endpointKey(sectionId: string, path: string) {
+  return `${sectionId}:${path}`;
+}
+
+function endpointDomId(sectionId: string, path: string) {
+  return `ep-${endpointKey(sectionId, path).replace(/[^a-zA-Z0-9]/g, "-")}`;
+}
+
 export function DeveloperDocs() {
   const [lang, setLang] = useState<Lang>("curl");
-  const [activeSection, setActiveSection] = useState("intro");
-  const [activeEndpoint, setActiveEndpoint] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const detailsRefs = useRef(new Map<string, HTMLDetailsElement>());
+  const copyTimer = useRef<number | null>(null);
+
+  const allIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const section of SECTIONS) {
+      ids.push(section.id);
+      if (section.endpoints) {
+        for (const ep of section.endpoints) {
+          ids.push(endpointDomId(section.id, ep.path));
+        }
+      }
+    }
+    return ids;
+  }, []);
+
+  const spy = useScrollSpy(allIds);
+
+  const activeEndpoint = spy !== null && spy.startsWith("ep-") ? spy : null;
+  const activeSection = useMemo(() => {
+    if (!spy) return SECTIONS[0].id;
+    if (spy.startsWith("ep-")) {
+      const owner = SECTIONS.find((s) =>
+        s.endpoints?.some((ep) => endpointDomId(s.id, ep.path) === spy),
+      );
+      return owner ? owner.id : SECTIONS[0].id;
+    }
+    return spy;
+  }, [spy]);
 
   function scrollToId(id: string) {
-    setActiveSection(id);
-    setActiveEndpoint(null);
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function scrollToEndpoint(secId: string, path: string) {
-    setActiveSection(secId);
-    const key = `${secId}:${path}`;
-    setActiveEndpoint(key);
-    const el = document.getElementById(`ep-${key.replace(/[^a-zA-Z0-9]/g, "-")}`);
-    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  function scrollToEndpoint(sectionId: string, path: string) {
+    const domId = endpointDomId(sectionId, path);
+    const details = detailsRefs.current.get(domId);
+    if (details) details.open = true;
+    document
+      .getElementById(domId)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  const activeCode =
-    activeEndpoint !== null
-      ? (() => {
-          for (const s of SECTIONS) {
-            if (!s.endpoints) continue;
-            const ep = s.endpoints.find(
-              (e) => `${s.id}:${e.path}` === activeEndpoint,
-            );
-            if (ep) return ep.code(lang);
-          }
-          return "";
-        })()
-      : `# Emplobo REST API
-# Pilih endpoint pada kolom sebelah kiri untuk melihat contoh request.
-#
-# Semua request memerlukan:
-#   Authorization: Bearer <CLERK_SESSION_TOKEN>
-#
-# Coba di lingkungan pengembangan Anda:
-
-$API=${process.env.NEXT_PUBLIC_API_URL ?? "https://api.emplobo-demo.example.com"}
-
-curl "$API/health"`;
-
-  const activeEndpointStatus =
-    activeEndpoint !== null
-      ? (() => {
-          for (const s of SECTIONS) {
-            if (!s.endpoints) continue;
-            const ep = s.endpoints.find(
-              (e) => `${s.id}:${e.path}` === activeEndpoint,
-            );
-            if (ep) return ep.response;
-          }
-          return 200;
-        })()
-      : 200;
+  async function copyCode(code: string) {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedKey("sample");
+      if (copyTimer.current) window.clearTimeout(copyTimer.current);
+      copyTimer.current = window.setTimeout(
+        () => setCopiedKey(null),
+        1600,
+      );
+    } catch {
+      // clipboard unavailable (e.g. insecure context) — ignore
+    }
+  }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[240px_1fr_420px]">
-      {/* ── Left TOC ──────────────────────────────────────────────────── */}
+    <div className="grid gap-10 lg:grid-cols-[260px_minmax(0,1fr)]">
+      {/* ── Left TOC (desktop) ─────────────────────────────────────────── */}
       <aside className="hidden lg:block">
-        <div className="sticky top-24 space-y-6">
-          <div>
-            <p className="font-label-caps text-label-caps text-secondary">
-              API DOCS
-            </p>
-            <h2 className="mt-1 font-headline-sm text-headline-sm text-on-surface">
-              Emplobo Developer Hub
-            </h2>
-          </div>
-          <nav className="space-y-1">
-            {SECTIONS.map((section) => (
-              <button
-                key={section.id}
-                type="button"
-                onClick={() => scrollToId(section.id)}
-                className={`block w-full rounded-lg px-3 py-2 text-left font-body-sm text-body-sm transition-colors ${
-                  activeSection === section.id
-                    ? "bg-primary-container font-medium text-on-primary-container"
-                    : "text-secondary hover:bg-surface-container-high hover:text-on-surface"
-                }`}
-              >
-                {section.title}
-              </button>
-            ))}
+        <div className="sticky top-24">
+          <p className="font-label-caps text-label-caps text-secondary">
+            API DOCS
+          </p>
+          <h2 className="mt-1 font-headline-sm text-headline-sm text-on-surface">
+            Developer Hub
+          </h2>
+          <nav className="mt-6 space-y-0.5" aria-label="Daftar isi API">
+            {SECTIONS.map((section) => {
+              const isSectionActive = activeSection === section.id;
+              return (
+                <div key={section.id}>
+                  <button
+                    type="button"
+                    onClick={() => scrollToId(section.id)}
+                    aria-current={isSectionActive ? "location" : undefined}
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left font-body-sm text-body-sm transition-colors ${
+                      isSectionActive
+                        ? "bg-primary-container font-medium text-on-primary-container"
+                        : "text-secondary hover:bg-surface-container-high hover:text-on-surface"
+                    }`}
+                  >
+                    <span>{section.title}</span>
+                    {section.endpoints ? (
+                      <span className="font-data-point text-[11px] text-outline">
+                        {section.endpoints.length}
+                      </span>
+                    ) : null}
+                  </button>
+                  {section.endpoints ? (
+                    <div className="ml-3 mt-0.5 space-y-0.5 border-l border-outline-variant pl-2.5">
+                      {section.endpoints.map((ep) => {
+                        const key = endpointKey(section.id, ep.path);
+                        const domId = endpointDomId(section.id, ep.path);
+                        const isActive = activeEndpoint === domId;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => scrollToEndpoint(section.id, ep.path)}
+                            aria-current={isActive ? "location" : undefined}
+                            className={`block w-full truncate rounded-md px-2.5 py-1.5 text-left font-data-point text-[12px] transition-colors ${
+                              isActive
+                                ? "bg-status-ready/10 font-medium text-status-ready"
+                                : "text-secondary hover:text-on-surface"
+                            }`}
+                          >
+                            <span
+                              className={`mr-1.5 font-bold ${
+                                isActive ? "text-status-ready" : "text-outline"
+                              }`}
+                            >
+                              {ep.method}
+                            </span>
+                            {ep.path}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
           </nav>
         </div>
       </aside>
 
-      {/* ── Center: endpoint docs ─────────────────────────────────────── */}
+      {/* ── Center: docs content ───────────────────────────────────────── */}
       <div className="min-w-0">
-        <h1 className="font-headline-md text-headline-md text-on-surface">
-          API Reference
-        </h1>
-        <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
-          Endpoint inti untuk melatih business brain dan mengelola pembelajaran
-          karyawan.
-        </p>
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+          <div>
+            <h1 className="font-headline-md text-headline-md text-on-surface">
+              API Reference
+            </h1>
+            <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+              Endpoint inti untuk melatih business brain dan mengelola
+              pembelajaran karyawan.
+            </p>
+          </div>
 
-        <div className="mt-8 space-y-10">
+          {/* Global language toggle */}
+          <div className="inline-flex shrink-0 self-start rounded-lg border border-outline-variant bg-surface-container-lowest p-1">
+            {(["curl", "node"] as const).map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLang(l)}
+                aria-pressed={lang === l}
+                className={`rounded-md px-3.5 py-1.5 font-data-point text-[12px] transition-colors ${
+                  lang === l
+                    ? "bg-primary text-on-primary"
+                    : "text-secondary hover:text-on-surface"
+                }`}
+              >
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-10 space-y-12">
           {SECTIONS.map((section) => (
             <section key={section.id} id={section.id} className="scroll-mt-24">
-              <h2 className="font-headline-sm text-headline-sm text-primary">
-                {section.title}
-              </h2>
-              <div className="mt-4 space-y-6">
+              <div className="flex items-baseline justify-between gap-4 border-b border-outline-variant pb-3">
+                <h2 className="font-headline-sm text-headline-sm text-primary">
+                  {section.title}
+                </h2>
+                {section.endpoints ? (
+                  <span className="shrink-0 font-data-point text-[12px] text-secondary">
+                    {section.endpoints.length} ENDPOINT
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="mt-5 space-y-6">
                 {"body" in section && section.body ? (
                   <div className="guide-content text-body-md leading-6">
                     {section.body}
@@ -473,18 +680,22 @@ curl "$API/health"`;
 
                 {"endpoints" in section && section.endpoints ? (
                   section.endpoints.map((ep) => {
-                    const key = `${section.id}:${ep.path}`;
+                    const key = endpointKey(section.id, ep.path);
+                    const domId = endpointDomId(section.id, ep.path);
                     return (
                       <div
                         key={key}
-                        id={`ep-${key.replace(/[^a-zA-Z0-9]/g, "-")}`}
-                        className="scroll-mt-24 rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm"
+                        id={domId}
+                        className="scroll-mt-24 rounded-lg border border-slate-200 bg-surface-container-lowest p-5 shadow-sm transition-colors hover:border-outline-variant md:p-6"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-2.5">
                           <MethodBadge method={ep.method} />
                           <code className="rounded border border-outline-variant bg-surface-muted px-2.5 py-1 font-data-point text-[13px] text-on-surface">
                             {ep.path}
                           </code>
+                          <span className="ml-auto font-data-point text-[11px] text-secondary">
+                            RESPONSE {ep.response} · JSON
+                          </span>
                         </div>
                         <p className="mt-3 font-body-sm text-body-sm text-on-surface-variant">
                           {ep.desc}
@@ -511,7 +722,10 @@ curl "$API/health"`;
                               </thead>
                               <tbody>
                                 {ep.params.map((p) => (
-                                  <tr key={p.name} className="border-t border-outline-variant first:border-t-0">
+                                  <tr
+                                    key={p.name}
+                                    className="border-t border-outline-variant first:border-t-0"
+                                  >
                                     <td className="px-4 py-2 font-data-point text-[13px] text-on-surface">
                                       {p.name}
                                     </td>
@@ -532,39 +746,46 @@ curl "$API/health"`;
                             </table>
                           </div>
                         ) : (
-                          <p className="mt-3 font-label-caps text-[11px] text-secondary">
+                          <p className="mt-4 font-label-caps text-[11px] text-secondary">
                             TANPA PARAMETER BODY
                           </p>
                         )}
 
-                        {/* Inline code sample for mobile/tablet — the dark
-                            right pane is hidden below lg, so the "see example"
-                            action must work without it. */}
-                        <details className="group mt-4 lg:hidden">
-                          <summary className="inline-flex cursor-pointer list-none items-center gap-2 font-label-caps text-label-caps text-status-ready">
-                            <span className="material-symbols-outlined text-[16px]">
-                              code
-                            </span>
-                            LIHAT CONTOH cURL
-                          </summary>
-                          <pre className="scroll-slim-dark mt-3 overflow-x-auto rounded-lg bg-inverse-surface p-4 font-data-point text-[12px] leading-5 text-inverse-on-surface">
-                            {ep.code("curl")}
-                          </pre>
-                        </details>
-
-                        <button
-                          type="button"
-                          onClick={() => scrollToEndpoint(section.id, ep.path)}
-                          className="mt-4 hidden items-center gap-2 font-label-caps text-label-caps text-status-ready hover:underline lg:inline-flex"
+                        <details
+                          ref={(el) => {
+                            if (el) detailsRefs.current.set(domId, el);
+                            else detailsRefs.current.delete(domId);
+                          }}
+                          className="group mt-4"
                         >
-                          <span className="material-symbols-outlined text-[16px]">
-                            code
-                          </span>
-                          LIHAT CONTOH {lang === "curl" ? "cURL" : "NODE.JS"}
-                        </button>
-                        <p className="mt-3 font-data-point text-[11px] text-secondary">
-                          RESPONSE: {ep.response} · JSON
-                        </p>
+                          <summary className="inline-flex cursor-pointer list-none items-center gap-2 rounded-lg font-label-caps text-label-caps text-status-ready hover:underline">
+                            <span className="flex h-6 w-6 items-center justify-center rounded border border-status-ready/30 bg-status-ready/10">
+                              <span className="material-symbols-outlined text-[14px]">
+                                code
+                              </span>
+                            </span>
+                            <span>LIHAT CONTOH {lang === "curl" ? "CURL" : "NODE.JS"}</span>
+                            <span className="material-symbols-outlined text-[14px] transition-transform group-open:rotate-180">
+                              expand_more
+                            </span>
+                          </summary>
+                          <div className="relative mt-3">
+                            <pre className="scroll-slim-dark overflow-x-auto rounded-lg bg-inverse-surface p-4 font-data-point text-[12px] leading-5 text-inverse-on-surface">
+                              <code>{ep.code(lang)}</code>
+                            </pre>
+                            <button
+                              type="button"
+                              onClick={() => copyCode(ep.code(lang))}
+                              aria-label="Salin contoh kode"
+                              className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1.5 font-label-caps text-[10px] text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                            >
+                              <span className="material-symbols-outlined text-[13px]">
+                                {copiedKey === "sample" ? "check" : "content_copy"}
+                              </span>
+                              {copiedKey === "sample" ? "SALIN" : "SALIN"}
+                            </button>
+                          </div>
+                        </details>
                       </div>
                     );
                   })
@@ -574,41 +795,6 @@ curl "$API/health"`;
           ))}
         </div>
       </div>
-
-      {/* ── Right dark code pane ──────────────────────────────────────── */}
-      <aside className="hidden lg:block">
-        <div className="sticky top-24 rounded-lg bg-inverse-surface p-0 shadow-lg">
-          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-error/80" />
-              <span className="h-2.5 w-2.5 rounded-full bg-status-locked/80" />
-              <span className="h-2.5 w-2.5 rounded-full bg-primary-fixed-dim" />
-            </div>
-            <div className="flex gap-1 rounded-lg bg-white/10 p-1">
-              {(["curl", "node"] as const).map((l) => (
-                <button
-                  key={l}
-                  type="button"
-                  onClick={() => setLang(l)}
-                  className={`rounded-md px-3 py-1 font-data-point text-[11px] transition-colors ${
-                    lang === l
-                      ? "bg-white/15 text-on-primary"
-                      : "text-white/50 hover:text-white"
-                  }`}
-                >
-                  {l.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          </div>
-          <pre className="scroll-slim-dark max-h-[640px] overflow-auto p-4 font-data-point text-[13px] leading-6 text-inverse-on-surface">
-            <code>{activeCode}</code>
-          </pre>
-          <div className="border-t border-white/10 px-4 py-2.5 font-data-point text-[11px] text-primary-fixed-dim">
-            RESPONSE: {activeEndpoint !== null ? activeEndpointStatus : "—"} OK · JSON
-          </div>
-        </div>
-      </aside>
     </div>
   );
 }

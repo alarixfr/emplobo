@@ -22,12 +22,92 @@ const ADVANTAGES = [
 ];
 
 const INDUSTRIES = [
-  "KOPI & KEDAI",
-  "RESTORAN & WARUNG",
-  "RITEL & TOKO",
-  "LAUNDRY",
-  "BENGKEL",
-  "JASA LAYANAN",
+  { icon: "local_cafe", name: "KOPI & KEDAI" },
+  { icon: "restaurant", name: "RESTORAN & WARUNG" },
+  { icon: "local_laundry_service", name: "LAUNDRY" },
+  { icon: "storefront", name: "RITEL & TOKO" },
+  { icon: "delivery_dining", name: "KULINER & DELIVERY" },
+  { icon: "spa", name: "KECANTIKAN & SALON" },
+  { icon: "car_repair", name: "BENGKEL" },
+  { icon: "support_agent", name: "JASA LAYANAN" },
+];
+
+const STATS = [
+  { value: "1×", label: "Latih pengetahuan sekali", sub: "per role kerja" },
+  { value: "3", label: "Langkah menuju tim siap", sub: "latih → guide → on-board" },
+  { value: "0", label: "Rupiah biaya bulanan", sub: "gratis untuk semua UMKM" },
+  { value: "24/7", label: "Tutor AI selalu siaga", sub: "ter-grounding pada SOP Anda" },
+];
+
+const AUDIENCES = [
+  {
+    icon: "storefront",
+    title: "Owner UMKM",
+    desc: "Bangun SOP dari kepala Anda sendiri — tanpa konsultan dan tanpa menulis dokumen bertele-tele.",
+  },
+  {
+    icon: "groups",
+    title: "HR / Manajer",
+    desc: "Hentikan repetisi onboarding. Materi sekali jadi, dikerjakan ulang oleh AI untuk setiap karyawan baru.",
+  },
+  {
+    icon: "school",
+    title: "Karyawan",
+    desc: "Belajar sesuai ritme sendiri: baca panduan, kerjakan kuis, dan tanya tutor AI kapan pun dibutuhkan.",
+  },
+];
+
+const FEATURES = [
+  {
+    icon: "forum",
+    title: "Training Room",
+    desc: "Latih AI per role lewat percakapan. AI bertanya untuk mengisi celah pengetahuan bisnis Anda.",
+    tag: "CHAT",
+  },
+  {
+    icon: "speed",
+    title: "Skor kesiapan otomatis",
+    desc: "AI mengukur kelengkapan materi 0–100 dan memberi tahu saat sebuah role siap dibuatkan guide.",
+    tag: "0–100",
+  },
+  {
+    icon: "auto_stories",
+    title: "Guide ber-bab + kuis",
+    desc: "Pengetahuan tersusun menjadi panduan terstruktur lengkap dengan evaluasi pemahaman karyawan.",
+    tag: "STRUCTURED",
+  },
+  {
+    icon: "support_agent",
+    title: "AI Tutor 24/7",
+    desc: "Karyawan bertanya kapan pun. Jawaban dibatasi pada SOP yang benar-benar diajarkan — tidak mengarang.",
+    tag: "GROUNDED",
+  },
+  {
+    icon: "inventory",
+    title: "Knowledge Library",
+    desc: "Unggah dokumen SOP dan catatan. AI memakainya hanya setelah Anda konfirmasi.",
+    tag: "DOCS",
+  },
+  {
+    icon: "monitor_heart",
+    title: "Dashboard progres",
+    desc: "Pantau kelulusan per role, skor kuis, dan progress tiap karyawan secara real-time.",
+    tag: "INSIGHT",
+  },
+];
+
+const BEFORE = [
+  "HR mengulang materi dari nol setiap ada karyawan baru",
+  "SOP tersebar di kepala, catatan, dan grup chat",
+  "Tidak ada cara mengukur siapa yang sudah benar-benar paham",
+  "Pelatihan berhenti selama HR sibuk beroperasional",
+];
+
+const AFTER = [
+  "AI mengajar ulang materi yang sama — konsisten, tanpa lelah",
+  "SOP tersusun jadi guide terstruktur lengkap dengan kuis",
+  "Skor dan progress terlihat real-time di dashboard admin",
+  "Tutor 24/7 menjawab pertanyaan karyawan kapan pun",
 ];
 
 const STEPS = [
@@ -48,6 +128,80 @@ const STEPS = [
     tone: "ready" as const,
     title: "AI mengajar karyawan",
     desc: "Guide ber-bab + kuis + AI Tutor 24/7 untuk seluruh karyawan yang ditugaskan.",
+  },
+];
+
+const TESTIMONIALS = [
+  {
+    quote:
+      "Dulu tiap barista baru butuh dua minggu supervisi langsung. Sekarang AI yang menjelaskan prosedur — saya cukup koreksi saat ada yang keluar jalur.",
+    name: "Maya",
+    role: "Owner · Kedai Kopi",
+    initials: "MY",
+  },
+  {
+    quote:
+      "Karyawan bisa bertanya prosedur tutup kasir jam 10 malam dan jawabannya selalu sesuai SOP toko. Itu yang tadinya terasa mustahil.",
+    name: "Rizal",
+    role: "Manajer · Minimarket",
+    initials: "RZ",
+  },
+  {
+    quote:
+      "Onboarding jadi konsisten. Semua karyawan menerima materi yang sama persis dari AI, bukan versi masing-masing senior.",
+    name: "Ani",
+    role: "HR · Rumah Makan",
+    initials: "AN",
+  },
+];
+
+const SECURITY = [
+  {
+    icon: "lock",
+    title: "Isolasi antar-bisnis",
+    desc: "Data setiap UMKM terpisah total. Setiap query di-scope otomatis ke organisasi Anda — karyawan hanya melihat bagian miliknya.",
+  },
+  {
+    icon: "verified_user",
+    title: "AI tidak mengarang SOP",
+    desc: "Tutor di-grounding pada materi yang diajarkan. Bila tidak ada jawabannya dalam materi, AI mengatakannya dan memberi tahu atasan.",
+  },
+  {
+    icon: "fact_check",
+    title: "Nilai yang jujur",
+    desc: "Kuis dinilai di server. Kunci jawaban tidak pernah dikirim ke perangkat pengguna sebelum penilaian terjadi.",
+  },
+  {
+    icon: "monitoring",
+    title: "Pemakaian terkendali",
+    desc: "Rate limit, cooldown, dan pencatatan penggunaan menjaga biaya AI tetap sehat dan adil bagi semua pengguna.",
+  },
+];
+
+const FAQS = [
+  {
+    q: "Apakah Emplobo benar-benar gratis?",
+    a: "Ya. Tidak ada paket berbayar, masa uji coba, atau biaya bulanan. Fokus kami adalah membuat pelatihan SDM terjangkau bagi UMKM.",
+  },
+  {
+    q: "Berapa banyak karyawan yang bisa dilatih satu business brain?",
+    a: "Tanpa batas. Begitu guide diterbitkan, semua karyawan yang ditugaskan dapat membaca panduan, mengerjakan kuis, dan bertanya pada tutor AI kapan saja.",
+  },
+  {
+    q: "Bagaimana saya tahu materi sudah cukup untuk dilatihkan?",
+    a: "AI menilai kelengkapan materi tiap role dengan skor 0–100. Saat skor mencapai 75+, status role menjadi READY dan tombol Generate Guide muncul.",
+  },
+  {
+    q: "Apa bedanya dengan LMS atau video training biasa?",
+    a: "LMS hanya menyimpan materi. Emplobo mengubah pengetahuan Anda menjadi asisten mengajar yang mampu menjawab pertanyaan spesifik tiap karyawan dan menguji pemahamannya.",
+  },
+  {
+    q: "Bisakah jawaban tutor AI keluar dari SOP yang diajarkan?",
+    a: "Tidak. Tutor hanya menjawab berdasarkan materi yang Anda ajarkan. Jika pertanyaan tidak tercakup, AI menyarankan karyawan untuk bertanya ke atasan.",
+  },
+  {
+    q: "Dokumen seperti apa yang bisa saya berikan ke AI?",
+    a: "File PDF, DOCX, atau TXT yang diunggah ke Knowledge Library. Dokumen baru aktif setelah Anda konfirmasi — hanya dokumen aktif yang dipakai AI.",
   },
 ];
 
@@ -200,13 +354,14 @@ export default function HomePage() {
         </section>
 
         {/* ── Trust bar ────────────────────────────────────────────────── */}
-        <section className="overflow-hidden border-y border-outline-variant bg-surface-container-lowest py-8">
-          <p className="mb-6 text-center font-label-caps text-label-caps text-secondary">
-            DIRANCANG UNTUK PELATIHAN TIM UMKM
+        <section className="overflow-hidden border-y border-outline-variant bg-surface-container-lowest py-10">
+          <p className="mb-7 text-center font-label-caps text-label-caps text-secondary">
+            DIPERCAYA BISNIS DARI BERBAGAI INDUSTRI
           </p>
 
           {/* Endless marquee — item list duplicated for a seamless loop; the
-              duplicated set is aria-hidden so screen readers read it once. */}
+              duplicated set is aria-hidden so screen readers read it once.
+              Per-item mx-6 keeps spacing uniform across the loop seam. */}
           <div className="marquee-mask">
             <div className="marquee-track" aria-label="Bisnis yang didukung Emplobo">
               {[0, 1].map((copy) => (
@@ -214,16 +369,44 @@ export default function HomePage() {
                   key={copy}
                   aria-hidden={copy === 1}
                   data-dup={copy === 1}
-                  className="flex shrink-0 items-center gap-10 px-5 font-headline-sm text-lg font-semibold text-outline"
+                  className="flex shrink-0 items-center"
                 >
-                  {(INDUSTRIES).map((item) => (
-                    <span key={item} className="flex items-center gap-10">
-                      {item}
-                      <span className="material-symbols-outlined text-base text-outline-variant">
-                        brightness_1
+                  {INDUSTRIES.map((item) => (
+                    <span
+                      key={`${copy}-${item.name}`}
+                      className="mx-6 flex items-center gap-3"
+                    >
+                      <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-outline-variant bg-surface-bright text-secondary">
+                        <span className="material-symbols-outlined text-[20px]">
+                          {item.icon}
+                        </span>
+                      </span>
+                      <span className="whitespace-nowrap font-headline-sm text-[16px] font-semibold text-outline">
+                        {item.name}
                       </span>
                     </span>
                   ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Stats band ────────────────────────────────────────────────── */}
+        <section className="border-b border-outline-variant bg-inverse-surface">
+          <div className="mx-auto w-full max-w-container px-4 py-14 md:px-10 md:py-16">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
+              {STATS.map((stat) => (
+                <div key={stat.label} className="text-left">
+                  <p className="font-headline-md text-headline-md text-on-primary md:text-4xl">
+                    {stat.value}
+                  </p>
+                  <p className="mt-2 font-label-caps text-label-caps text-white/70">
+                    {stat.label}
+                  </p>
+                  <p className="mt-1 font-body-sm text-body-sm text-white/50">
+                    {stat.sub}
+                  </p>
                 </div>
               ))}
             </div>
@@ -263,47 +446,273 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* ── For whom ──────────────────────────────────────────────────── */}
+        <section className="border-y border-outline-variant bg-surface-container-lowest">
+          <div className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24">
+            <p className="text-center font-label-caps text-label-caps text-secondary">
+              DIBUAT UNTUK TIM UMKM
+            </p>
+            <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
+              Satu platform untuk seluruh siklus pelatihan
+            </h2>
+            <div className="mt-12 grid gap-8 md:grid-cols-3">
+              {AUDIENCES.map((a) => (
+                <div
+                  key={a.title}
+                  className="rounded-xl border border-outline-variant bg-surface-container-lowest p-8 text-center transition-colors hover:border-primary hover:bg-surface-bright"
+                >
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-ai-border bg-ai-accent">
+                    <span className="material-symbols-outlined text-[30px] text-primary">
+                      {a.icon}
+                    </span>
+                  </div>
+                  <h3 className="mt-5 font-headline-sm text-headline-sm text-on-surface">
+                    {a.title}
+                  </h3>
+                  <p className="mx-auto mt-3 max-w-xs font-body-md text-body-md text-on-surface-variant">
+                    {a.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Feature grid ──────────────────────────────────────────────── */}
+        <section className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24">
+          <p className="text-center font-label-caps text-label-caps text-secondary">
+            FITUR LENGKAP
+          </p>
+          <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
+            Semua yang dibutuhkan untuk mengajar karyawan
+          </h2>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((f) => (
+              <div
+                key={f.title}
+                className="group rounded-xl border border-outline-variant bg-surface-container-lowest p-7 transition-colors hover:border-primary/40 hover:bg-surface-bright"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-container transition-transform group-hover:scale-105">
+                    <span className="material-symbols-outlined text-[22px] text-on-primary-container">
+                      {f.icon}
+                    </span>
+                  </div>
+                  <span className="rounded-full border border-outline-variant px-2.5 py-1 font-label-caps text-[10px] text-secondary">
+                    {f.tag}
+                  </span>
+                </div>
+                <h3 className="mt-5 font-headline-sm text-headline-sm text-primary">
+                  {f.title}
+                </h3>
+                <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+                  {f.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Before / After ───────────────────────────────────────────── */}
+        <section className="border-y border-outline-variant bg-surface-container-lowest">
+          <div className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24">
+            <p className="text-center font-label-caps text-label-caps text-secondary">
+              SEBELUM VS SESUDAH
+            </p>
+            <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
+              Onboarding yang biasanya melelahkan, kini otomatis
+            </h2>
+
+            <div className="mt-12 grid gap-6 lg:grid-cols-2">
+              <div className="rounded-xl border border-error/25 bg-surface-container-lowest p-8 md:p-10">
+                <p className="font-label-caps text-label-caps text-error">
+                  TANPA EMPLOBO
+                </p>
+                <ul className="mt-6 space-y-4">
+                  {BEFORE.map((item) => (
+                    <li key={item} className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-error/10">
+                        <span className="material-symbols-outlined text-[14px] text-error">
+                          close
+                        </span>
+                      </span>
+                      <span className="font-body-md text-body-md text-on-surface-variant">
+                        {item}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-xl border border-primary bg-primary p-8 md:p-10">
+                <p className="font-label-caps text-label-caps text-on-primary">
+                  DENGAN EMPLOBO
+                </p>
+                <ul className="mt-6 space-y-4">
+                  {AFTER.map((item) => (
+                    <li key={item} className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-container">
+                        <span className="material-symbols-outlined text-[14px] text-on-primary-container">
+                          check
+                        </span>
+                      </span>
+                      <span className="font-body-md text-body-md text-on-primary">
+                        {item}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ── How it Works ─────────────────────────────────────────────── */}
         <section
           id="how-it-works"
-          className="border-t border-outline-variant bg-surface-container-lowest"
+          className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24"
         >
+          <p className="text-center font-label-caps text-label-caps text-secondary">
+            CARA KERJA
+          </p>
+          <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
+            Tiga langkah, dari know-how ke tim yang siap
+          </h2>
+
+          <div className="relative mt-14 grid gap-10 md:grid-cols-3 md:gap-8">
+            <div
+              aria-hidden
+              className="absolute left-[16%] right-[16%] top-6 hidden h-0.5 bg-outline-variant md:block"
+            />
+            {STEPS.map((step) => {
+              const tone =
+                step.tone === "primary"
+                  ? "bg-primary text-on-primary"
+                  : step.tone === "ai"
+                    ? "border border-ai-border bg-ai-accent text-primary"
+                    : "bg-status-ready text-white";
+              return (
+                <div key={step.num} className="relative text-center">
+                  <div
+                    className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full font-data-point text-data-point font-bold ${tone}`}
+                  >
+                    {step.num}
+                  </div>
+                  <h3 className="mt-5 font-headline-sm text-headline-sm text-on-surface">
+                    {step.title}
+                  </h3>
+                  <p className="mx-auto mt-2 max-w-xs font-body-md text-body-md text-on-surface-variant">
+                    {step.desc}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ── Testimonials ─────────────────────────────────────────────── */}
+        <section className="border-y border-outline-variant bg-surface-container-lowest">
           <div className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24">
             <p className="text-center font-label-caps text-label-caps text-secondary">
-              CARA KERJA
+              CERITA PENGGUNA
             </p>
             <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
-              Tiga langkah, dari know-how ke tim yang siap
+              Dari pelatihan yang merepotkan, jadi rutinitas yang tenang
+            </h2>
+            <div className="mt-12 grid gap-6 md:grid-cols-3">
+              {TESTIMONIALS.map((t) => (
+                <figure
+                  key={t.name}
+                  className="flex flex-col rounded-xl border border-outline-variant bg-surface-container-lowest p-8"
+                >
+                  <span className="material-symbols-outlined text-[26px] text-primary">
+                    format_quote
+                  </span>
+                  <blockquote className="mt-4 flex-1 font-body-md text-body-md leading-7 text-on-surface-variant">
+                    “{t.quote}”
+                  </blockquote>
+                  <figcaption className="mt-6 flex items-center gap-3 border-t border-outline-variant pt-5">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-container font-label-caps text-label-caps text-on-primary-container">
+                      {t.initials}
+                    </span>
+                    <div>
+                      <p className="font-headline-sm text-[14px] text-on-surface">
+                        {t.name}
+                      </p>
+                      <p className="font-label-caps text-label-caps text-secondary">
+                        {t.role}
+                      </p>
+                    </div>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Security & trust ─────────────────────────────────────────── */}
+        <section className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24">
+          <p className="text-center font-label-caps text-label-caps text-secondary">
+            KEAMANAN & KEANDALAN
+          </p>
+          <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
+            Dibangun untuk dipercaya, sejak hari pertama
+          </h2>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2">
+            {SECURITY.map((s) => (
+              <div
+                key={s.title}
+                className="flex items-start gap-5 rounded-xl border border-outline-variant bg-surface-container-lowest p-7"
+              >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary-container">
+                  <span className="material-symbols-outlined text-[24px] text-on-primary-container">
+                    {s.icon}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="font-headline-sm text-headline-sm text-primary">
+                    {s.title}
+                  </h3>
+                  <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+                    {s.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── FAQ ──────────────────────────────────────────────────────── */}
+        <section
+          id="faq"
+          className="border-t border-outline-variant bg-surface-container-lowest"
+        >
+          <div className="mx-auto w-full max-w-3xl px-4 py-16 md:px-10 md:py-24">
+            <p className="text-center font-label-caps text-label-caps text-secondary">
+              PERTANYAAN UMUM
+            </p>
+            <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
+              Hal yang sering ditanyakan
             </h2>
 
-            <div className="relative mt-14 grid gap-10 md:grid-cols-3 md:gap-8">
-              <div
-                aria-hidden
-                className="absolute left-[16%] right-[16%] top-6 hidden h-0.5 bg-outline-variant md:block"
-              />
-              {STEPS.map((step) => {
-                const tone =
-                  step.tone === "primary"
-                    ? "bg-primary text-on-primary"
-                    : step.tone === "ai"
-                      ? "border border-ai-border bg-ai-accent text-primary"
-                      : "bg-status-ready text-white";
-                return (
-                  <div key={step.num} className="relative text-center">
-                    <div
-                      className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full font-data-point text-data-point font-bold ${tone}`}
-                    >
-                      {step.num}
-                    </div>
-                    <h3 className="mt-5 font-headline-sm text-headline-sm text-on-surface">
-                      {step.title}
-                    </h3>
-                    <p className="mx-auto mt-2 max-w-xs font-body-md text-body-md text-on-surface-variant">
-                      {step.desc}
-                    </p>
-                  </div>
-                );
-              })}
+            <div className="mt-10 space-y-3">
+              {FAQS.map((faq) => (
+                <details
+                  key={faq.q}
+                  className="group rounded-xl border border-outline-variant bg-surface-container-lowest p-5 transition-colors open:border-primary/40"
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-headline-sm text-[16px] text-on-surface">
+                    {faq.q}
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-outline-variant text-secondary transition-transform group-open:rotate-45">
+                      <span className="material-symbols-outlined text-[16px]">
+                        add
+                      </span>
+                    </span>
+                  </summary>
+                  <p className="mt-3 font-body-md text-body-md leading-7 text-on-surface-variant">
+                    {faq.a}
+                  </p>
+                </details>
+              ))}
             </div>
           </div>
         </section>

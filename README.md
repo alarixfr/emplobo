@@ -500,9 +500,9 @@ sekali penuh terhadap deployment live sebelum submit.
 
 #### Halaman Publik
 
-- **Landing**: `/`: marketing page (hero, keunggulan, cara kerja 3 langkah, CTA).
-- **Developer Docs**: `/docs` — API reference 3-pane (TOC, endpoint + param tables, dark code pane cURL/Node toggle).
-- **Legal**: `/privacy` (kebijakan privasi, AI grounded, isolasi tenant) & `/terms` (syarat & ketentuan) dengan sticky outline + scroll-spy.
+- **Landing**: `/` — marketing page lengkap: hero + product frame, trust bar marquee industri (ikon + label "DIPERCAYA BISNIS DARI BERBAGAI INDUSTRI"), stats band (1×/3/0/24/7), keunggulan (3 kartu), untuk siapa (owner/HR/karyawan), fitur lengkap (6 kartu), sebelum vs sesudah, cara kerja 3 langkah, testimoni, keamanan & keandalan, FAQ, dan CTA.
+- **Developer Docs**: `/docs` — API reference 2-pane: sticky TOC hierarkis (section + endpoint, scroll-spy, jumlah endpoint), header dengan toggle bahasa global cURL/Node.js, tabel parameter tiap endpoint, dan contoh kode inline per endpoint (expandable + tombol salin).
+- **Legal**: `/privacy` & `/terms` — kebijakan privasi (data, AI grounded, isolasi tenant, keamanan teknis, retensi, kontak) dan syarat & ketentuan, sticky outline bernomor + scroll-spy di desktop, pill navigasi di mobile, tautan silang antar dokumen, dan tautan kembali ke beranda.
 
 ---
 
