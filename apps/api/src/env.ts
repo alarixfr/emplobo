@@ -14,14 +14,17 @@ const envSchema = z
     CLERK_PUBLISHABLE_KEY: z.string().min(1),
     CLERK_WEBHOOK_SECRET: z.string().min(1),
     WEB_APP_ORIGIN: z.string().url(),
-    // Claude models are routed through OpenRouter (raw fetch), so this is an
-    // OpenRouter key despite the Claude model names used in code.
+    // All model traffic is routed through OpenRouter (raw fetch), so this is
+    // an OpenRouter key regardless of the model slug used.
     OPENROUTER_API_KEY: z.string().optional(),
-    // Which OpenRouter model slug powers the AI trainer/tutor. Defaults to
-    // OpenRouter's free auto-router (routes to available :free models, no
-    // cost). Set a specific slug (e.g. "anthropic/claude-sonnet-4.5") to
-    // pin a paid model instead.
-    OPENROUTER_MODEL: z.string().min(1).default("openrouter/free"),
+    // Which OpenRouter model slug powers the AI trainer/tutor (training,
+    // completeness scoring, guide generation, and employee chat tutor).
+    // Default: MiniMax M3 free endpoint (no cost, 1M context window, used in
+    // the live demo). Set a specific slug (e.g. "anthropic/claude-sonnet-4.5")
+    // to pin a different model instead. Alias names from earlier builds
+    // (claude-sonnet-4-5, claude-haiku-4-5) are still normalized on the call
+    // path for backward compatibility.
+    OPENROUTER_MODEL: z.string().min(1).default("minimax/minimax-m3:free"),
     UPSTASH_REDIS_REST_URL: z.string().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
   })
