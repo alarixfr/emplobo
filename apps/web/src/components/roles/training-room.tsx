@@ -15,6 +15,7 @@ import { ReadinessRing } from "@/components/ui/readiness-ring";
 import { KnowledgeGaps } from "@/components/roles/knowledge-gaps";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { MobileRoleRail } from "@/components/roles/mobile-role-rail";
 import type { RoleStatus, TrainingRoleSummary } from "@/lib/roles";
 
 type TrainingMessage = {
@@ -74,24 +75,11 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
       {/* Mobile role switcher (left rail is hidden on small screens) */}
       <div className="lg:hidden">
-        <label
-          htmlFor="training-role-mobile"
-          className="font-label-caps text-label-caps text-secondary"
-        >
-          PILIH ROLE
-        </label>
-        <select
-          id="training-role-mobile"
-          value={selectedRole.id}
-          onChange={(e) => selectRole(e.target.value)}
-          className="mt-1.5 w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2.5 font-body-md text-body-md text-on-surface outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
-        >
-          {roles.map((role) => (
-            <option key={role.id} value={role.id}>
-              {role.name} · {role.completenessScore}%
-            </option>
-          ))}
-        </select>
+        <MobileRoleRail
+          roles={roles}
+          activeRoleId={selectedRole.id}
+          onSelect={selectRole}
+        />
       </div>
 
       {/* ── Roles Context (left rail) ─────────────────────────────────── */}
