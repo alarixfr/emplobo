@@ -8,10 +8,33 @@ const apiOrigin = process.env.NEXT_PUBLIC_API_URL
   ? new URL(process.env.NEXT_PUBLIC_API_URL).origin
   : null;
 
+// Custom Clerk frontend domain, e.g. clerk.emplobo.com. When a production
+// instance uses a custom frontend API domain, the Clerk SDK script and all
+// session/identity calls are served from THAT origin (not *.clerk.com), so
+// the CSP must allow it or auth silently breaks (missing header buttons is
+// the tell-tale symptom). Clerk encodes the domain into the publishable key:
+// pk_<env>_<base64(domain$)>; see @clerk/backend parsePublishableKey.
+let clerkFrontendOrigin: string | null = null;
+const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+if (clerkPublishableKey) {
+  const enc = clerkPublishableKey.split("_").pop() ?? "";
+  try {
+    const base64 = enc.length % 4 ? enc + "=".repeat(4 - (enc.length % 4)) : enc;
+    let domain = Buffer.from(base64, "base64").toString("utf8");
+    if (domain.endsWith("$")) domain = domain.slice(0, -1);
+    if (domain && domain.includes(".")) {
+      clerkFrontendOrigin = `https://${domain}`;
+    }
+  } catch {
+    // Non-fatal: fall back to the built-in *.clerk.com allowlist below.
+  }
+}
+
 const connectSrc = [
   "'self'",
   ...(isDev ? ["http://localhost:4000"] : []),
   ...(apiOrigin ? [apiOrigin] : []),
+  ...(clerkFrontendOrigin ? [clerkFrontendOrigin] : []),
   "https://*.clerk.accounts.dev",
   "https://*.clerk.com",
   "https://api.clerk.com",
@@ -34,6 +57,7 @@ const scriptSrc = [
   // 'unsafe-eval' is only needed for Next.js dev (react-refresh); shipping it
   // in production would weaken XSS mitigation.
   ...(isDev ? ["'unsafe-eval'"] : []),
+  ...(clerkFrontendOrigin ? [clerkFrontendOrigin] : []),
   "https://*.clerk.accounts.dev",
   "https://*.clerk.com",
   "https://challenges.cloudflare.com",
@@ -65,10 +89,10 @@ const securityHeaders = [
       // the @import in globals.css is blocked and the typography system
       // silently falls back to system fonts.
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "img-src 'self' data: blob: https://*.clerk.com https://img.clerk.com",
+      "img-src 'self' data: blob: https://*.clerk.com https://img.clerk.com" + (clerkFrontendOrigin ? ` ${clerkFrontendOrigin}` : ""),
       "font-src 'self' data: https://fonts.gstatic.com",
       `connect-src ${connectSrc.join(" ")}`,
-      "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com",
+      "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com" + (clerkFrontendOrigin ? ` ${clerkFrontendOrigin}` : ""),
       "worker-src 'self' blob:",
       "form-action 'self'",
       "base-uri 'self'",

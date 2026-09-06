@@ -512,6 +512,12 @@ pnpm db:migrate:deploy   # prisma migrate deploy — bukan migrate dev
    `user.created`, `user.updated`, `organizationMembership.created`,
    `organizationMembership.updated`, `organizationMembership.deleted`
 5. Paste **Signing Secret** ke `CLERK_WEBHOOK_SECRET` di apps/api
+6. **Custom frontend domain di DNS registrar** (mis. `clerk.emplobo.com`):
+   tambahkan CNAME `clerk` → `frontend-api.clerk.services`. Tanpa ini,
+   SDK Clerk tidak termuat dan tombol auth (Masuk / Mulai gratis) tidak
+   muncul. `next.config.ts` otomatis me-derive origin frontend auth dari
+   `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` untuk dimasukkan ke CSP — tinggal
+   redeploy web setelah CNAME aktif.
 
 ### 5️⃣ Verifikasi Keamanan (post-deploy)
 
