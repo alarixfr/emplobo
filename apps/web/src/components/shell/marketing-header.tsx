@@ -166,20 +166,14 @@ export function MarketingHeader() {
                 Masuk
               </button>
             </SignInButton>
-            {/* Mobile: compact logo-icon sign-up; desktop: full CTA button */}
+            {/* Mobile: compact icon sign-up; desktop: full CTA button */}
             <Link
               href="/sign-up"
-              aria-label="Mulai gratis — daftar sekarang"
+              aria-label="Daftar — Mulai gratis"
               title="Mulai gratis"
-              className="shrink-0 md:hidden"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px md:hidden"
             >
-              <Image
-                src="/logo-icon.png"
-                alt="Mulai gratis"
-                width={36}
-                height={36}
-                className="h-9 w-9 rounded-lg transition-transform duration-300 hover:scale-105"
-              />
+              <span className="material-symbols-outlined text-[20px]">person_add</span>
             </Link>
             <Link
               href="/sign-up"
