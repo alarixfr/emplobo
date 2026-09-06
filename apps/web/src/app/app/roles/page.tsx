@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { CreateRoleForm } from "@/components/roles/create-role-form";
+import { Reveal, Stagger } from "@/components/motion/reveal";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { apiFetch } from "@/lib/api";
@@ -52,17 +53,19 @@ export default async function RolesPage() {
 
   return (
     <div className="mx-auto w-full max-w-container space-y-8">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="font-headline-md text-headline-md text-on-surface">
-            Roles
-          </h1>
-          <p className="mt-1 max-w-2xl font-body-md text-body-md text-on-surface-variant">
-            Buat peran kerja (Kasir, Barista, …) lalu latih AI per role di
-            Training Room untuk menghasilkan panduan SOP.
-          </p>
+      <Reveal y={18} x={0} delay={0} duration={0.7}>
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div>
+            <h1 className="font-headline-md text-headline-md text-on-surface">
+              Roles
+            </h1>
+            <p className="mt-1 max-w-2xl font-body-md text-body-md text-on-surface-variant">
+              Buat peran kerja (Kasir, Barista, …) lalu latih AI per role di
+              Training Room untuk menghasilkan panduan SOP.
+            </p>
+          </div>
         </div>
-      </div>
+      </Reveal>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
         {/* Role list */}
@@ -80,9 +83,9 @@ export default async function RolesPage() {
               Belum ada role. Buat yang pertama lewat formulir di samping.
             </p>
           ) : (
-            <ul className="mt-4 space-y-3">
+            <Stagger y={20} stagger={0.08} className="mt-4 space-y-3">
               {roles.map((role) => (
-                <li key={role.id}>
+                <div key={role.id}>
                   <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
@@ -159,10 +162,10 @@ export default async function RolesPage() {
                         </Link>
                       ) : null}
                     </div>
+</div>
                   </div>
-                </li>
-              ))}
-            </ul>
+                ))}
+              </Stagger>
           )}
         </section>
 

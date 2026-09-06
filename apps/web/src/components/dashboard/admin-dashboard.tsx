@@ -1,8 +1,10 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ApiError, apiFetch } from "@/lib/api";
+import { CountUp } from "@/components/motion/count-up";
+import { Stagger } from "@/components/motion/reveal";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -104,7 +106,7 @@ function StatCard({
   iconClass,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   hint?: string;
   icon: string;
   iconClass: string;
@@ -116,12 +118,12 @@ function StatCard({
           {label}
         </p>
         <div
-          className={`flex h-10 w-10 items-center justify-center rounded-full ${iconClass}`}
+          className={`flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110 ${iconClass}`}
         >
           <span className="material-symbols-outlined text-[20px]">{icon}</span>
         </div>
       </div>
-      <p className="mt-2 font-headline-md text-[32px] leading-10 text-on-surface">
+      <p className="mt-2 font-headline-md text-[32px] leading-10 tabular-nums text-on-surface">
         {value}
       </p>
       {hint ? (
@@ -246,17 +248,17 @@ export function AdminDashboard() {
   return (
     <div className="space-y-8">
       {/* ── Metrics bento grid ───────────────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <Stagger y={18} stagger={0.07} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="JUMLAH ROLE"
-          value={String(summary.roles.total)}
+          value={<CountUp to={summary.roles.total} separator />}
           hint={`${summary.roles.draft} draft · ${summary.roles.ready} siap · ${summary.roles.published} published`}
           icon="menu_book"
           iconClass="bg-ai-accent text-primary"
         />
         <StatCard
           label="KARYAWAN"
-          value={String(summary.employees)}
+          value={<CountUp to={summary.employees} separator />}
           hint={`${summary.assignments} penugasan modul aktif`}
           icon="group"
           iconClass="bg-surface-container-low text-secondary"
@@ -264,9 +266,11 @@ export function AdminDashboard() {
         <StatCard
           label="RATA-RATA NILAI KUIS"
           value={
-            summary.quiz.avgBestScore !== null
-              ? `${summary.quiz.avgBestScore}%`
-              : "—"
+            summary.quiz.avgBestScore !== null ? (
+              <CountUp to={summary.quiz.avgBestScore} suffix="%" />
+            ) : (
+              "—"
+            )
           }
           hint={
             summary.quiz.attempts > 0
@@ -285,7 +289,7 @@ export function AdminDashboard() {
           icon="bolt"
           iconClass="bg-primary-fixed text-on-primary-fixed-variant"
         />
-      </div>
+      </Stagger>
 
       {/* ── Kesiapan AI table + Aktivitas Terbaru ────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -322,12 +326,13 @@ export function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {summary.perRole.map((role) => {
+                  {summary.perRole.map((role, i) => {
                     const status = role.status as RoleStatus;
                     return (
                       <tr
                         key={role.roleId}
-                        className="border-b border-outline-variant transition-colors last:border-0 hover:bg-surface-bright"
+                        style={{ animationDelay: `${i * 40}ms` }}
+                        className="animate-fade-rise border-b border-outline-variant transition-colors last:border-0 hover:bg-surface-bright"
                       >
                         <td className="px-5 py-4">
                           <div className="flex items-center gap-3">
@@ -358,6 +363,7 @@ export function AdminDashboard() {
                                 status,
                                 role.completenessScore,
                               )}
+                              animate
                               className="w-28"
                             />
                             <span className="font-data-point text-data-point text-on-surface">
@@ -410,8 +416,12 @@ export function AdminDashboard() {
                   aria-hidden
                   className="absolute bottom-2 left-[15px] top-2 w-0.5 bg-gradient-to-b from-outline-variant to-transparent"
                 />
-                {summary.recentActivity.map((item) => (
-                  <li key={item.id} className="relative flex gap-4">
+                {summary.recentActivity.map((item, i) => (
+                  <li
+                    key={item.id}
+                    style={{ animationDelay: `${i * 70}ms` }}
+                    className="animate-fade-rise relative flex gap-4"
+                  >
                     <div
                       className={`z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-4 ring-surface-container-lowest ${ACTIVITY_ICON_BG[item.kind]}`}
                     >

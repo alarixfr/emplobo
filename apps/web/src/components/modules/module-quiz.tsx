@@ -133,7 +133,7 @@ export function ModuleQuizCard({
 
       {result ? (
         /* ── Result view ─────────────────────────────────────────────── */
-        <div className="mt-8 space-y-4" aria-live="polite">
+        <div className="animate-fade-rise mt-8 space-y-4" aria-live="polite">
           <div
             ref={resultRef}
             tabIndex={-1}
@@ -281,8 +281,8 @@ export function ModuleQuizCard({
                     onClick={() => handleSelectOption(optIdx)}
                     className={`flex items-center gap-3 rounded-lg border px-4 py-4 text-left font-body-md text-body-md transition ${
                       isSelected
-                        ? "border-2 border-primary bg-surface-bright font-medium text-on-surface"
-                        : "border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:bg-surface-bright"
+                        ? "scale-[1.015] border-2 border-primary bg-surface-bright font-medium text-on-surface shadow-sm"
+                        : "border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:scale-[1.01] hover:bg-surface-bright"
                     }`}
                   >
                     <span

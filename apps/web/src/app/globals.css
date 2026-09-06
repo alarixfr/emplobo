@@ -438,3 +438,120 @@ body {
     display: none;
   }
 }
+
+/* ── App shell navigation motion ────────────────────────────────────────
+   Active nav items settle in with a tiny slide+fade (keyed on active state
+   so switching routes re-triggers them), and RouteProgress sweeps a 2px
+   primary bar across the top on every route change. */
+.nav-item-enter {
+  animation: nav-item-enter 0.22s ease both;
+}
+
+.animate-fade-rise {
+  animation: fade-rise 0.45s ease both;
+}
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nav-item-enter {
+  from {
+    opacity: 0.45;
+    transform: translateX(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.nav-pill-enter {
+  animation: nav-pill-enter 0.26s ease both;
+}
+
+@keyframes nav-pill-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.route-progress {
+  height: 2px;
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-primary),
+    transparent
+  );
+  opacity: 0;
+  transform: translateX(-120%);
+}
+
+.route-progress--active {
+  animation: route-progress-sweep 0.5s ease forwards;
+}
+
+@keyframes route-progress-sweep {
+  from {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(320%);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-item-enter,
+  .nav-pill-enter,
+  .animate-fade-rise,
+  .route-progress--active {
+    animation: none;
+  }
+  .route-progress {
+    display: none;
+  }
+}
+
+/* ── FAQ disclosure ─────────────────────────────────────────────────────
+   The answer fades+settles in when a question opens; closing snaps (native
+   details behavior). Height animation needs the still-patchy
+   ::details-content API, so we animate the answer only — safe and smooth. */
+details.faq-item[open] .faq-answer {
+  animation: faq-reveal 0.28s ease both;
+}
+
+@keyframes faq-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  details.faq-item[open] .faq-answer {
+    animation: none;
+  }
+}

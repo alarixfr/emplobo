@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AssignmentPanel } from "./assignment-panel";
 import { GuideGeneratorPanel } from "./guide-generator-panel";
+import { Reveal } from "@/components/motion/reveal";
 import type { RoleGuide, RoleStatus } from "@/lib/roles";
 
 // Lifts role status above both panels so the assignment panel activates the
@@ -24,14 +25,18 @@ export function RoleDetailPanels({
 
   return (
     <>
-      <GuideGeneratorPanel
-        roleId={roleId}
-        roleName={roleName}
-        roleStatus={status}
-        initialGuide={initialGuide}
-        onStatusUpdated={setStatus}
-      />
-      <AssignmentPanel roleId={roleId} roleStatus={status} />
+      <Reveal y={18} x={0} delay={0} duration={0.7}>
+        <GuideGeneratorPanel
+          roleId={roleId}
+          roleName={roleName}
+          roleStatus={status}
+          initialGuide={initialGuide}
+          onStatusUpdated={setStatus}
+        />
+      </Reveal>
+      <Reveal y={18} x={0} delay={0.06} duration={0.7}>
+        <AssignmentPanel roleId={roleId} roleStatus={status} />
+      </Reveal>
     </>
   );
 }

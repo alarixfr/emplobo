@@ -760,7 +760,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
               return (
                 <div
                   key={message.id}
-                  className={`flex max-w-[85%] items-start gap-4 ${
+                  className={`animate-fade-rise flex max-w-[85%] items-start gap-4 ${
                     isAI ? "self-start" : "flex-row-reverse self-end"
                   }`}
                 >

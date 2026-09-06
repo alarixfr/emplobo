@@ -5,6 +5,7 @@ import { KnowledgeGaps } from "@/components/roles/knowledge-gaps";
 import { RoleDetailPanels } from "@/components/roles/role-detail-panels";
 import { ReadinessRing } from "@/components/ui/readiness-ring";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Reveal } from "@/components/motion/reveal";
 import { ApiError, apiFetch } from "@/lib/api";
 import type { RoleGuide, TrainingRoleDetail } from "@/lib/roles";
 
@@ -80,47 +81,49 @@ export default async function RoleDetailPage({ params }: PageProps) {
         <span className="text-on-surface">{role.name.toUpperCase()}</span>
       </nav>
 
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-headline-md text-headline-md text-on-surface">
-              {role.name}
-            </h1>
-            <StatusBadge status={role.status} />
-            {pendingGuideDraft ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-status-ready/10 px-2.5 py-1 font-label-caps text-[10px] text-status-ready">
-                <span className="material-symbols-outlined ms-fill text-[12px]">
-                  update
+      <Reveal y={18} x={0} delay={0} duration={0.7}>
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="font-headline-md text-headline-md text-on-surface">
+                {role.name}
+              </h1>
+              <StatusBadge status={role.status} />
+              {pendingGuideDraft ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-status-ready/10 px-2.5 py-1 font-label-caps text-[10px] text-status-ready">
+                  <span className="material-symbols-outlined ms-fill text-[12px]">
+                    update
+                  </span>
+                  DRAF PERUBAHAN MENUNGGU TINJAUAN
                 </span>
-                DRAF PERUBAHAN MENUNGGU TINJAUAN
-              </span>
+              ) : null}
+            </div>
+            {role.description ? (
+              <p className="mt-1 max-w-2xl font-body-md text-body-md text-on-surface-variant">
+                {role.description}
+              </p>
             ) : null}
           </div>
-          {role.description ? (
-            <p className="mt-1 max-w-2xl font-body-md text-body-md text-on-surface-variant">
-              {role.description}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {guide ? (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {guide ? (
+              <Link
+                href={`/app/content/${role.id}`}
+                className="inline-flex items-center gap-2 rounded-lg border border-primary px-4 py-2.5 font-label-caps text-label-caps text-primary transition-colors hover:bg-primary-fixed-dim/40"
+              >
+                <span className="material-symbols-outlined text-[18px]">edit_note</span>
+                EDIT KONTEN
+              </Link>
+            ) : null}
             <Link
-              href={`/app/content/${role.id}`}
-              className="inline-flex items-center gap-2 rounded-lg border border-primary px-4 py-2.5 font-label-caps text-label-caps text-primary transition-colors hover:bg-primary-fixed-dim/40"
+              href={`/app/training/${role.id}`}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
             >
-              <span className="material-symbols-outlined text-[18px]">edit_note</span>
-              EDIT KONTEN
+              <span className="material-symbols-outlined text-[18px]">school</span>
+              BUKA TRAINING ROOM
             </Link>
-          ) : null}
-          <Link
-            href={`/app/training/${role.id}`}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
-          >
-            <span className="material-symbols-outlined text-[18px]">school</span>
-            BUKA TRAINING ROOM
-          </Link>
+          </div>
         </div>
-      </div>
+      </Reveal>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Left column: guide generation + assignment */}

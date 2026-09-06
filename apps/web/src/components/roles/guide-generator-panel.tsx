@@ -362,7 +362,8 @@ export function GuideGeneratorPanel({
             {draft.chapters.map((chapter, index) => (
               <details
                 key={`${draft.id}-${index}`}
-                className="rounded-lg border border-outline-variant bg-surface-bright p-4"
+                style={{ animationDelay: `${index * 60}ms` }}
+                className="animate-fade-rise rounded-lg border border-outline-variant bg-surface-bright p-4"
               >
                 <summary className="cursor-pointer font-label-caps text-label-caps text-secondary list-none [&::-webkit-details-marker]:hidden">
                   <span className="flex items-center justify-between gap-2">
@@ -410,12 +411,13 @@ export function GuideGeneratorPanel({
           </p>
         ) : (
           <ul className="mt-3 space-y-2">
-            {versions.map((version) => {
+            {versions.map((version, index) => {
               const isActive = guide?.version === version.version;
               return (
                 <li
                   key={version.id}
-                  className="rounded-lg border border-outline-variant bg-surface-bright p-4"
+                  style={{ animationDelay: `${index * 60}ms` }}
+                  className="animate-fade-rise rounded-lg border border-outline-variant bg-surface-bright p-4"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-data-point text-data-point text-on-surface">
@@ -481,10 +483,11 @@ export function GuideGeneratorPanel({
           </div>
 
           <div className="space-y-3">
-            {guide.chapters.map((chapter) => (
+            {guide.chapters.map((chapter, index) => (
               <article
                 key={chapter.id}
-                className="rounded-lg border border-outline-variant bg-surface-bright p-5"
+                style={{ animationDelay: `${index * 60}ms` }}
+                className="animate-fade-rise rounded-lg border border-outline-variant bg-surface-bright p-5"
               >
                 <p className="font-label-caps text-label-caps text-secondary">
                   BAB {chapter.order}

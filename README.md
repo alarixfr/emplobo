@@ -87,7 +87,7 @@ Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = sat
 - **Dashboard admin** - Statistik lengkap: completion %, skor kuis, per-role progress, pemakaian AI 30 hari
 - **Employee Directory** - Halaman khusus admin untuk memantau progress tiap karyawan (search, filter role, AI insight)
 - **Developer Docs & Halaman Legal** - `/docs` (API reference 3-pane dengan dark code pane cURL/Node) dan `/privacy`, `/terms`
-- **UI/UX polish** - Design system **"Institutional Intelligence"** (Forest Green `#144225`, Enterprise Slate, indigo AI accent) dengan tipografi Inter (headline & body) + JetBrains Mono (data/label-caps) + Material Symbols; sidebar tonal, mobile bottom nav, skeleton loading, readability ring, knowledge gaps, status badge label-caps di seluruh layar (landing, dashboard, training room, guide reader, quiz, chat tutor, learning center, docs, legal)
+- **UI/UX polish** - Design system **"Institutional Intelligence"** (Forest Green `#144225`, Enterprise Slate, indigo AI accent) dengan tipografi Inter (headline & body) + JetBrains Mono (data/label-caps) + Material Symbols; sidebar tonal, mobile bottom nav, skeleton loading, readability ring, knowledge gaps, status badge label-caps di seluruh layar (landing, dashboard, training room, guide reader, quiz, chat tutor, learning center, docs, legal) — plus **motion system GSAP**: hero "cockpit" (typewriter chat + readability ring yang menggambar), reveal/stagger saat scroll, count-up metrik, progress bar navigasi, pill aktif sidebar/bottom-nav, dan entri pesan chat (semua empati `prefers-reduced-motion`)
 
 ---
 
@@ -127,6 +127,7 @@ UI Library   : Tailwind CSS v4 + design system "Institutional Intelligence"
                (Forest Green #144225 · Enterprise Slate · indigo AI accent #EEF2FF)
 Typography   : Inter (headline + body) · JetBrains Mono (label-caps/data)
 Icons        : Material Symbols Outlined (font, via Google Fonts)
+Motion      : GSAP + ScrollTrigger (reveal/stagger, hero cockpit, count-up, progress bars)
 Auth UI      : Clerk B2B (Organizations)
 Validation   : Zod (client & server, .strict() di API)
 Markdown     : react-markdown + remark-gfm + rehype-sanitize
@@ -168,9 +169,10 @@ Redis        : Upstash
   "apps/web": {
     "@clerk/nextjs": "^6",
     "next": "^15.5",
-    "zod": "^3",
-    "react-markdown": "^10",
-    "rehype-sanitize": "^6"
+"zod": "^3",
+      "react-markdown": "^10",
+      "rehype-sanitize": "^6",
+      "gsap": "^3.15"
   },
   "packages/db": {
     "@prisma/client": "^6",
@@ -503,7 +505,7 @@ sekali penuh terhadap deployment live sebelum submit.
 
 #### Halaman Publik
 
-- **Landing**: `/` — marketing page lengkap: hero + product frame, trust bar marquee industri (ikon + label "DIPERCAYA BISNIS DARI BERBAGAI INDUSTRI"), stats band (1×/3/0/24/7), keunggulan (3 kartu), untuk siapa (owner/HR/karyawan), fitur lengkap (6 kartu), sebelum vs sesudah, cara kerja 3 langkah, testimoni, keamanan & keandalan, FAQ, dan CTA.
+- **Landing**: `/` — marketing page lengkap: hero "cockpit" animasi (headline dengan underline SVG, chat typewriter, ring kesiapan AI yang menggambar 0→65%), trust bar marquee industri (ikon + label "DIBANGUN UNTUK BERBAGAI INDUSTRI UMKM"), stats band (1×/3/0/24/7), keunggulan (3 kartu), untuk siapa (owner/HR/karyawan), fitur lengkap (6 kartu), sebelum vs sesudah, cara kerja 3 langkah, **Business Brain Loop** (section transparansi 3 tahap: pendiri mengajar AI → AI menilai kesiapannya sendiri → AI mengajar semua karyawan, dengan spine yang menggambar dan kategori data disuntikkan AI per tahap — menggantikan klaim pemasaran palsu), keamanan & keandalan, FAQ (dengan animasi buka/tutup), dan CTA.
 - **Developer Docs**: `/docs` — API reference 2-pane: sticky TOC hierarkis (section + endpoint, scroll-spy, jumlah endpoint), header dengan toggle bahasa global cURL/Node.js, tabel parameter tiap endpoint, dan contoh kode inline per endpoint (expandable + tombol salin).
 - **Legal**: `/privacy` & `/terms` — kebijakan privasi (data, AI grounded, isolasi tenant, keamanan teknis, retensi, kontak) dan syarat & ketentuan, sticky outline bernomor + scroll-spy di desktop, pill navigasi di mobile, tautan silang antar dokumen, dan tautan kembali ke beranda.
 
@@ -655,7 +657,8 @@ berbasis lint/typecheck/build + smoke test endpoint/routing. Verifikasi fungsion
 per Section tersedia di bagian [User Guide](#-penggunaan) (Step 1–12 sudah aktif:
 seluruh fitur inti sampai AI Tutor grounded, polish UI/UX — design system
 "Institutional Intelligence" (Forest Green/Inter/JetBrains Mono + Material
-Symbols) konsisten di landing, dashboard, employee directory, training room,
+Symbols) dengan motion GSAP (reveal/stagger, hero cockpit, count-up) konsisten
+di landing, dashboard, employee directory, training room,
 guide reader, quiz, AI tutor, learning center, content editor, docs, dan
 halaman legal — serta checklist keamanan Section 8 terverifikasi: tenant scoping (orgId di semua query),
 scoping employee per userId, ownership ChatSession dicek ulang tiap pesan

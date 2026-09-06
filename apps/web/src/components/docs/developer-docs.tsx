@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useScrollSpy } from "@/lib/use-scroll-spy";
+import { Reveal } from "@/components/motion/reveal";
 
 type Lang = "curl" | "node";
 
@@ -667,7 +668,8 @@ export function DeveloperDocs() {
 
       {/* ── Center: docs content ───────────────────────────────────────── */}
       <div className="min-w-0">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+        <Reveal y={14} duration={0.7}>
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
           <div>
             <h1 className="font-headline-md text-headline-md text-on-surface">
               API Reference
@@ -697,10 +699,12 @@ export function DeveloperDocs() {
             ))}
           </div>
         </div>
+        </Reveal>
 
         <div className="mt-10 space-y-12">
           {SECTIONS.map((section) => (
-            <section key={section.id} id={section.id} className="scroll-mt-24">
+            <Reveal key={section.id} y={16} duration={0.6}>
+            <section id={section.id} className="scroll-mt-24">
               <div className="flex items-baseline justify-between gap-4 border-b border-outline-variant pb-3">
                 <h2 className="font-headline-sm text-headline-sm text-primary">
                   {section.title}
@@ -833,6 +837,7 @@ export function DeveloperDocs() {
                 ) : null}
               </div>
             </section>
+            </Reveal>
           ))}
         </div>
       </div>

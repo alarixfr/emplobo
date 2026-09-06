@@ -293,10 +293,11 @@ export function EmployeeDirectory() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((employee) => (
+                {filtered.map((employee, index) => (
                   <tr
                     key={employee.id}
-                    className="border-b border-outline-variant transition-colors last:border-0 hover:bg-surface-bright"
+                    style={{ animationDelay: `${index * 40}ms` }}
+                    className="animate-fade-rise border-b border-outline-variant transition-colors last:border-0 hover:bg-surface-bright"
                   >
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">

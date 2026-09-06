@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
+import { Reveal } from "@/components/motion/reveal";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type {
@@ -264,6 +265,8 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
             </span>
           </div>
 
+          {/* Chapter title + content — re-reveals as the active chapter changes */}
+          <Reveal key={activeChapter.id} y={14} duration={0.6}>
           {/* Category chips */}
           <div className="flex flex-wrap gap-2">
             <span className="rounded-full border border-outline-variant px-3 py-1 font-label-caps text-[10px] text-secondary">
@@ -287,7 +290,7 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
               Bab {activeIndex + 1} dari {chapters.length}
             </span>
             {activeChapter.completedAt ? (
-              <span className="flex items-center gap-1.5 text-primary">
+              <span className="animate-fade-rise flex items-center gap-1.5 text-primary">
                 <span className="material-symbols-outlined ms-fill text-[16px]">
                   check_circle
                 </span>
@@ -304,6 +307,7 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
               {activeChapter.content}
             </ReactMarkdown>
           </div>
+          </Reveal>
 
           {/* End-of-chapter CTA block */}
           <div className="mt-10 rounded-lg border border-outline-variant bg-surface-bright p-6 text-center">
@@ -321,7 +325,7 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
                 </p>
               ) : null}
               {activeChapter.completedAt ? (
-                <span className="inline-flex items-center gap-2 rounded-lg border border-primary-fixed-dim bg-primary-fixed/40 px-4 py-2.5 font-label-caps text-label-caps text-on-primary-fixed-variant">
+                <span className="animate-fade-rise inline-flex items-center gap-2 rounded-lg border border-primary-fixed-dim bg-primary-fixed/40 px-4 py-2.5 font-label-caps text-label-caps text-on-primary-fixed-variant">
                   <span className="material-symbols-outlined ms-fill text-[18px]">
                     check_circle
                   </span>

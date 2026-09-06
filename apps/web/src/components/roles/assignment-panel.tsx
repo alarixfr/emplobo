@@ -183,12 +183,16 @@ export function AssignmentPanel({ roleId, roleStatus }: AssignmentPanelProps) {
           </p>
         ) : (
           <ul className="divide-y divide-outline-variant">
-            {users.map((user) => {
+            {users.map((user, index) => {
               const checked = selected.has(user.id);
               const disabled = user.isAssigned;
 
               return (
-                <li key={user.id} className="flex items-center justify-between gap-3 p-3">
+                <li
+                  key={user.id}
+                  style={{ animationDelay: `${index * 60}ms` }}
+                  className="animate-fade-rise flex items-center justify-between gap-3 p-3"
+                >
                   <label className="flex min-w-0 items-center gap-3">
                     <input
                       type="checkbox"

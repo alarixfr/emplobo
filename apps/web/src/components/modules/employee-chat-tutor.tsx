@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
+import { Reveal } from "@/components/motion/reveal";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ChatMessageItem, ChatSessionSummary } from "@/lib/chat";
 
@@ -316,8 +317,9 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
             Belum ada sesi tanya jawab.
           </p>
         ) : (
-          <ul className="scroll-slim mt-3 max-h-64 space-y-1 overflow-y-auto lg:max-h-none">
-            {sessions.map((session) => {
+          <Reveal y={12} duration={0.6}>
+            <ul className="scroll-slim mt-3 max-h-64 space-y-1 overflow-y-auto lg:max-h-none">
+              {sessions.map((session) => {
               const isActive = session.id === activeSessionId;
               return (
                 <li key={session.id}>
@@ -344,6 +346,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
               );
             })}
           </ul>
+          </Reveal>
         )}
       </aside>
 
@@ -422,7 +425,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
                 return (
                   <div
                     key={msg.id}
-                    className={`flex max-w-[85%] gap-3 ${
+                    className={`animate-fade-rise flex max-w-[85%] gap-3 ${
                       isUser ? "flex-row-reverse self-end" : "self-start"
                     }`}
                   >

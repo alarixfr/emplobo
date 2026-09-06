@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { AppSidebar } from "@/components/shell/app-sidebar";
 import { MobileBottomNav } from "@/components/shell/mobile-bottom-nav";
+import { RouteProgress } from "@/components/motion/route-progress";
 
 export default async function AppLayout({
   children,
@@ -25,6 +26,7 @@ export default async function AppLayout({
 
   return (
     <div className="flex h-full bg-surface-muted text-on-surface">
+      <RouteProgress />
       <AppSidebar isAdmin={isAdmin} />
 
       <div className="relative flex min-w-0 flex-1 flex-col">

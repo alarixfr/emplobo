@@ -49,7 +49,8 @@ export function KnowledgeGaps({ gaps, size = "md" }: KnowledgeGapsProps) {
           {gaps.map((gap, idx) => (
             <li
               key={idx}
-              className={`flex items-start gap-2.5 rounded-lg border border-status-locked/40 border-l-4 border-l-status-locked bg-status-locked/5 ${
+              style={{ animationDelay: `${idx * 60}ms` }}
+              className={`animate-fade-rise flex items-start gap-2.5 rounded-lg border border-status-locked/40 border-l-4 border-l-status-locked bg-status-locked/5 ${
                 isCompact ? "p-2.5" : "p-3"
               }`}
             >

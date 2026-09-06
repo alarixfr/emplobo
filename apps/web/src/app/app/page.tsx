@@ -1,6 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { AdminDashboard } from "@/components/dashboard/admin-dashboard";
+import { Reveal } from "@/components/motion/reveal";
 
 export default async function AppHomePage() {
   const { orgRole } = await auth();
@@ -15,48 +16,50 @@ export default async function AppHomePage() {
 
   return (
     <div className="mx-auto w-full max-w-container space-y-8">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="font-headline-md text-headline-md text-on-surface">
-            Halo, {displayName.split(" ")[0]}
-          </h1>
-          <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
-            {isAdmin
-              ? "Pantau kesiapan AI business brain dan progress pelatihan tim Anda."
-              : "Modul pembelajaran Anda akan muncul di sini. Lanjutkan progress Anda."}
-          </p>
-        </div>
-
-        {isAdmin ? (
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/app/knowledge"
-              className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-surface-container-lowest px-4 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                database
-              </span>
-              KNOWLEDGE
-            </Link>
-            <Link
-              href="/app/employees"
-              className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-surface-container-lowest px-4 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                person_add
-              </span>
-              KARYAWAN
-            </Link>
-            <Link
-              href="/app/roles"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
-            >
-              <span className="material-symbols-outlined text-[18px]">add</span>
-              ROLE BARU
-            </Link>
+      <Reveal y={18} x={0} delay={0} duration={0.7}>
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div>
+            <h1 className="font-headline-md text-headline-md text-on-surface">
+              Halo, {displayName.split(" ")[0]}
+            </h1>
+            <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
+              {isAdmin
+                ? "Pantau kesiapan AI business brain dan progress pelatihan tim Anda."
+                : "Modul pembelajaran Anda akan muncul di sini. Lanjutkan progress Anda."}
+            </p>
           </div>
-        ) : null}
-      </div>
+
+          {isAdmin ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/app/knowledge"
+                className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-surface-container-lowest px-4 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  database
+                </span>
+                KNOWLEDGE
+              </Link>
+              <Link
+                href="/app/employees"
+                className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-surface-container-lowest px-4 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  person_add
+                </span>
+                KARYAWAN
+              </Link>
+              <Link
+                href="/app/roles"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
+              >
+                <span className="material-symbols-outlined text-[18px]">add</span>
+                ROLE BARU
+              </Link>
+            </div>
+          ) : null}
+        </div>
+      </Reveal>
 
       {isAdmin ? (
         <AdminDashboard />

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useScrollSpy } from "@/lib/use-scroll-spy";
+import { Reveal } from "@/components/motion/reveal";
 
 export type LegalSection = {
   id: string;
@@ -41,6 +42,7 @@ export function LegalPage({
     <main className="mx-auto w-full max-w-container flex-1 px-4 py-12 md:px-10">
       <div className="grid gap-10 lg:grid-cols-[240px_1fr]">
         {/* ── Sticky outline (desktop) ─────────────────────────────────── */}
+        <Reveal x={-8} y={0} duration={0.6}>
         <aside className="hidden lg:block">
           <div className="sticky top-24">
             <Link
@@ -102,8 +104,10 @@ export function LegalPage({
             ) : null}
           </div>
         </aside>
+        </Reveal>
 
         {/* ── Article column ───────────────────────────────────────────── */}
+        <Reveal y={18} duration={0.7}>
         <article className="mx-auto w-full max-w-[720px]">
           <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-6 shadow-sm md:p-10">
             {/* Mobile back + section pills (outline is hidden on mobile) */}
@@ -163,8 +167,8 @@ export function LegalPage({
 
             <div className="mt-8 space-y-10">
               {sections.map((section, index) => (
+                <Reveal key={section.id} y={14} duration={0.6}>
                 <section
-                  key={section.id}
                   id={section.id}
                   className="scroll-mt-24"
                 >
@@ -185,10 +189,12 @@ export function LegalPage({
                     ))}
                   </div>
                 </section>
+                </Reveal>
               ))}
             </div>
           </div>
         </article>
+        </Reveal>
       </div>
     </main>
   );

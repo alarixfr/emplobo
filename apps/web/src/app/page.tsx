@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { LandingHero } from "@/components/marketing/landing-hero";
+import { LineStretch, Reveal, Stagger } from "@/components/motion/reveal";
 import { MarketingFooter } from "@/components/shell/marketing-footer";
 import { MarketingHeader } from "@/components/shell/marketing-header";
 
@@ -187,153 +189,16 @@ export default function HomePage() {
       <MarketingHeader />
 
       <main className="flex-1">
-        {/* ── Hero ─────────────────────────────────────────────────────── */}
-        <section className="mx-auto w-full max-w-container px-4 pb-16 pt-16 text-center md:px-10 md:pt-24">
-          <h1 className="mx-auto max-w-4xl font-headline-lg text-headline-lg-mobile text-primary md:text-headline-lg">
-            Skalakan pengetahuan bisnis Anda dengan AI.
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl font-body-lg text-body-lg text-on-surface-variant">
-            Emplobo adalah otak SDM untuk UMKM: latih AI sekali dengan SOP
-            bisnis Anda, lalu biarkan AI meng-onboard dan mengajar setiap
-            karyawan tanpa batas, 24/7.
-          </p>
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
-            <SignedOut>
-              <Link
-                href="/sign-up"
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
-              >
-                MULAI GRATIS
-                <span className="material-symbols-outlined text-[18px]">
-                  arrow_forward
-                </span>
-              </Link>
-              <SignInButton mode="redirect">
-                <button
-                  type="button"
-                  className="inline-flex items-center rounded-lg border border-secondary px-6 py-3.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
-                >
-                  MASUK
-                </button>
-              </SignInButton>
-            </SignedOut>
-            <SignedIn>
-              <Link
-                href="/app"
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container"
-              >
-                BUKA APP
-                <span className="material-symbols-outlined text-[18px]">
-                  arrow_forward
-                </span>
-              </Link>
-            </SignedIn>
-          </div>
-
-          {/* Product frame */}
-          <div className="mx-auto mt-14 max-w-4xl overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-[0_4px_24px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center gap-1.5 border-b border-outline-variant bg-surface-container-low px-4 py-3">
-              <span className="h-2.5 w-2.5 rounded-full bg-surface-container-highest" />
-              <span className="h-2.5 w-2.5 rounded-full bg-surface-container-highest" />
-              <span className="h-2.5 w-2.5 rounded-full bg-surface-container-highest" />
-            </div>
-            <div className="grid gap-4 p-4 text-left md:grid-cols-12 md:p-6">
-              <div className="hidden rounded-xl border border-outline-variant bg-surface-container-lowest p-4 md:col-span-3 md:block">
-                <p className="font-label-caps text-label-caps text-secondary">
-                  ROLES CONTEXT
-                </p>
-                <div className="mt-3 space-y-2">
-                  {["Barista", "Head Barista", "Kasir"].map((r, i) => (
-                    <div
-                      key={r}
-                      className={`rounded-lg border p-3 ${
-                        i === 0
-                          ? "border-primary ring-1 ring-primary"
-                          : "border-outline-variant"
-                      }`}
-                    >
-                      <p className="font-data-point text-data-point font-bold text-on-surface">
-                        {r}
-                      </p>
-                      <p className="mt-0.5 text-[12px] text-secondary">
-                        {i === 0 ? "IN PROGRESS" : "DRAFT"}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 md:col-span-6">
-                <div className="flex items-center gap-2">
-                  <p className="font-headline-sm text-[18px] text-on-surface">
-                    Training Room
-                  </p>
-                  <span className="rounded-full border border-outline-variant bg-surface-container-low px-2 py-0.5 font-label-caps text-label-caps text-on-surface-variant">
-                    DRAFT
-                  </span>
-                </div>
-                <div className="mt-4 space-y-3">
-                  <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-ai-border bg-ai-accent p-3 text-sm text-on-surface">
-                    Bagaimana urutan prosedur menutup espresso machine di akhir
-                    shift?
-                  </div>
-                  <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm border border-outline-variant bg-surface-container-lowest p-3 text-sm text-on-surface">
-                    Backflush tiap group head dengan cafiza 10 detik, ulangi 5x…
-                  </div>
-                  <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-ai-border bg-ai-accent p-3 text-sm text-on-surface">
-                    Tercatat. Bagaimana penghitungan stok susu dan bean?
-                  </div>
-                </div>
-              </div>
-              <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 text-center md:col-span-3">
-                <p className="font-label-caps text-label-caps text-secondary">
-                  BRAIN READINESS
-                </p>
-                <div className="mt-3 flex items-center justify-center">
-                  <div className="relative inline-flex h-24 w-24 items-center justify-center">
-                    <svg
-                      className="h-full w-full -rotate-90 transform"
-                      viewBox="0 0 100 100"
-                    >
-                      <circle
-                        className="text-outline-variant"
-                        cx="50"
-                        cy="50"
-                        fill="transparent"
-                        r="40"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                      />
-                      <circle
-                        className="text-primary"
-                        cx="50"
-                        cy="50"
-                        fill="transparent"
-                        r="40"
-                        stroke="currentColor"
-                        strokeDasharray="251.2"
-                        strokeDashoffset="87.92"
-                        strokeWidth="8"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <span className="absolute font-headline-sm text-2xl font-bold text-primary">
-                      65%
-                    </span>
-                  </div>
-                </div>
-                <p className="mt-3 font-body-sm text-body-sm text-secondary">
-                  Kelengkapan materi role
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+{/* ── Hero — the animated cockpit ────────────────────────────────── */}
+        <LandingHero />
 
         {/* ── Industry bar ──────────────────────────────────────────────── */}
         <section className="overflow-hidden border-y border-outline-variant bg-surface-container-lowest py-10">
-          <p className="mb-7 text-center font-label-caps text-label-caps text-secondary">
-            DIBANGUN UNTUK BERBAGAI INDUSTRI UMKM
-          </p>
+          <Reveal y={10} duration={0.7}>
+            <p className="mb-7 text-center font-label-caps text-label-caps text-secondary">
+              DIBANGUN UNTUK BERBAGAI INDUSTRI UMKM
+            </p>
+          </Reveal>
 
           {/* Endless marquee — item list duplicated for a seamless loop; the
               duplicated set is aria-hidden so screen readers read it once.
@@ -371,7 +236,11 @@ export default function HomePage() {
         {/* ── Stats band ────────────────────────────────────────────────── */}
         <section className="border-b border-outline-variant bg-inverse-surface">
           <div className="mx-auto w-full max-w-container px-4 py-14 md:px-10 md:py-16">
-            <div className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
+            <Stagger
+              y={22}
+              stagger={0.1}
+              className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4"
+            >
               {STATS.map((stat) => (
                 <div key={stat.label} className="text-left">
                   <p className="font-headline-md text-headline-md text-on-primary md:text-4xl">
@@ -385,7 +254,7 @@ export default function HomePage() {
                   </p>
                 </div>
               ))}
-            </div>
+            </Stagger>
           </div>
         </section>
 
@@ -394,19 +263,23 @@ export default function HomePage() {
           id="advantage"
           className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24"
         >
-          <p className="text-center font-label-caps text-label-caps text-secondary">
-            KEUNGGULAN EMPLOBO
-          </p>
-          <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
-            Satu kali latih, semua karyawan siap
-          </h2>
-          <div className="mt-12 grid gap-8 md:grid-cols-3">
+          <Reveal y={18}>
+            <p className="text-center font-label-caps text-label-caps text-secondary">
+              KEUNGGULAN EMPLOBO
+            </p>
+          </Reveal>
+          <Reveal y={20} delay={0.05}>
+            <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
+              Satu kali latih, semua karyawan siap
+            </h2>
+          </Reveal>
+          <Stagger y={26} stagger={0.1} className="mt-12 grid gap-8 md:grid-cols-3">
             {ADVANTAGES.map((adv) => (
               <div
                 key={adv.title}
-                className="rounded-lg border border-outline-variant bg-surface-container-lowest p-8 transition-colors hover:bg-surface-bright"
+                className="group rounded-lg border border-outline-variant bg-surface-container-lowest p-8 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-surface-bright hover:shadow-[0_16px_40px_-20px_rgba(20,66,37,0.25)]"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-container">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-container transition-transform duration-300 group-hover:scale-105">
                   <span className="material-symbols-outlined ms-fill text-on-primary-container">
                     {adv.icon}
                   </span>
@@ -419,25 +292,29 @@ export default function HomePage() {
                 </p>
               </div>
             ))}
-          </div>
+          </Stagger>
         </section>
 
         {/* ── For whom ──────────────────────────────────────────────────── */}
         <section className="border-y border-outline-variant bg-surface-container-lowest">
           <div className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24">
-            <p className="text-center font-label-caps text-label-caps text-secondary">
-              DIBUAT UNTUK TIM UMKM
-            </p>
-            <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
-              Satu platform untuk seluruh siklus pelatihan
-            </h2>
-            <div className="mt-12 grid gap-8 md:grid-cols-3">
+            <Reveal y={18}>
+              <p className="text-center font-label-caps text-label-caps text-secondary">
+                DIBUAT UNTUK TIM UMKM
+              </p>
+            </Reveal>
+            <Reveal y={20} delay={0.05}>
+              <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
+                Satu platform untuk seluruh siklus pelatihan
+              </h2>
+            </Reveal>
+            <Stagger y={26} stagger={0.1} className="mt-12 grid gap-8 md:grid-cols-3">
               {AUDIENCES.map((a) => (
                 <div
                   key={a.title}
-                  className="rounded-xl border border-outline-variant bg-surface-container-lowest p-8 text-center transition-colors hover:border-primary hover:bg-surface-bright"
+                  className="rounded-xl border border-outline-variant bg-surface-container-lowest p-8 text-center transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:bg-surface-bright hover:shadow-[0_16px_40px_-20px_rgba(20,66,37,0.25)]"
                 >
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-ai-border bg-ai-accent">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-ai-border bg-ai-accent transition-transform duration-300 group-hover:scale-105">
                     <span className="material-symbols-outlined text-[30px] text-primary">
                       {a.icon}
                     </span>
@@ -450,56 +327,64 @@ export default function HomePage() {
                   </p>
                 </div>
               ))}
-            </div>
+            </Stagger>
           </div>
         </section>
 
         {/* ── Feature grid ──────────────────────────────────────────────── */}
         <section className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24">
+          <Reveal y={18}>
           <p className="text-center font-label-caps text-label-caps text-secondary">
             FITUR LENGKAP
           </p>
+        </Reveal>
+        <Reveal y={20} delay={0.05}>
           <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
             Semua yang dibutuhkan untuk mengajar karyawan
           </h2>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <div
-                key={f.title}
-                className="group rounded-xl border border-outline-variant bg-surface-container-lowest p-7 transition-colors hover:border-primary/40 hover:bg-surface-bright"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-container transition-transform group-hover:scale-105">
-                    <span className="material-symbols-outlined text-[22px] text-on-primary-container">
-                      {f.icon}
-                    </span>
-                  </div>
-                  <span className="rounded-full border border-outline-variant px-2.5 py-1 font-label-caps text-[10px] text-secondary">
-                    {f.tag}
+        </Reveal>
+        <Stagger y={26} stagger={0.07} className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {FEATURES.map((f) => (
+            <div
+              key={f.title}
+              className="group rounded-xl border border-outline-variant bg-surface-container-lowest p-7 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-surface-bright hover:shadow-[0_16px_40px_-20px_rgba(20,66,37,0.22)]"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-container transition-transform duration-300 group-hover:scale-110">
+                  <span className="material-symbols-outlined text-[22px] text-on-primary-container">
+                    {f.icon}
                   </span>
                 </div>
-                <h3 className="mt-5 font-headline-sm text-headline-sm text-primary">
-                  {f.title}
-                </h3>
-                <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
-                  {f.desc}
-                </p>
+                <span className="rounded-full border border-outline-variant px-2.5 py-1 font-label-caps text-[10px] text-secondary transition-colors group-hover:border-primary/30 group-hover:text-primary">
+                  {f.tag}
+                </span>
               </div>
-            ))}
-          </div>
+              <h3 className="mt-5 font-headline-sm text-headline-sm text-primary">
+                {f.title}
+              </h3>
+              <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+                {f.desc}
+              </p>
+            </div>
+          ))}
+        </Stagger>
         </section>
 
         {/* ── Before / After ───────────────────────────────────────────── */}
         <section className="border-y border-outline-variant bg-surface-container-lowest">
           <div className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24">
+            <Reveal y={18}>
             <p className="text-center font-label-caps text-label-caps text-secondary">
               SEBELUM VS SESUDAH
             </p>
+          </Reveal>
+          <Reveal y={20} delay={0.05}>
             <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
               Onboarding yang biasanya melelahkan, kini otomatis
             </h2>
+          </Reveal>
 
-            <div className="mt-12 grid gap-6 lg:grid-cols-2">
+            <Stagger y={26} stagger={0.1} className="mt-12 grid gap-6 lg:grid-cols-2">
               <div className="rounded-xl border border-error/25 bg-surface-container-lowest p-8 md:p-10">
                 <p className="font-label-caps text-label-caps text-error">
                   TANPA EMPLOBO
@@ -538,7 +423,7 @@ export default function HomePage() {
                   ))}
                 </ul>
               </div>
-            </div>
+            </Stagger>
           </div>
         </section>
 
@@ -547,41 +432,48 @@ export default function HomePage() {
           id="how-it-works"
           className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24"
         >
+          <Reveal y={18}>
           <p className="text-center font-label-caps text-label-caps text-secondary">
             CARA KERJA
           </p>
+        </Reveal>
+        <Reveal y={20} delay={0.05}>
           <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
             Tiga langkah, dari know-how ke tim yang siap
           </h2>
+        </Reveal>
 
-          <div className="relative mt-14 grid gap-10 md:grid-cols-3 md:gap-8">
-            <div
+          <div className="relative mt-14">
+            <LineStretch
+              orientation="horizontal"
               aria-hidden
               className="absolute left-[16%] right-[16%] top-6 hidden h-0.5 bg-outline-variant md:block"
             />
-            {STEPS.map((step) => {
-              const tone =
-                step.tone === "primary"
-                  ? "bg-primary text-on-primary"
-                  : step.tone === "ai"
-                    ? "border border-ai-border bg-ai-accent text-primary"
-                    : "bg-status-ready text-white";
-              return (
-                <div key={step.num} className="relative text-center">
-                  <div
-                    className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full font-data-point text-data-point font-bold ${tone}`}
-                  >
-                    {step.num}
+            <Stagger y={24} stagger={0.12} className="grid gap-10 md:grid-cols-3 md:gap-8">
+              {STEPS.map((step) => {
+                const tone =
+                  step.tone === "primary"
+                    ? "bg-primary text-on-primary"
+                    : step.tone === "ai"
+                      ? "border border-ai-border bg-ai-accent text-primary"
+                      : "bg-status-ready text-white";
+                return (
+                  <div key={step.num} className="relative text-center">
+                    <div
+                      className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full font-data-point text-data-point font-bold ${tone}`}
+                    >
+                      {step.num}
+                    </div>
+                    <h3 className="mt-5 font-headline-sm text-headline-sm text-on-surface">
+                      {step.title}
+                    </h3>
+                    <p className="mx-auto mt-2 max-w-xs font-body-md text-body-md text-on-surface-variant">
+                      {step.desc}
+                    </p>
                   </div>
-                  <h3 className="mt-5 font-headline-sm text-headline-sm text-on-surface">
-                    {step.title}
-                  </h3>
-                  <p className="mx-auto mt-2 max-w-xs font-body-md text-body-md text-on-surface-variant">
-                    {step.desc}
-                  </p>
-                </div>
-              );
-            })}
+                );
+              })}
+            </Stagger>
           </div>
         </section>
 
@@ -607,14 +499,12 @@ export default function HomePage() {
 
             {/* Vertically centered connector; numeric chips sit on it */}
             <div className="relative">
-              <div
-                aria-hidden
-                className="absolute inset-y-0 left-10 hidden w-px bg-outline-variant md:left-[44%] lg:block"
-              />
+              {/* Spined between the stages: draws itself as you scroll */}
+              <LineStretch className="absolute inset-y-0 left-10 hidden w-px bg-outline-variant md:left-[44%] lg:block" />
 
             {/* ── Stage 1 · Admin trains once ─────────────────────────── */}
             <div className="relative mt-14 grid items-center gap-8 md:grid-cols-2 md:gap-12">
-              <div className="md:order-1">
+              <Reveal x={-40} y={16} className="md:order-1">
                 <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] md:p-5">
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-label-caps text-label-caps text-secondary">
@@ -639,9 +529,9 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Reveal>
 
-              <div className="md:order-2">
+              <Reveal x={40} y={16} delay={0.12} className="md:order-2">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-data-point text-data-point font-bold text-on-primary lg:absolute lg:left-[44%] lg:-translate-x-1/2">
                   01
                 </span>
@@ -661,12 +551,12 @@ export default function HomePage() {
                     disunting admin kapan saja — bukan kotak hitam.
                   </span>
                 </p>
-              </div>
+              </Reveal>
             </div>
 
             {/* ── Stage 2 · AI self-assesses readiness ─────────────────── */}
             <div className="relative mt-14 grid items-center gap-8 md:grid-cols-2 md:gap-12">
-              <div className="md:order-2">
+              <Reveal x={40} y={16} className="md:order-2">
                 <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] md:p-5">
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-label-caps text-label-caps text-secondary">
@@ -718,9 +608,9 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Reveal>
 
-              <div className="md:order-1">
+              <Reveal x={-40} y={16} delay={0.12} className="md:order-1">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-ai-border bg-ai-accent font-data-point text-data-point font-bold text-primary lg:absolute lg:left-[44%] lg:-translate-x-1/2">
                   02
                 </span>
@@ -741,12 +631,12 @@ export default function HomePage() {
                     mengikuti training — bukan estimasi pemasaran.
                   </span>
                 </p>
-              </div>
+              </Reveal>
             </div>
 
             {/* ── Stage 3 · AI teaches every employee ──────────────────── */}
             <div className="relative mt-14 grid items-center gap-8 md:grid-cols-2 md:gap-12">
-              <div className="md:order-1">
+              <Reveal x={-40} y={16} className="md:order-1">
                 <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] md:p-5">
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-label-caps text-label-caps text-secondary">
@@ -790,9 +680,9 @@ export default function HomePage() {
                     sesuai SOP adalah…”
                   </div>
                 </div>
-              </div>
+              </Reveal>
 
-              <div className="md:order-2">
+              <Reveal x={40} y={16} delay={0.12} className="md:order-2">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-status-ready font-data-point text-data-point font-bold text-white lg:absolute lg:left-[44%] lg:-translate-x-1/2">
                   03
                 </span>
@@ -813,7 +703,7 @@ export default function HomePage() {
                     dijawab jujur: sarankan bertanya ke atasan.
                   </span>
                 </p>
-              </div>
+              </Reveal>
             </div>
             </div>
           </div>
@@ -821,34 +711,38 @@ export default function HomePage() {
 
         {/* ── Security & trust ─────────────────────────────────────────── */}
         <section className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24">
+          <Reveal y={18}>
           <p className="text-center font-label-caps text-label-caps text-secondary">
             KEAMANAN & KEANDALAN
           </p>
+        </Reveal>
+        <Reveal y={20} delay={0.05}>
           <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
             Dibangun untuk dipercaya, sejak hari pertama
           </h2>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2">
-            {SECURITY.map((s) => (
-              <div
-                key={s.title}
-                className="flex items-start gap-5 rounded-xl border border-outline-variant bg-surface-container-lowest p-7"
-              >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary-container">
-                  <span className="material-symbols-outlined text-[24px] text-on-primary-container">
-                    {s.icon}
-                  </span>
-                </div>
-                <div>
-                  <h3 className="font-headline-sm text-headline-sm text-primary">
-                    {s.title}
-                  </h3>
-                  <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
-                    {s.desc}
-                  </p>
-                </div>
+        </Reveal>
+        <Stagger y={22} stagger={0.08} className="mt-12 grid gap-6 sm:grid-cols-2">
+          {SECURITY.map((s) => (
+            <div
+              key={s.title}
+              className="flex items-start gap-5 rounded-xl border border-outline-variant bg-surface-container-lowest p-7 transition-all duration-300 hover:border-primary/25 hover:shadow-[0_14px_36px_-22px_rgba(20,66,37,0.22)]"
+            >
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary-container">
+                <span className="material-symbols-outlined text-[24px] text-on-primary-container">
+                  {s.icon}
+                </span>
               </div>
-            ))}
-          </div>
+              <div>
+                <h3 className="font-headline-sm text-headline-sm text-primary">
+                  {s.title}
+                </h3>
+                <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+                  {s.desc}
+                </p>
+              </div>
+            </div>
+          ))}
+        </Stagger>
         </section>
 
         {/* ── FAQ ──────────────────────────────────────────────────────── */}
@@ -857,18 +751,23 @@ export default function HomePage() {
           className="border-t border-outline-variant bg-surface-container-lowest"
         >
           <div className="mx-auto w-full max-w-3xl px-4 py-16 md:px-10 md:py-24">
+            <Reveal y={18}>
             <p className="text-center font-label-caps text-label-caps text-secondary">
               PERTANYAAN UMUM
             </p>
+          </Reveal>
+          <Reveal y={20} delay={0.05}>
             <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
               Hal yang sering ditanyakan
             </h2>
+          </Reveal>
 
+            <Reveal y={20}>
             <div className="mt-10 space-y-3">
               {FAQS.map((faq) => (
                 <details
                   key={faq.q}
-                  className="group rounded-xl border border-outline-variant bg-surface-container-lowest p-5 transition-colors open:border-primary/40"
+                  className="faq-item group rounded-xl border border-outline-variant bg-surface-container-lowest p-5 transition-colors open:border-primary/40"
                 >
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-headline-sm text-[16px] text-on-surface">
                     {faq.q}
@@ -878,17 +777,19 @@ export default function HomePage() {
                       </span>
                     </span>
                   </summary>
-                  <p className="mt-3 font-body-md text-body-md leading-7 text-on-surface-variant">
+                  <p className="faq-answer mt-3 font-body-md text-body-md leading-7 text-on-surface-variant">
                     {faq.a}
                   </p>
                 </details>
               ))}
             </div>
+            </Reveal>
           </div>
         </section>
 
         {/* ── Final CTA ────────────────────────────────────────────────── */}
         <section className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24">
+          <Reveal y={28} duration={0.8}>
           <div className="flex flex-col items-start justify-between gap-6 rounded-xl border border-outline-variant bg-primary p-8 md:flex-row md:items-center md:p-12">
             <div className="flex items-start gap-5">
               <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-container sm:flex">
@@ -923,6 +824,7 @@ export default function HomePage() {
               </Link>
             </SignedIn>
           </div>
+          </Reveal>
         </section>
       </main>
 

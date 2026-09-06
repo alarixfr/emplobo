@@ -16,6 +16,7 @@ import type {
 } from "@/lib/content";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Reveal } from "@/components/motion/reveal";
 
 const MAX_CHAPTERS = 60;
 const MAX_QUESTIONS = 25;
@@ -390,46 +391,48 @@ export function ContentEditor({ roleId }: { roleId: string }) {
       </nav>
 
       {/* Hero */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-headline-md text-headline-md text-on-surface">
-              {role.name}
-            </h1>
-            <StatusBadge status={role.status} />
+      <Reveal y={18} x={0} delay={0} duration={0.7}>
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="font-headline-md text-headline-md text-on-surface">
+                {role.name}
+              </h1>
+              <StatusBadge status={role.status} />
+            </div>
+            <p className="mt-1 max-w-2xl font-body-md text-body-md text-on-surface-variant">
+              Editor panduan yang dihasilkan AI. Perubahan tersimpan sekali klik
+              dan langsung berlaku untuk karyawan yang mempelajari role ini.
+              v{guide.version} · {chaptersCount} chapter · {questionCount} soal ·
+              diperbarui {formatDate(guide.updatedAt)}
+            </p>
           </div>
-          <p className="mt-1 max-w-2xl font-body-md text-body-md text-on-surface-variant">
-            Editor panduan yang dihasilkan AI. Perubahan tersimpan sekali klik
-            dan langsung berlaku untuk karyawan yang mempelajari role ini.
-            v{guide.version} · {chaptersCount} chapter · {questionCount} soal ·
-            diperbarui {formatDate(guide.updatedAt)}
-          </p>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {dirty ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-status-locked px-3 py-2 font-label-caps text-[11px] text-status-locked">
+                <span className="material-symbols-outlined text-[14px]">schedule</span>
+                PERUBAHAN BELUM DISIMPAN
+              </span>
+            ) : notice ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-status-ready px-3 py-2 font-label-caps text-[11px] text-status-ready">
+                <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                TERSIMPAN
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => void handleSave()}
+              disabled={saving || !dirty}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                {saving ? "progress_activity animate-spin" : "save"}
+              </span>
+              {saving ? "MENYIMPAN…" : "SIMPAN"}
+            </button>
+          </div>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {dirty ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-status-locked px-3 py-2 font-label-caps text-[11px] text-status-locked">
-              <span className="material-symbols-outlined text-[14px]">schedule</span>
-              PERUBAHAN BELUM DISIMPAN
-            </span>
-          ) : notice ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-status-ready px-3 py-2 font-label-caps text-[11px] text-status-ready">
-              <span className="material-symbols-outlined text-[14px]">check_circle</span>
-              TERSIMPAN
-            </span>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => void handleSave()}
-            disabled={saving || !dirty}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              {saving ? "progress_activity animate-spin" : "save"}
-            </span>
-            {saving ? "MENYIMPAN…" : "SIMPAN"}
-          </button>
-        </div>
-      </div>
+      </Reveal>
 
       {error ? (
         <p role="alert" className="rounded-lg border border-error-container bg-error-container/40 p-4 font-body-sm text-body-sm text-error">

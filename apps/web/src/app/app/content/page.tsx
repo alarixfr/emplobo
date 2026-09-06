@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { apiFetch } from "@/lib/api";
+import { Reveal } from "@/components/motion/reveal";
 import type { ContentHubResponse } from "@/lib/content";
 
 function roleIcon(name: string): string {
@@ -41,18 +42,20 @@ export default async function ContentHubPage() {
 
   return (
     <div className="mx-auto w-full max-w-container space-y-8">
-      <div className="flex flex-col justify-between gap-4">
-        <div>
-          <h1 className="font-headline-md text-headline-md text-on-surface">
-            Konten Guide
-          </h1>
-          <p className="mt-1 max-w-2xl font-body-md text-body-md text-on-surface-variant">
-            Tinjau dan edit panduan hasil AI sesuai kebutuhan, ubah urutan chapter,
-            perbaiki isi markdown, dan sesuaikan soal kuis sebelum dibagikan ke
-            karyawan.
-          </p>
+      <Reveal y={18} x={0} delay={0} duration={0.7}>
+        <div className="flex flex-col justify-between gap-4">
+          <div>
+            <h1 className="font-headline-md text-headline-md text-on-surface">
+              Konten Guide
+            </h1>
+            <p className="mt-1 max-w-2xl font-body-md text-body-md text-on-surface-variant">
+              Tinjau dan edit panduan hasil AI sesuai kebutuhan, ubah urutan chapter,
+              perbaiki isi markdown, dan sesuaikan soal kuis sebelum dibagikan ke
+              karyawan.
+            </p>
+          </div>
         </div>
-      </div>
+      </Reveal>
 
       <section>
         {loadError ? (

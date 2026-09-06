@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { z } from "zod";
 import { ApiError, apiFetch } from "@/lib/api";
+import { Reveal } from "@/components/motion/reveal";
 import type { TrainingRoleSummary } from "@/lib/roles";
 
 const formSchema = z
@@ -72,10 +73,11 @@ export function CreateRoleForm({ onCreated }: CreateRoleFormProps) {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-4 rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm"
-    >
+    <Reveal y={18} x={0} delay={0} duration={0.7}>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm"
+      >
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-fixed">
           <span className="material-symbols-outlined text-[20px] text-on-primary-fixed-variant">
@@ -141,11 +143,12 @@ export function CreateRoleForm({ onCreated }: CreateRoleFormProps) {
       <button
         type="submit"
         disabled={isPending}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary transition-all hover:-translate-y-0.5 hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-60"
       >
         <span className="material-symbols-outlined text-[18px]">add</span>
         {isPending ? "MENYIMPAN…" : "BUAT ROLE"}
       </button>
-    </form>
+      </form>
+    </Reveal>
   );
 }

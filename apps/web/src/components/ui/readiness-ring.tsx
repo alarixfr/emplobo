@@ -33,7 +33,10 @@ export function ReadinessRing({ percent }: { percent: number }) {
           strokeLinecap="round"
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <div
+        key={clamped}
+        className="nav-pill-enter absolute inset-0 flex flex-col items-center justify-center"
+      >
         <span className="font-headline-lg text-[32px] font-bold text-primary">
           {clamped}%
         </span>

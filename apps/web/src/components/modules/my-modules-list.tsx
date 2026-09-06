@@ -4,6 +4,7 @@ import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { Stagger } from "@/components/motion/reveal";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { EmployeeModuleSummary } from "@/lib/modules";
@@ -158,7 +159,7 @@ export function MyModulesList() {
         <h2 className="font-label-caps text-label-caps text-secondary">
           MODUL DITUGASKAN
         </h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <Stagger className="mt-4 grid gap-4 md:grid-cols-2">
           {modules.map((module) => {
             const started = module.progress.completionPct > 0;
             const finished = module.progress.completionPct >= 100;
@@ -236,7 +237,7 @@ export function MyModulesList() {
               </div>
             );
           })}
-        </div>
+        </Stagger>
       </section>
 
       {/* ── Certifications ────────────────────────────────────────────── */}

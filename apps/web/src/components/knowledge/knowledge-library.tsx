@@ -15,6 +15,7 @@ import type {
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileDropzone } from "@/components/ui/file-dropzone";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { Reveal, Stagger } from "@/components/motion/reveal";
 
 function formatBytes(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -451,7 +452,7 @@ export function KnowledgeLibrary() {
   return (
     <div className="space-y-8">
       {/* ── Metrics ───────────────────────────────────────────────────── */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <Stagger y={18} stagger={0.08} className="grid gap-4 md:grid-cols-3">
         <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
           <p className="font-label-caps text-label-caps text-secondary">
             TOTAL DOKUMEN
@@ -499,7 +500,7 @@ export function KnowledgeLibrary() {
               : "Potongan teks siap dipakai AI training & tutor."}
           </p>
         </div>
-      </div>
+      </Stagger>
 
       {/* ── Notice banners ───────────────────────────────────────────── */}
       {error ? (
@@ -872,7 +873,7 @@ export function KnowledgeLibrary() {
 
           {/* Document list */}
           <section className="rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm">
-            <div className="border-b border-outline-variant p-4">
+            <Reveal y={18} x={0} delay={0} duration={0.7} className="border-b border-outline-variant p-4">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-headline-sm text-[18px] text-on-surface">
                   Daftar Dokumen
@@ -893,7 +894,7 @@ export function KnowledgeLibrary() {
                   className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest py-2 pl-9 pr-3 font-body-sm text-body-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary focus:ring-2 focus:ring-primary-fixed-dim/50"
                 />
               </div>
-            </div>
+            </Reveal>
 
             <div className="scroll-slim max-h-[24rem] space-y-2 overflow-y-auto bg-surface-container-low p-3">
               {filteredDocuments.length === 0 ? (
@@ -903,14 +904,15 @@ export function KnowledgeLibrary() {
                     : "Belum ada dokumen knowledge."}
                 </p>
               ) : (
-                filteredDocuments.map((document) => {
+                filteredDocuments.map((document, index) => {
                   const active = document.id === selectedDocumentId;
                   return (
                     <button
                       key={document.id}
                       type="button"
+                      style={{ animationDelay: `${index * 60}ms` }}
                       onClick={() => setSelectedDocumentId(document.id)}
-                      className={`w-full rounded-lg border p-3 text-left transition-colors ${
+                      className={`animate-fade-rise w-full rounded-lg border p-3 text-left transition-colors ${
                         active
                           ? "border-primary bg-primary-fixed-dim/40 shadow-sm ring-1 ring-primary"
                           : "border-outline-variant bg-surface-container-lowest shadow-sm hover:border-primary/40 hover:bg-surface-container-low"
