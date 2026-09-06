@@ -408,14 +408,43 @@ pnpm lint
 
 ## 🚀 Deployment
 
-Arsitektur produksi: **apps/web → Vercel**, **apps/api → Railway/Render**,
+Arsitektur produksi: **apps/web → Vercel**, **apps/api → Railway**,
 **PostgreSQL → Neon (pooled)**, **Clerk B2B production instance**, **Upstash
 Redis** (rate limit + cache). Checklist berikut adalah jalur deploy resmi
 (Section 13).
 
-### 1️⃣ Deploy `apps/api` ke Railway/Render
+> ⚠️ **Requirement runtime:** seluruh workspace berjalan di **Node ≥ 22.18**
+> (kompilasi `apps/api` mengimpor `@emplobo/db` yang entry-nya file `.ts`,
+> dijalankan Node via native type-stripping). Docker Image API memakai
+> `node:22` sehingga persyaratan ini otomatis terpenuhi; untuk run lokal
+> gunakan `.nvmrc` (`nvm use`).
 
-Set env vars berikut (nilai production, bukan dev):
+### 0️⃣ Persiapan Akun (dari nol)
+
+Urutan buat akun — selesaikan 1–5 dulu sebelum menyentuh Railway:
+
+1. **GitHub** — pastikan repo sudah di-push ke `github.com/<user>/emplobo`
+   (Dockerfile & .dockerignore sudah termasuk).
+2. **Neon** (https://neon.tech) → *Create a project* (free tier) → salin
+   **pooled** & **direct** connection string (`postgresql://...?sslmode=require`).
+3. **Upstash Redis** (https://console.upstash.com) → *Create Database* (free)
+   → salin `UPSTASH_REDIS_REST_URL` dan `UPSTASH_REDIS_REST_TOKEN`.
+4. **Hack Club AI** (https://ai.hackclub.com) → ambil API key (`sk-hc-v1-...`)
+   untuk gateway model (default `openai/gpt-oss-safeguard-20b`).
+5. **Clerk** (https://dashboard.clerk.com) → *Add application* "Emplobo" →
+   aktifkan **Organizations** (+ role `org:admin`; `basic_member` →
+   EMPLOYEE) → salin `pk_...`/`sk_...` (akan jadi production keys) → buat
+   **Webhook signing secret** (`whsec_...`).
+
+### 1️⃣ Deploy `apps/api` ke Railway
+
+Repositori ini berisi **Dockerfile** di root (Node 22 + pnpm workspace +
+`prisma migrate deploy` otomatis di setiap start), sehingga Railway
+terdeteksi sebagai **Dockerfile** tanpa konfigurasi build tambahan.
+
+1. https://railway.app → *New Project* → *Deploy from GitHub repo*
+   → pilih repo Emplobo (Railway mengenali Dockerfile di root).
+2. Di *Variables* service, isi semua nilai production (bukan dev):
 
 ```env
 DATABASE_URL="postgresql://user:pass@ep-xxx-pooler.neon.tech/emplobo?sslmode=require"  # pooled
@@ -434,7 +463,11 @@ NODE_ENV="production"
 ```
 
 > ⚠️ `WEB_APP_ORIGIN` adalah satu-satunya origin yang diizinkan CORS — tidak
-> ada wildcard. Pastikan nilainya persis domain web ter-deploy.
+> ada wildcard. Set **install command / build** dikosongkan (Dockerfile sudah
+> berisi semua langkah). Setelah deploy pertama selesai, buka *Settings →
+> Networking* untuk generate domain publik `https://<api>.up.railway.app` dan
+> test `curl https://<api>.up.railway.app/health` → harus `{"ok":true}`.
+> Migrasi DB dijalankan otomatis oleh container saat start.
 
 ### 2️⃣ Deploy `apps/web` ke Vercel
 
@@ -454,8 +487,17 @@ NEXT_PUBLIC_API_URL="https://<api-domain>"
 
 > CORS di `apps/web/next.config.ts` otomatis memakai `NEXT_PUBLIC_API_URL`
 > untuk `connect-src` CSP — pastikan tidak ada origin lain yang diblokir.
+>
+> **Konfigurasi Vercel:** Framework → Next.js; *Root Directory* → `apps/web`;
+> *Install Command* biarkan default (Vercel mendeteksi pnpm workspace);
+> *Build Command* → `next build`; *Node.js Version* → **22.x**.
+> `NEXT_PUBLIC_API_URL` wajib di-set sebelum build (dipakai kompilasi CSP).
 
 ### 3️⃣ Migrasi Database (Neon)
+
+Migrasi **otomatis** setiap container Railway start
+(`prisma migrate deploy` ada di CMD Dockerfile). Untuk migrasi manual dari
+lokal (wajib `DIRECT_URL` di `packages/db/.env`):
 
 ```bash
 pnpm db:migrate:deploy   # prisma migrate deploy — bukan migrate dev
