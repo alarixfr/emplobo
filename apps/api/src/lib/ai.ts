@@ -140,6 +140,13 @@ export async function callAiText(
   const completion = await client.chat.completions.create({
     model: env.AI_MODEL,
     max_tokens: maxTokens,
+    // Reasoning models (gpt-oss, qwen3) burn their whole output budget on
+    // chain-of-thought unless steered. "minimal" is the default so replies
+    // are complete, fast, and free of leaked thinking; it's configurable per
+    // deployment and dropped entirely when unset (non-reasoning models).
+    ...(env.AI_REASONING_EFFORT
+      ? { reasoning_effort: env.AI_REASONING_EFFORT }
+      : {}),
     messages: [{ role: "system", content: system }, ...messages],
   });
 

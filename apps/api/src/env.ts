@@ -24,6 +24,13 @@ const envSchema = z
     // (training, completeness scoring, guide generation, and employee chat
     // tutor). Default: OpenAI gpt-oss-safeguard-20b on the Hack Club AI proxy.
     AI_MODEL: z.string().min(1).default("openai/gpt-oss-safeguard-20b"),
+    // Reasoning effort for reasoning-capable models. The default model spends
+    // most of its output budget on chain-of-thought; "minimal" keeps replies
+    // fast, complete, and free of leaked thinking. Set "medium"/"high" for
+    // deeper reasoning, or leave empty when a non-reasoning model is used.
+    AI_REASONING_EFFORT: z
+      .enum(["minimal", "low", "medium", "high"])
+      .default("minimal"),
     OPENROUTER_API_KEY: z.string().optional(),
     OPENROUTER_MODEL: z.string().min(1).optional(),
     UPSTASH_REDIS_REST_URL: z.string().optional(),
@@ -62,6 +69,7 @@ export function loadEnv(): Env {
     AI_API_KEY: process.env.AI_API_KEY,
     AI_BASE_URL: process.env.AI_BASE_URL,
     AI_MODEL: process.env.AI_MODEL,
+    AI_REASONING_EFFORT: process.env.AI_REASONING_EFFORT,
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,

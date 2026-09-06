@@ -313,9 +313,9 @@ async function publishGuideDraftTx(
 
 // Guide generation is the most expensive single AI call — 3/hour per Role
 // (Section 5.3). Protects against accidental double-clicks and cost blowups.
-// The reasoning model spends part of the budget on chain-of-thought, so the
-// guide request stays small and the prompt keeps each chapter compact.
-const GUIDE_GEN_MAX_TOKENS = 4000;
+// Budget keeps chain-of-thought headroom (gpt-oss spends ~700–1500 of it) so
+// the JSON guide finishes under the limit instead of truncating mid-chapter.
+const GUIDE_GEN_MAX_TOKENS = 6000;
 
 function parseScoringJson(raw: string): { score: number; missingAreas: string[] } | null {
   const block = raw.match(/\{[\s\S]*\}/)?.[0] ?? raw;
@@ -949,6 +949,19 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           }
         }
 
+        // Always refresh gaps so the UI can update the right rail the moment
+        // a re-score lands (no wait for the 30s status poll). When scoring
+        // didn't run this turn, the previous value is returned unchanged.
+        let latestGaps: string[] = [];
+        try {
+          const gapsCache = await cache.getJson<{
+            missingAreas: string[];
+          }>(`role-gaps:${role.id}`);
+          latestGaps = gapsCache?.missingAreas ?? [];
+        } catch {
+          latestGaps = [];
+        }
+
         res.status(201).json({
           adminMessage,
           aiMessage,
@@ -957,6 +970,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
             completenessScore: finalScore,
             trainingMessageCount: updatedRole.trainingMessageCount,
           },
+          missingAreas: latestGaps,
           becameReady,
         });
       } catch (err) {

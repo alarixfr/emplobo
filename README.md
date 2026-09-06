@@ -330,6 +330,7 @@ CLERK_PUBLISHABLE_KEY="pk_test_xxx"
 CLERK_WEBHOOK_SECRET="whsec_xxx"
 AI_API_KEY="sk-hc-v1-xxx"
 AI_MODEL="openai/gpt-oss-safeguard-20b"   # default: OpenAI gpt-oss-safeguard-20b via Hack Club AI proxy; bisa diganti ke model lain yang ekspos proxy
+AI_REASONING_EFFORT="minimal"              # default "minimal": mencegah model reasoning (gpt-oss/qwen3) menghabiskan seluruh budget output pada chain-of-thought sehingga jawaban terpotong atau bocor pemikiran; kosongkan untuk model non-reasoning
 WEB_APP_ORIGIN="http://localhost:3000"
 PORT="4000"
 ```
@@ -404,6 +405,7 @@ CLERK_PUBLISHABLE_KEY="pk_live_xxx"
 CLERK_WEBHOOK_SECRET="whsec_xxx"
 AI_API_KEY="sk-hc-v1-xxx"
 AI_MODEL="openai/gpt-oss-safeguard-20b"
+AI_REASONING_EFFORT="minimal"
 UPSTASH_REDIS_REST_URL="https://xxx.upstash.io"
 UPSTASH_REDIS_REST_TOKEN="xxx"
 WEB_APP_ORIGIN="https://<web-domain>"   # harus persis origin web yang ter-deploy
@@ -571,7 +573,9 @@ DELETE /api/knowledge/:id                  # soft-delete (ARCHIVED)
 
 # AI model — semua panggilan AI (training, scoring, guide, tutor) memakai slug
 # env AI_MODEL (default "openai/gpt-oss-safeguard-20b" via Hack Club AI proxy, OpenAI-compatible).
-# Untuk biaya nol pastikan key WAJIB ada di prod; opsional di dev (fallback canned reply).
+# env AI_REASONING_EFFORT (default "minimal") menekan chain-of-thought agar jawaban tidak
+# terpotong/bocor pemikiran; kosongkan untuk model non-reasoning. Untuk biaya nol pastikan
+# key WAJIB ada di prod; opsional di dev (fallback canned reply).
 # Bahasa default semua interaksi AI: Bahasa Indonesia, diperkuat sebagai aturan utama
 # (LANGUAGE_DIRECTIVE di lib/prompts.ts). AI juga membaca 4 pesan pengguna terakhir untuk
 # menyesuaikan bahasa jawaban (detectConversationLanguage: bila pesan terakhir dominan

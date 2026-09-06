@@ -436,6 +436,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
               adminMessage: TrainingMessage;
               aiMessage: TrainingMessage;
               role: { status: RoleStatus; completenessScore: number };
+              missingAreas?: string[];
               becameReady: boolean;
             }>(`/api/roles/${role.id}/training/messages`, {
               method: "POST",
@@ -451,6 +452,11 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
           ]);
           setStatus(data.role.status);
           setCompleteness(data.role.completenessScore);
+          // A re-score may have run inside this request — apply the fresh
+          // knowledge gaps immediately instead of waiting for the 30s poll.
+          if (data.missingAreas) {
+            setMissingAreas(data.missingAreas);
+          }
           return;
         } catch (err) {
           // Lock lost, rate limit, or a validation error are final — never
