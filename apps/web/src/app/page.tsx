@@ -131,30 +131,6 @@ const STEPS = [
   },
 ];
 
-const TESTIMONIALS = [
-  {
-    quote:
-      "Dulu tiap barista baru butuh dua minggu supervisi langsung. Sekarang AI yang menjelaskan prosedur — saya cukup koreksi saat ada yang keluar jalur.",
-    name: "Maya",
-    role: "Owner · Kedai Kopi",
-    initials: "MY",
-  },
-  {
-    quote:
-      "Karyawan bisa bertanya prosedur tutup kasir jam 10 malam dan jawabannya selalu sesuai SOP toko. Itu yang tadinya terasa mustahil.",
-    name: "Rizal",
-    role: "Manajer · Minimarket",
-    initials: "RZ",
-  },
-  {
-    quote:
-      "Onboarding jadi konsisten. Semua karyawan menerima materi yang sama persis dari AI, bukan versi masing-masing senior.",
-    name: "Ani",
-    role: "HR · Rumah Makan",
-    initials: "AN",
-  },
-];
-
 const SECURITY = [
   {
     icon: "lock",
@@ -353,17 +329,17 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── Trust bar ────────────────────────────────────────────────── */}
+        {/* ── Industry bar ──────────────────────────────────────────────── */}
         <section className="overflow-hidden border-y border-outline-variant bg-surface-container-lowest py-10">
           <p className="mb-7 text-center font-label-caps text-label-caps text-secondary">
-            DIPERCAYA BISNIS DARI BERBAGAI INDUSTRI
+            DIBANGUN UNTUK BERBAGAI INDUSTRI UMKM
           </p>
 
           {/* Endless marquee — item list duplicated for a seamless loop; the
               duplicated set is aria-hidden so screen readers read it once.
               Per-item mx-6 keeps spacing uniform across the loop seam. */}
           <div className="marquee-mask">
-            <div className="marquee-track" aria-label="Bisnis yang didukung Emplobo">
+            <div className="marquee-track" aria-label="Industri UMKM yang didukung Emplobo">
               {[0, 1].map((copy) => (
                 <div
                   key={copy}
@@ -609,42 +585,236 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── Testimonials ─────────────────────────────────────────────── */}
+        {/* ── The Business Brain Loop ───────────────────────────────────── */}
+        {/* A transparency feature, not marketing: walks through the actual
+            train → self-assessed readiness → teach loop, annotating the
+            honesty mechanism inside each stage. This is the product's real
+            differentiator (an LMS stores material; Emplobo trains a teacher). */}
         <section className="border-y border-outline-variant bg-surface-container-lowest">
-          <div className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24">
+          <div className="relative mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24">
             <p className="text-center font-label-caps text-label-caps text-secondary">
-              CERITA PENGGUNA
+              LOOP TRAINING AI
             </p>
             <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
-              Dari pelatihan yang merepotkan, jadi rutinitas yang tenang
+              Dari obrolan sekali, menjadi pengajar yang jujur untuk semua
             </h2>
-            <div className="mt-12 grid gap-6 md:grid-cols-3">
-              {TESTIMONIALS.map((t) => (
-                <figure
-                  key={t.name}
-                  className="flex flex-col rounded-xl border border-outline-variant bg-surface-container-lowest p-8"
-                >
-                  <span className="material-symbols-outlined text-[26px] text-primary">
-                    format_quote
-                  </span>
-                  <blockquote className="mt-4 flex-1 font-body-md text-body-md leading-7 text-on-surface-variant">
-                    “{t.quote}”
-                  </blockquote>
-                  <figcaption className="mt-6 flex items-center gap-3 border-t border-outline-variant pt-5">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-container font-label-caps text-label-caps text-on-primary-container">
-                      {t.initials}
+            <p className="mx-auto mt-4 max-w-2xl text-center font-body-md text-body-md text-on-surface-variant">
+              Bukan LMS yang sebatas menyimpan materi. Ini satu otak bisnis yang
+              dilatih sekali, menguji kesiapannya sendiri, lalu mengajar setiap
+              karyawan — dibatasi keras oleh materi yang Anda berikan. Berikut
+              isinya, sebagaimana adanya di dalam produk.
+            </p>
+
+            {/* Vertically centered connector; numeric chips sit on it */}
+            <div className="relative">
+              <div
+                aria-hidden
+                className="absolute inset-y-0 left-10 hidden w-px bg-outline-variant md:left-[44%] lg:block"
+              />
+
+            {/* ── Stage 1 · Admin trains once ─────────────────────────── */}
+            <div className="relative mt-14 grid items-center gap-8 md:grid-cols-2 md:gap-12">
+              <div className="md:order-1">
+                <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] md:p-5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-label-caps text-label-caps text-secondary">
+                      TRAINING · BARISTA
+                    </p>
+                    <span className="rounded-full border border-outline-variant bg-surface-container-low px-2.5 py-0.5 font-label-caps text-label-caps text-on-surface-variant">
+                      DRAFT
                     </span>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-ai-border bg-ai-accent p-3 text-sm text-on-surface">
+                      Masih ada celah di materi ini — bagaimana SOP menutup mesin
+                      espresso di akhir shift?
+                    </div>
+                    <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm border border-outline-variant bg-surface-container-high p-3 text-sm text-on-surface">
+                      Backflush tiap group head 10 detik, ulangi 5x, lalu
+                      keringkan portafilter.
+                    </div>
+                    <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-ai-border bg-ai-accent p-3 text-sm text-on-surface">
+                      Tercatat. Bagaimana perhitungan stok susu dan bean setiap
+                      pagi?
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="md:order-2">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-data-point text-data-point font-bold text-on-primary lg:absolute lg:left-[44%] lg:-translate-x-1/2">
+                  01
+                </span>
+                <h3 className="mt-4 font-headline-md text-headline-md text-primary">
+                  Admin berbicara sekali
+                </h3>
+                <p className="mt-3 font-body-md text-body-md text-on-surface-variant">
+                  SOP, kebijakan toko, dan know-how dituangkan lewat perbincangan
+                  biasa dengan AI — sekali saja per role kerja.
+                </p>
+                <p className="mt-5 flex items-start gap-2 rounded-lg border border-outline-variant bg-surface-bright p-3 font-body-sm text-body-sm text-on-surface-variant">
+                  <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
+                    fact_check
+                  </span>
+                  <span>
+                    Setiap pesan tersimpan sebagai materi yang bisa ditinjau dan
+                    disunting admin kapan saja — bukan kotak hitam.
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            {/* ── Stage 2 · AI self-assesses readiness ─────────────────── */}
+            <div className="relative mt-14 grid items-center gap-8 md:grid-cols-2 md:gap-12">
+              <div className="md:order-2">
+                <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] md:p-5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-label-caps text-label-caps text-secondary">
+                      BRAIN READINESS · BARISTA
+                    </p>
+                    <span className="rounded-full bg-status-ready/10 px-2.5 py-0.5 font-label-caps text-label-caps text-status-ready">
+                      READY
+                    </span>
+                  </div>
+                  <div className="mt-4 flex items-center gap-5">
+                    <div className="relative inline-flex h-20 w-20 shrink-0 items-center justify-center">
+                      <svg
+                        className="h-full w-full -rotate-90 transform"
+                        viewBox="0 0 100 100"
+                      >
+                        <circle
+                          className="text-outline-variant"
+                          cx="50"
+                          cy="50"
+                          fill="transparent"
+                          r="40"
+                          stroke="currentColor"
+                          strokeWidth="8"
+                        />
+                        <circle
+                          className="text-primary"
+                          cx="50"
+                          cy="50"
+                          fill="transparent"
+                          r="40"
+                          stroke="currentColor"
+                          strokeDasharray="251.2"
+                          strokeDashoffset="45.2"
+                          strokeWidth="8"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <span className="absolute font-headline-sm text-xl font-bold text-primary">
+                        82%
+                      </span>
+                    </div>
                     <div>
-                      <p className="font-headline-sm text-[14px] text-on-surface">
-                        {t.name}
+                      <p className="font-data-point text-data-point text-on-surface">
+                        Skor kelengkapan materi role
                       </p>
-                      <p className="font-label-caps text-label-caps text-secondary">
-                        {t.role}
+                      <p className="mt-1 font-body-sm text-body-sm text-secondary">
+                        82 &gt; 75 — ambang tercapai, role siap dibentuk guide.
                       </p>
                     </div>
-                  </figcaption>
-                </figure>
-              ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="md:order-1">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-ai-border bg-ai-accent font-data-point text-data-point font-bold text-primary lg:absolute lg:left-[44%] lg:-translate-x-1/2">
+                  02
+                </span>
+                <h3 className="mt-4 font-headline-md text-headline-md text-primary">
+                  AI menguji kesiapannya sendiri
+                </h3>
+                <p className="mt-3 font-body-md text-body-md text-on-surface-variant">
+                  Dari transkrip training, AI menghitung skor kelengkapan 0–100
+                  secara berkala. Menembus 75, role berubah menjadi READY dan
+                  pintu pembuatan guide terbuka.
+                </p>
+                <p className="mt-5 flex items-start gap-2 rounded-lg border border-outline-variant bg-surface-bright p-3 font-body-sm text-body-sm text-on-surface-variant">
+                  <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
+                    fact_check
+                  </span>
+                  <span>
+                    Skor dihitung dari materi Anda sendiri dan diperbarui
+                    mengikuti training — bukan estimasi pemasaran.
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            {/* ── Stage 3 · AI teaches every employee ──────────────────── */}
+            <div className="relative mt-14 grid items-center gap-8 md:grid-cols-2 md:gap-12">
+              <div className="md:order-1">
+                <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] md:p-5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-label-caps text-label-caps text-secondary">
+                      LEARNING · BARISTA
+                    </p>
+                    <span className="rounded-full bg-primary-fixed/50 px-2.5 py-0.5 font-label-caps text-label-caps text-on-primary-fixed-variant">
+                      PANDUAN V2
+                    </span>
+                  </div>
+                  <ul className="mt-4 space-y-2">
+                    <li className="flex items-center gap-3 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2.5">
+                      <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
+                        check_circle
+                      </span>
+                      <span className="font-body-sm text-body-sm text-on-surface">
+                        1 · SOP Pembukaan Shift
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-3 rounded-lg border border-primary bg-primary-fixed/40 px-3 py-2.5">
+                      <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
+                        menu_book
+                      </span>
+                      <span className="font-body-sm text-body-sm text-on-surface">
+                        2 · Mesin &amp; Peralatan
+                      </span>
+                      <span className="ml-auto rounded-full bg-status-ready/10 px-2 py-0.5 font-label-caps text-label-caps text-status-ready">
+                        KUIS 90%
+                      </span>
+                    </li>
+                    <li className="flex items-center gap-3 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2.5 opacity-70">
+                      <span className="material-symbols-outlined shrink-0 text-[18px] text-secondary">
+                        schedule
+                      </span>
+                      <span className="font-body-sm text-body-sm text-on-surface">
+                        3 · Standar Rasa Kopi
+                      </span>
+                    </li>
+                  </ul>
+                  <div className="mt-3 rounded-2xl rounded-tl-sm border border-ai-border bg-ai-accent p-3 text-sm text-on-surface">
+                    “Kalau mesin bermasalah di tengah shift, langkah pertama
+                    sesuai SOP adalah…”
+                  </div>
+                </div>
+              </div>
+
+              <div className="md:order-2">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-status-ready font-data-point text-data-point font-bold text-white lg:absolute lg:left-[44%] lg:-translate-x-1/2">
+                  03
+                </span>
+                <h3 className="mt-4 font-headline-md text-headline-md text-primary">
+                  AI mengajar semua karyawan
+                </h3>
+                <p className="mt-3 font-body-md text-body-md text-on-surface-variant">
+                  Guide ber-bab, kuis yang dinilai di server, dan tutor 24/7 yang
+                  menjawab hanya dari materi role tersebut. Setiap karyawan baru
+                  tinggal belajar.
+                </p>
+                <p className="mt-5 flex items-start gap-2 rounded-lg border border-outline-variant bg-surface-bright p-3 font-body-sm text-body-sm text-on-surface-variant">
+                  <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
+                    fact_check
+                  </span>
+                  <span>
+                    Tutor tidak mengarang prosedur. Pertanyaan di luar materi
+                    dijawab jujur: sarankan bertanya ke atasan.
+                  </span>
+                </p>
+              </div>
+            </div>
             </div>
           </div>
         </section>
@@ -728,7 +898,7 @@ export default function HomePage() {
               </div>
               <div>
                 <h2 className="font-headline-sm text-headline-sm text-on-primary">
-                  Panduan SOP siap pakai dalam hitungan menit
+                  Panduan SOP tersusun dari materi yang Anda ajarkan
                 </h2>
                 <p className="mt-2 max-w-xl font-body-md text-body-md text-on-primary-container">
                   Begitu materi dirasa cukup, AI menyusun panduan ber-bab
