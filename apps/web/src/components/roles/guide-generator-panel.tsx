@@ -6,7 +6,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
-import { guideRateLimitMessage } from "@/lib/rate";
+import { guideRateLimitMessage, providerRateLimitMessage } from "@/lib/rate";
 import type {
   GuideDraftFull,
   GuideVersionInfo,
@@ -119,9 +119,10 @@ export function GuideGeneratorPanel({
           typeof err.body === "object" && err.body !== null ? (err.body as object) : {};
         if ("provider" in body && body.provider === "rate_limit") {
           setError(
-            err instanceof Error && err.message
-              ? err.message
-              : "Penyedia AI sedang ramai (rate limit). Tunggu sebentar, lalu coba lagi.",
+            providerRateLimitMessage(
+              "retryAfter" in body ? (body as { retryAfter?: number }).retryAfter : undefined,
+              "retryAt" in body ? (body as { retryAt?: string }).retryAt : undefined,
+            ),
           );
         } else {
           setError(

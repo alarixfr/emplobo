@@ -8,7 +8,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
-import { guideRateLimitMessage } from "@/lib/rate";
+import { guideRateLimitMessage, providerRateLimitMessage } from "@/lib/rate";
 import type { KnowledgeDocumentSummary, KnowledgeQuota } from "@/lib/knowledge";
 import { KNOWLEDGE_FILE_ACCEPT } from "@/components/ui/file-dropzone";
 import { ReadinessRing } from "@/components/ui/readiness-ring";
@@ -494,15 +494,21 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
         setLockFree(true);
         setSendError("Kunci training hilang. Role ini sedang dilatih admin lain.");
       } else if (err instanceof ApiError && err.status === 429) {
+        const body =
+          typeof err.body === "object" && err.body !== null ? (err.body as object) : {};
         const retry =
-          typeof err.body === "object" &&
-          err.body &&
-          "retryAfter" in err.body &&
-          typeof (err.body as { retryAfter?: unknown }).retryAfter === "number"
-            ? (err.body as { retryAfter: number }).retryAfter
+          "retryAfter" in body && typeof (body as { retryAfter?: unknown }).retryAfter === "number"
+            ? (body as { retryAfter: number }).retryAfter
             : null;
+        const retryAt = "retryAt" in body ? (body as { retryAt?: unknown }).retryAt : undefined;
         setRetryAfter(retry);
-        setSendError(err instanceof Error ? err.message : "Gagal mengirim pesan.");
+        setSendError(
+          "provider" in body
+            ? providerRateLimitMessage(retry ?? undefined, retryAt)
+            : err instanceof Error
+              ? err.message
+              : "Gagal mengirim pesan.",
+        );
       } else if (isTransient(err)) {
         setSendError(
           "Gagal mengirim pesan. Periksa koneksi internet Anda, lalu coba lagi.",
@@ -541,9 +547,10 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
           typeof err.body === "object" && err.body !== null ? (err.body as object) : {};
         if ("provider" in body && body.provider === "rate_limit") {
           setGenerateError(
-            err instanceof Error && err.message
-              ? err.message
-              : "Penyedia AI sedang ramai (rate limit). Tunggu sebentar, lalu coba lagi.",
+            providerRateLimitMessage(
+              "retryAfter" in body ? (body as { retryAfter?: number }).retryAfter : undefined,
+              "retryAt" in body ? (body as { retryAt?: string }).retryAt : undefined,
+            ),
           );
         } else {
           setGenerateError(
@@ -701,6 +708,24 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role.id]);
+
+  useEffect(() => {
+    // Live countdown for the rate-limit hint — re-render once per second
+    // while a retry wait is pending so the admin sees the clock run down
+    // instead of a stale static number.
+    if (retryAfter === null) return;
+    const timer = window.setInterval(() => {
+      setRetryAfter((current) => {
+        if (current === null) return current;
+        if (current <= 1) {
+          // Wait elapsed: drop the cooldown line and let the next attempt go.
+          return null;
+        }
+        return current - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [retryAfter]);
 
   useEffect(() => {
     // Suppress the browser default for stray file drops anywhere in the room

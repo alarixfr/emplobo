@@ -33,3 +33,13 @@ export function guideRateLimitMessage(
   const wait = typeof retryAfter === "number" ? retryAfter : 60;
   return `Jatah pembuatan panduan role ini habis — maksimal ${limit} kali per jam per role. Coba lagi ${formatRetryWait(wait)}${formatRetryClock(retryAt)}.`;
 }
+
+/**
+ * Message for the AI provider's own rate limit (Hack Club proxy). Same wait
+ * + clock treatment as the app quota so the admin knows exactly when to
+ * retry instead of guessing.
+ */
+export function providerRateLimitMessage(retryAfter?: unknown, retryAt?: unknown): string {
+  const wait = typeof retryAfter === "number" ? retryAfter : 30;
+  return `Penyedia AI sedang ramai (rate limit). Coba lagi ${formatRetryWait(wait)}${formatRetryClock(retryAt)}.`;
+}
