@@ -79,6 +79,16 @@
   --color-background: #f9faf5;
   --color-on-background: #1a1c19;
 
+  /* ── shadcn-compatible semantic tokens ──────────────────────────────
+     Minimal aliases so shadcn/ui primitives (Input, etc.) resolve to the
+     design system instead of silently missing. Mapped 1:1 onto the
+     Material-3 tokens above; keep them in sync when those change. */
+  --color-foreground: #1a1c19;        /* = on-surface */
+  --color-muted-foreground: #717971;  /* = outline */
+  --color-border: #c1c9bf;            /* = outline-variant */
+  --color-input: #c1c9bf;             /* = outline-variant */
+  --color-ring: #3b6847;              /* = primary */
+
   /* ── Fonts (loaded via Google Fonts stylesheet above) ─────────────── */
   /* Professional, general-purpose face: Inter throughout (headlines and
      body); JetBrains Mono reserved for data/labels/code only. */
@@ -150,6 +160,12 @@
   --spacing-margin-desktop: 2.5rem;
   --spacing-gutter: 1.5rem;
   --spacing-section-gap: 4rem;
+}
+
+/* Raw CSS variable consumed by BackgroundBeams' base grid gradient
+   (var(--neutral-300)); kept outside @theme so it stays namespace-free. */
+:root {
+  --neutral-300: #d4d4d8;
 }
 
 body {
