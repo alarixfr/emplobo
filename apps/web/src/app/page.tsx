@@ -500,7 +500,7 @@ export default function HomePage() {
             {/* Vertically centered connector; numeric chips sit on it */}
             <div className="relative">
               {/* Spined between the stages: draws itself as you scroll */}
-              <LineStretch className="absolute inset-y-0 left-10 hidden w-px bg-outline-variant md:left-[44%] lg:block" />
+              <LineStretch className="absolute inset-y-0 left-10 hidden w-px bg-outline-variant md:left-1/2 lg:block" />
 
             {/* ── Stage 1 · Admin trains once ─────────────────────────── */}
             <div className="relative mt-14 grid items-center gap-8 md:grid-cols-2 md:gap-12">
@@ -532,7 +532,7 @@ export default function HomePage() {
               </Reveal>
 
               <div className="md:order-2">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-data-point text-data-point font-bold text-on-primary lg:absolute lg:left-[44%] lg:-translate-x-1/2">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-data-point text-data-point font-bold text-on-primary lg:absolute lg:left-1/2 lg:-translate-x-1/2">
                   01
                 </span>
                 <Reveal x={40} y={16} delay={0.12}>
@@ -613,7 +613,7 @@ export default function HomePage() {
               </Reveal>
 
               <div className="md:order-1">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-ai-border bg-ai-accent font-data-point text-data-point font-bold text-primary lg:absolute lg:left-[44%] lg:-translate-x-1/2">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-ai-border bg-ai-accent font-data-point text-data-point font-bold text-primary lg:absolute lg:left-1/2 lg:-translate-x-1/2">
                   02
                 </span>
                 <Reveal x={-40} y={16} delay={0.12}>
@@ -687,7 +687,7 @@ export default function HomePage() {
               </Reveal>
 
               <div className="md:order-2">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-status-ready font-data-point text-data-point font-bold text-white lg:absolute lg:left-[44%] lg:-translate-x-1/2">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-status-ready font-data-point text-data-point font-bold text-white lg:absolute lg:left-1/2 lg:-translate-x-1/2">
                   03
                 </span>
                 <Reveal x={40} y={16} delay={0.12}>
