@@ -178,6 +178,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
   const [lockFree, setLockFree] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -399,6 +400,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
     const content = input.trim();
     setSendError(null);
     setRetryAfter(null);
+    setRetryAttempt(0);
     setIsSending(true);
     setInput("");
 
@@ -416,27 +418,56 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
     setMessages((prev) => [...prev, optimisticAdmin]);
     setIsThinking(true);
 
-    try {
-      const data = await withToken((token) =>
-        apiFetch<{
-          adminMessage: TrainingMessage;
-          aiMessage: TrainingMessage;
-          role: { status: RoleStatus; completenessScore: number };
-          becameReady: boolean;
-        }>(`/api/roles/${role.id}/training/messages`, {
-          method: "POST",
-          token,
-          body: { content },
-        }),
-      );
+    // Industry-standard retry: only transient failures (network drop,
+    // timeouts, 5xx) are retried, with exponential backoff + jitter. The
+    // server rolls the admin message back on AI failure, so each re-POST is
+    // safe — it never creates a duplicate transcript row.
+    const MAX_ATTEMPTS = 3;
+    const backoff = (attempt: number) =>
+      500 * 2 ** (attempt - 1) + Math.round(Math.random() * 250); // ~500ms, ~1250ms
+    const isTransient = (err: unknown) =>
+      !(err instanceof ApiError) || (err.status >= 500 && err.status <= 599);
 
-      setMessages((prev) => [
-        ...prev.filter((message) => message.id !== optimisticId),
-        data.adminMessage,
-        data.aiMessage,
-      ]);
-      setStatus(data.role.status);
-      setCompleteness(data.role.completenessScore);
+    try {
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+          const data = await withToken((token) =>
+            apiFetch<{
+              adminMessage: TrainingMessage;
+              aiMessage: TrainingMessage;
+              role: { status: RoleStatus; completenessScore: number };
+              becameReady: boolean;
+            }>(`/api/roles/${role.id}/training/messages`, {
+              method: "POST",
+              token,
+              body: { content },
+            }),
+          );
+
+          setMessages((prev) => [
+            ...prev.filter((message) => message.id !== optimisticId),
+            data.adminMessage,
+            data.aiMessage,
+          ]);
+          setStatus(data.role.status);
+          setCompleteness(data.role.completenessScore);
+          return;
+        } catch (err) {
+          // Lock lost, rate limit, or a validation error are final — never
+          // retried (a 429 retry would just hammer the limiter).
+          if (!isTransient(err)) throw err;
+
+          if (attempt < MAX_ATTEMPTS) {
+            setRetryAttempt(attempt);
+            setIsThinking(true);
+            await new Promise<void>((resolve) =>
+              setTimeout(resolve, backoff(attempt)),
+            );
+            continue;
+          }
+          throw err;
+        }
+      }
     } catch (err) {
       // The server rolled the admin message back on AI failure — remove the
       // optimistic copy and restore the text so nothing is lost.
@@ -458,12 +489,17 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
             : null;
         setRetryAfter(retry);
         setSendError(err instanceof Error ? err.message : "Gagal mengirim pesan.");
+      } else if (isTransient(err)) {
+        setSendError(
+          "Gagal mengirim pesan. Periksa koneksi internet Anda, lalu coba lagi.",
+        );
       } else {
         setSendError(err instanceof Error ? err.message : "Gagal mengirim pesan.");
       }
     } finally {
       setIsThinking(false);
       setIsSending(false);
+      setRetryAttempt(0);
     }
   }
 
@@ -824,7 +860,9 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
                     />
                   </span>
                   <span className="font-body-sm text-[12px] text-secondary">
-                    AI sedang berpikir...
+                    {retryAttempt > 0
+                      ? `terjadi kesalahan, mencoba ulang (${retryAttempt}/2)...`
+                      : "AI sedang berpikir..."}
                   </span>
                 </div>
               </div>

@@ -482,7 +482,7 @@ export function createChatRouter(requireAuth: AuthMiddleware, env: Env): Router 
       // already rolled the optimistic bubble back).
       let aiReply: AiCallResult;
       try {
-        aiReply = await callAiText(env, systemPrompt, history, 800, {
+        aiReply = await callAiText(env, systemPrompt, history, 1000, {
           timeoutMs: 30_000,
           fallbackReply:
             "Maaf, saat ini AI tutor sedang dalam mode offline. Silakan tanyakan kepada supervisor Anda mengenai prosedur ini.",

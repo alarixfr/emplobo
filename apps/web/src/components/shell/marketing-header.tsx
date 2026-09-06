@@ -136,7 +136,7 @@ export function MarketingHeader() {
                 key={link.href}
                 href={link.href}
                 aria-current={active ? "page" : undefined}
-                className={`group relative pb-1 pt-1 font-label-caps text-label-caps transition-colors ${
+                className={`group relative pb-1 pt-1 font-label-md text-label-md transition-colors ${
                   active
                     ? "font-bold text-primary"
                     : spied
@@ -161,16 +161,16 @@ export function MarketingHeader() {
             <SignInButton mode="redirect">
               <button
                 type="button"
-                className="font-label-caps text-label-caps text-on-surface-variant transition-colors hover:text-primary"
+                className="font-label-md text-label-md text-on-surface-variant transition-colors hover:text-primary"
               >
-                MASUK
+                Masuk
               </button>
             </SignInButton>
             <Link
               href="/sign-up"
-              className="group inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px"
+              className="group inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 font-label-md text-label-md text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px"
             >
-              MULAI GRATIS
+              Mulai gratis
               <svg
                 className="hidden transition-transform duration-300 group-hover:translate-x-0.5 sm:inline-flex"
                 width="14"
@@ -191,9 +191,9 @@ export function MarketingHeader() {
           <SignedIn>
             <Link
               href="/app"
-              className="group inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 font-label-caps text-label-caps text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px"
+              className="group inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 font-label-md text-label-md text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px"
             >
-              BUKA APP
+              Buka app
               <svg
                 width="14"
                 height="14"
@@ -267,7 +267,7 @@ export function MarketingHeader() {
                 data-menu-item
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center justify-between rounded-lg px-3 py-2.5 font-body-md text-body-md text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
+                className="flex items-center justify-between rounded-lg px-3 py-2.5 font-label-md text-label-md text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-primary"
               >
                 {link.label}
               </Link>

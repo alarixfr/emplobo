@@ -89,6 +89,7 @@
   --font-body-md: "Inter", system-ui, sans-serif;
   --font-body-sm: "Inter", system-ui, sans-serif;
   --font-label-caps: "JetBrains Mono", ui-monospace, monospace;
+  --font-label-md: "Inter", system-ui, sans-serif;
   --font-data-point: "JetBrains Mono", ui-monospace, monospace;
 
   /* ── Type scale (size + weight/line-height/letter-spacing modifiers) ── */
@@ -126,6 +127,13 @@
   --text-label-caps--line-height: 1rem;
   --text-label-caps--font-weight: 600;
   --text-label-caps--letter-spacing: 0.05em;
+
+  /* Nav labels — Inter (not mono), sentence case, normal tracking, so the
+     marketing nav reads human instead of robotic all-caps terminal text. */
+  --text-label-md: 0.9rem;
+  --text-label-md--line-height: 1.25rem;
+  --text-label-md--font-weight: 600;
+  --text-label-md--letter-spacing: -0.01em;
 
   --text-data-point: 0.875rem;
   --text-data-point--line-height: 1.25rem;

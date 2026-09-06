@@ -313,9 +313,9 @@ async function publishGuideDraftTx(
 
 // Guide generation is the most expensive single AI call — 3/hour per Role
 // (Section 5.3). Protects against accidental double-clicks and cost blowups.
-// The AI proxy caps output tokens (and reasoning models burn budget fast), so
-// guide requests stay small and the prompt keeps each chapter compact.
-const GUIDE_GEN_MAX_TOKENS = 2048;
+// The reasoning model spends part of the budget on chain-of-thought, so the
+// guide request stays small and the prompt keeps each chapter compact.
+const GUIDE_GEN_MAX_TOKENS = 4000;
 
 function parseScoringJson(raw: string): { score: number; missingAreas: string[] } | null {
   const block = raw.match(/\{[\s\S]*\}/)?.[0] ?? raw;
@@ -815,7 +815,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
                 .map((m) => m.content),
             ),
             buildHistoryMessages(selected),
-            500,
+            800,
             {
               timeoutMs: 60_000,
               fallbackReply:
@@ -867,75 +867,85 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         let becameReady = false;
 
         if (updatedRole.trainingMessageCount % 5 === 0) {
-          const fullTranscript = await prisma.trainingMessage.findMany({
-            where: { roleId: role.id, orgId: auth.orgId },
-            orderBy: { createdAt: "asc" },
-            select: { sender: true, content: true },
-          });
-
-          const scoringReply = await callAiText(
-            env,
-            buildScoringPrompt(),
-            [
-              {
-                role: "user",
-                content: wrapBusinessData(
-                  fullTranscript
-                    .map((m) => `${m.sender.toUpperCase()}: ${sanitizeUserText(m.content)}`)
-                    .join("\n"),
-                ),
-              },
-            ],
-            300,
-            {
-              timeoutMs: 60_000,
-              // Empty fallback: in offline dev (no API key) parsing fails and
-              // the previous completeness score is kept (Section 7.2).
-              fallbackReply: "",
-            },
-          );
-
-          await logAiUsage({
-            orgId: auth.orgId,
-            userId: auth.userId,
-            kind: "training",
-            tokensIn: scoringReply.tokensIn,
-            tokensOut: scoringReply.tokensOut,
-          });
-
-          const parsedScore = parseScoringJson(scoringReply.text);
-          if (parsedScore) {
-            finalScore = parsedScore.score;
-
-            // Knowledge Gaps (Training Room right rail) — missingAreas is
-            // ephemeral model output, cached per-role (org-shared content)
-            // instead of adding a schema column. Overwritten every re-score.
-            await cache.setJson(
-              `role-gaps:${role.id}`,
-              {
-                missingAreas: parsedScore.missingAreas,
-                updatedAt: new Date().toISOString(),
-              },
-              30 * 24 * 60 * 60,
-            );
-            if (parsedScore.score >= 75 && updatedRole.status === "DRAFT") {
-              finalStatus = "READY";
-              becameReady = true;
-            }
-
-            const roleAfterScore = await prisma.trainingRole.update({
-              where: { id: role.id },
-              data: {
-                completenessScore: finalScore,
-                status: finalStatus,
-              },
-              select: {
-                status: true,
-                completenessScore: true,
-              },
+          // Scoring is background, best-effort work — a failed or empty AI
+          // reply must never crash the message request or reset progress.
+          // Section 7.2: on failure keep the previous score and continue.
+          try {
+            const fullTranscript = await prisma.trainingMessage.findMany({
+              where: { roleId: role.id, orgId: auth.orgId },
+              orderBy: { createdAt: "asc" },
+              select: { sender: true, content: true },
             });
-            finalStatus = roleAfterScore.status;
-            finalScore = roleAfterScore.completenessScore;
+
+            const scoringReply = await callAiText(
+              env,
+              buildScoringPrompt(),
+              [
+                {
+                  role: "user",
+                  content: wrapBusinessData(
+                    fullTranscript
+                      .map((m) => `${m.sender.toUpperCase()}: ${sanitizeUserText(m.content)}`)
+                      .join("\n"),
+                  ),
+                },
+              ],
+              1400,
+              {
+                timeoutMs: 60_000,
+                // Empty fallback: in offline dev (no API key) parsing fails and
+                // the previous completeness score is kept (Section 7.2).
+                fallbackReply: "",
+              },
+            );
+
+            await logAiUsage({
+              orgId: auth.orgId,
+              userId: auth.userId,
+              kind: "training",
+              tokensIn: scoringReply.tokensIn,
+              tokensOut: scoringReply.tokensOut,
+            });
+
+            const parsedScore = parseScoringJson(scoringReply.text);
+            if (parsedScore) {
+              finalScore = parsedScore.score;
+
+              // Knowledge Gaps (Training Room right rail) — missingAreas is
+              // ephemeral model output, cached per-role (org-shared content)
+              // instead of adding a schema column. Overwritten every re-score.
+              await cache.setJson(
+                `role-gaps:${role.id}`,
+                {
+                  missingAreas: parsedScore.missingAreas,
+                  updatedAt: new Date().toISOString(),
+                },
+                30 * 24 * 60 * 60,
+              );
+              if (parsedScore.score >= 75 && updatedRole.status === "DRAFT") {
+                finalStatus = "READY";
+                becameReady = true;
+              }
+
+              const roleAfterScore = await prisma.trainingRole.update({
+                where: { id: role.id },
+                data: {
+                  completenessScore: finalScore,
+                  status: finalStatus,
+                },
+                select: {
+                  status: true,
+                  completenessScore: true,
+                },
+              });
+              finalStatus = roleAfterScore.status;
+              finalScore = roleAfterScore.completenessScore;
+            }
+          } catch (scoringErr) {
+            console.error(
+              `[scoring] keep previous score for role ${role.id}:`,
+              scoringErr instanceof Error ? scoringErr.message : scoringErr,
+            );
           }
         }
 

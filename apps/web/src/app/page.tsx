@@ -59,6 +59,33 @@ const AUDIENCES = [
   },
 ];
 
+const PAIN_VALUES = [
+  {
+    icon: "history",
+    pain: "Materi yang sama harus diulang berulang kali",
+    hurt: "Setiap karyawan baru datang, pemilik atau senior harus menjelaskan hal yang itu itu saja dari awal.",
+    value: "Cukup diajarkan sekali kepada AI. Karyawan berikutnya belajar langsung dari materi itu tanpa didampingi lagi.",
+  },
+  {
+    icon: "psychology_alt",
+    pain: "SOP hanya tersimpan di kepala satu orang",
+    hurt: "Kalau pemilik atau senior yang hafal cara kerja keluar, pengetahuannya ikut hilang dan bisnis memulai lagi dari nol.",
+    value: "Pengetahuan dituliskan dan tersimpan di satu otak bisnis yang bisa diakses kapan saja, siapa pun yang berhenti.",
+  },
+  {
+    icon: "diversity_3",
+    pain: "Setiap senior mengajar dengan caranya sendiri",
+    hurt: "Karyawan belajar dari orang yang berbeda-beda, jadi standar pelayanan dan kerapian toko tidak pernah sama.",
+    value: "Semua karyawan belajar dari materi yang sama dan teruji, sehingga kualitas kerjanya konsisten dari shift ke shift.",
+  },
+  {
+    icon: "schedule",
+    pain: "Waktu kerja habis untuk mendidik",
+    hurt: "Menjelaskan ulang sambil melayani pelanggan membuat pekerjaan tersendat di jam yang paling sibuk.",
+    value: "AI yang mengajar kapan saja, 24/7. Pemilik dan senior kembali fokus pada urusan yang benar-benar membutuhkan mereka.",
+  },
+];
+
 const FEATURES = [
   {
     icon: "forum",
@@ -252,6 +279,65 @@ export default function HomePage() {
                   <p className="mt-1 font-body-sm text-body-sm text-white/50">
                     {stat.sub}
                   </p>
+                </div>
+              ))}
+            </Stagger>
+          </div>
+        </section>
+
+        {/* ── Pain point & Emplobo's answer ────────────────────────────── */}
+        <section className="border-b border-outline-variant bg-surface-container-lowest">
+          <div className="mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24">
+            <Reveal y={18}>
+              <p className="text-center font-label-caps text-label-caps text-secondary">
+                KENAPA BANYAK UMKM KESULITAN
+              </p>
+            </Reveal>
+            <Reveal y={20} delay={0.05}>
+              <h2 className="mt-3 text-center font-headline-md text-headline-md text-primary">
+                Mengajar karyawan baru terasa berat, hasilnya tidak menentu
+              </h2>
+            </Reveal>
+            <Reveal y={20} delay={0.1}>
+              <p className="mx-auto mt-4 max-w-2xl text-center font-body-md text-body-md text-on-surface-variant">
+                Bisnis yang mengandalkan orang banyak selalu butuh waktu untuk
+                mengajarkan cara kerja. Selama cara mengajarnya manual, masalah
+                yang sama akan terus berulang.
+              </p>
+            </Reveal>
+
+            <Stagger y={26} stagger={0.1} className="mt-12 grid gap-6 sm:grid-cols-2">
+              {PAIN_VALUES.map((item) => (
+                <div
+                  key={item.pain}
+                  className="flex flex-col rounded-xl border border-outline-variant bg-surface-container-lowest p-7 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-[0_16px_40px_-20px_rgba(20,66,37,0.22)]"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-error/10">
+                      <span className="material-symbols-outlined text-[22px] text-error">
+                        {item.icon}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="font-headline-sm text-[17px] text-on-surface">
+                        {item.pain}
+                      </h3>
+                      <p className="mt-1.5 font-body-md text-body-md text-on-surface-variant">
+                        {item.hurt}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-5 flex-1 rounded-lg border border-primary/20 bg-ai-accent p-4">
+                    <p className="flex items-center gap-1.5 font-label-caps text-label-caps text-primary">
+                      <span className="material-symbols-outlined ms-fill text-[15px]">
+                        check_circle
+                      </span>
+                      SOLUSI EMPLOBO
+                    </p>
+                    <p className="mt-2 font-body-md text-body-md text-on-surface">
+                      {item.value}
+                    </p>
+                  </div>
                 </div>
               ))}
             </Stagger>

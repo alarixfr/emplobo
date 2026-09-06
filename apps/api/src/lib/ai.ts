@@ -145,7 +145,9 @@ export async function callAiText(
 
   const text = completion.choices?.[0]?.message?.content?.trim();
   if (!text) {
-    throw new Error("AI returned empty text content");
+    throw new Error(
+      "AI returned empty text content (the model likely spent its whole output budget on chain-of-thought; treat as transient and retry with a larger budget)",
+    );
   }
 
   const promptJoined = [system, ...messages.map((m) => m.content)].join("\n");

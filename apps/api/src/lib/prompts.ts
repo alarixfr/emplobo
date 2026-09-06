@@ -26,6 +26,17 @@ const ENGLISH_DIRECTIVE = [
   "Istilah teknis yang lazim di bidangnya boleh memakai istilah aslinya.",
 ].join(" ");
 
+// Shared writing-style rules: the AI must sound like a capable human, not a
+// chatbot. Enforced across training, guide, and tutor flows so a brand's
+// employees never read machine-sounding prose or stray typographic dashes
+// inside real material they learn from.
+const OUTPUT_STYLE = [
+  "GAYA MENULIS (wajib, sama pentingnya dengan isi):",
+  "Tulislah seperti orang yang berpengalaman sedang menjelaskan, bukan seperti mesin. Jangan pakai frasa khas AI seperti 'Tentu, dengan senang hati', 'Sebagai AI', 'Pastinya!', 'Itu pertanyaan bagus', atau 'Semoga membantu'.",
+  "Jangan pakai tanda pisah '—' maupun '–' di dalam kalimat. Sambungkan gagasan dengan koma, titik, atau kata sambung biasa.",
+  "Pakai kalimat pendek dan langsung. Terus terang, hangat, dan enak dibaca orang awam.",
+].join("\n");
+
 // Token-based language heuristic — deliberately conservative so Indonesian
 // stays the default. We only switch to English when function words from the
 // last few user messages clearly outnumber Indonesian ones; ties stay
@@ -97,6 +108,8 @@ export function buildTrainingSystemPrompt(
     "",
     buildLanguageDirective(recentUserMessages),
     "",
+    OUTPUT_STYLE,
+    "",
     "CARA MENJAWAB + BERTANYA (ikuti urutan ini di setiap giliran):",
     "1. Baca saksama materi yang baru saja diajarkan admin. Balas dengan pengakuan singkat yang menunjukkan bahwa Anda benar-benar menangkap isinya.",
     "2. Ajukan PERSIS SATU pertanyaan lanjutan yang paling bernilai untuk mengisi celah pengetahuan terbesar pada role ini. Pertanyaan harus spesifik dan langsung bisa dijawab admin, bukan pertanyaan basa-basi seperti 'ada lagi?'.",
@@ -164,6 +177,8 @@ export function buildGuideSystemPrompt(
     `ANDA ADALAH: penulis panduan onboarding (guide) untuk role kerja "${roleName}" di sebuah UMKM.`,
     "",
     buildLanguageDirective(recentUserMessages),
+    "",
+    OUTPUT_STYLE,
     "",
     "SUMBER KONTEN (urutan prioritas):",
     "1. Transkrip training di dalam <business_data> — ini sumber utama. Seluruh prosedur, angka, takaran, dan istilah harus absah dari transkrip ini.",
@@ -236,6 +251,8 @@ export function buildTutorSystemPrompt(
     `ANDA ADALAH: "AI Tutor Emplobo" untuk role kerja "${roleName}". Seorang karyawan UMKM bertanya tentang cara kerja sehari-hari, sesuai SOP peran ini.`,
     "",
     buildLanguageDirective(recentUserMessages),
+    "",
+    OUTPUT_STYLE,
     "",
     "SUMBER JAWABAN (hanya ini, tidak ada yang lain):",
     "1. Panduan resmi (guide) + catatan transkrip training + knowledge library di dalam <knowledge_base> di bawah, khusus untuk role ini.",
