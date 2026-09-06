@@ -3,6 +3,7 @@
 import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { useLayoutEffect, useRef } from "react";
+import KineticGrid from "@/components/ui/kinetic-grid";
 import { EASE_OUT, gsap, prefersReducedMotion } from "@/lib/motion";
 
 /** Characters of a typewriter line; each is a span so GSAP can stagger them. */
@@ -22,11 +23,12 @@ const HERO_LINE_2_HEAD = "dengan ";
 const HERO_LINE_2_TAIL = "AI.";
 
 /**
- * Landing hero — the "crafted data-driven cockpit". One authored sequence:
- * the training chat types itself, its admin replies, three role cards slide
- * in, and the readiness ring draws to 65% as the numbers count up. Scrolling
- * past the hero moves it on a subtle parallax. Reduced motion skips to the
- * final state. This is the product's true mechanism, shown, not narrated.
+ * Landing hero — dark KineticGrid canvas (monochrome, brand-neutral) as the
+ * stage; one authored sequence on top: the training chat types itself, its
+ * admin replies, three role cards slide in, and the readiness ring draws to
+ * 65% as the numbers count up. Scrolling past the hero moves it on a subtle
+ * parallax. Reduced motion skips to the final state. The grid responds to
+ * cursor and click from anywhere.
  */
 export function LandingHero() {
   const scopeRef = useRef<HTMLElement | null>(null);
@@ -141,28 +143,28 @@ export function LandingHero() {
   }, []);
 
   return (
-    <section ref={scopeRef} className="relative overflow-hidden">
-      {/* Decorative ambient — two faint blurred tints behind the copy */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-32 left-1/2 h-[420px] w-[720px] -translate-x-1/2 rounded-full bg-primary-fixed/20 blur-3xl" />
-        <div className="absolute right-[8%] top-10 h-56 w-56 rounded-full bg-ai-accent blur-3xl" />
-        <div
-          className="absolute inset-0 opacity-[0.35]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, rgba(113,121,113,0.10) 1px, transparent 1px), linear-gradient(to bottom, rgba(113,121,113,0.10) 1px, transparent 1px)",
-            backgroundSize: "56px 56px",
-            maskImage: "radial-gradient(ellipse 70% 60% at 50% 0%, black 30%, transparent 70%)",
-          }}
-        />
+    <section ref={scopeRef} className="relative isolate overflow-hidden bg-[#161618]">
+      {/* KineticGrid — the interactive canvas (white monochrome grid) */}
+      <div aria-hidden className="absolute inset-0">
+        <KineticGrid globalColor="monochrome" />
       </div>
 
-      <div className="hero-copy mx-auto w-full max-w-container px-4 pb-12 pt-16 text-center md:px-10 md:pt-24">
-        <h1 className="mx-auto max-w-4xl font-headline-lg text-headline-lg-mobile text-primary md:text-headline-lg">
+      {/* Legibility vignette — deepens edges while the grid stays alive in the middle */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-[1]"
+        style={{
+          background:
+            "radial-gradient(120% 95% at 50% 8%, transparent 42%, rgba(0,0,0,0.55) 100%)",
+        }}
+      />
+
+      <div className="hero-copy relative z-10 mx-auto w-full max-w-container px-4 pb-10 pt-16 text-center md:px-10 md:pt-20">
+        <h1 className="mx-auto max-w-4xl font-headline-lg text-headline-lg-mobile text-white md:text-headline-lg">
           <span className="hero-line block">{HERO_LINE_1}</span>
           <span className="hero-line block">
             {HERO_LINE_2_HEAD}
-            <span className="relative inline-block italic">
+            <span className="relative inline-block italic text-primary-fixed">
               {HERO_LINE_2_TAIL}
               <svg
                 className="absolute -bottom-1.5 left-0 w-full"
@@ -173,7 +175,7 @@ export function LandingHero() {
                 <path
                   className="hero-underline"
                   d="M4 7c22-4 58-5 112-2"
-                  stroke="#3b6847"
+                  stroke="#bcefc4"
                   strokeWidth="3.5"
                   strokeLinecap="round"
                   fill="none"
@@ -183,7 +185,7 @@ export function LandingHero() {
           </span>
         </h1>
 
-        <p className="hero-sub mx-auto mt-6 max-w-2xl font-body-lg text-body-lg text-on-surface-variant">
+        <p className="hero-sub mx-auto mt-6 max-w-2xl font-body-lg text-body-lg text-white/70">
           Emplobo adalah otak SDM untuk UMKM: latih AI sekali dengan SOP bisnis
           Anda, lalu biarkan AI menyambut, melatih, dan mengajar setiap
           karyawan baru tanpa batas, 24/7.
@@ -193,7 +195,7 @@ export function LandingHero() {
           <SignedOut>
             <Link
               href="/sign-up"
-              className="group inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3.5 font-label-caps text-label-caps text-on-primary shadow-[0_8px_20px_-10px_rgba(20,66,37,0.6)] transition-all duration-300 hover:bg-primary-container hover:shadow-[0_12px_28px_-10px_rgba(20,66,37,0.55)] active:translate-y-px"
+              className="group inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3.5 font-label-caps text-label-caps text-primary shadow-[0_8px_24px_-12px_rgba(255,255,255,0.5)] transition-all duration-300 hover:bg-white/90 active:translate-y-px"
             >
               MULAI GRATIS
               <svg
@@ -215,7 +217,7 @@ export function LandingHero() {
             <SignInButton mode="redirect">
               <button
                 type="button"
-                className="inline-flex items-center rounded-lg border border-secondary px-6 py-3.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
+                className="inline-flex items-center rounded-lg border border-white/25 px-6 py-3.5 font-label-caps text-label-caps text-white transition-colors hover:border-white/45 hover:bg-white/10"
               >
                 MASUK
               </button>
@@ -224,7 +226,7 @@ export function LandingHero() {
           <SignedIn>
             <Link
               href="/app"
-              className="group inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3.5 font-label-caps text-label-caps text-on-primary shadow-[0_8px_20px_-10px_rgba(20,66,37,0.6)] transition-all duration-300 hover:bg-primary-container hover:shadow-[0_12px_28px_-10px_rgba(20,66,37,0.55)] active:translate-y-px"
+              className="group inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3.5 font-label-caps text-label-caps text-primary shadow-[0_8px_24px_-12px_rgba(255,255,255,0.5)] transition-all duration-300 hover:bg-white/90 active:translate-y-px"
             >
               BUKA APP
               <svg
@@ -248,8 +250,8 @@ export function LandingHero() {
       </div>
 
       {/* ── The cockpit: live product mechanism, animated on load ── */}
-      <div className="cockpit mx-auto w-full max-w-4xl px-4 md:px-10">
-        <div className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-[0_24px_60px_-24px_rgba(20,66,37,0.22)]">
+      <div className="cockpit mx-auto w-full max-w-4xl px-4 pb-16 md:px-10 md:pb-20">
+        <div className="overflow-hidden rounded-xl border border-white/10 bg-surface-container-lowest shadow-[0_24px_60px_-24px_rgba(0,0,0,0.6)]">
           <div className="flex items-center justify-between border-b border-outline-variant bg-surface-container-low px-4 py-3">
             <div className="flex items-center gap-1.5" aria-hidden>
               <span className="h-2.5 w-2.5 rounded-full bg-surface-container-highest" />

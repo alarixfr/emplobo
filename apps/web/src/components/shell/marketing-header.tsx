@@ -85,19 +85,26 @@ export function MarketingHeader() {
     return false;
   }
 
+  // On the landing page the header starts transparent over the dark KineticGrid
+  // hero (white chrome); once scrolling starts it switches back to the light
+  // treatment. Other marketing pages keep the light look throughout.
+  const darkTop = pathname === "/" && !scrolled;
+
   return (
     <header
       className={`sticky top-0 z-40 transition-all duration-300 ${
         scrolled
           ? "border-b border-outline-variant bg-surface-container-lowest/85 shadow-[0_1px_0_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(20,66,37,0.18)] backdrop-blur-md"
-          : "border-b border-transparent bg-surface-container-lowest/55 backdrop-blur-sm"
+          : darkTop
+            ? "bg-transparent"
+            : "border-b border-transparent bg-surface-container-lowest/55 backdrop-blur-sm"
       }`}
     >
       {/* Ambient brand wash + rim light — scroll-reactive glow behind the chrome */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className={`absolute inset-0 transition-opacity duration-500 ${
-            scrolled ? "opacity-100" : "opacity-40"
+            scrolled ? "opacity-100" : darkTop ? "opacity-0" : "opacity-40"
           }`}
           style={{
             background:
@@ -106,7 +113,7 @@ export function MarketingHeader() {
         />
         <div
           className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-inverse-surface/10 to-transparent transition-opacity duration-500 ${
-            scrolled ? "opacity-90" : "opacity-40"
+            scrolled ? "opacity-90" : darkTop ? "opacity-0" : "opacity-40"
           }`}
         />
       </div>
@@ -118,7 +125,7 @@ export function MarketingHeader() {
       >
         <Link href="/" aria-label="Emplobo">
           <Image
-            src="/logo.png"
+            src={darkTop ? "/logo-white.png" : "/logo.png"}
             alt="Emplobo"
             width={scrolled ? 108 : 120}
             height={scrolled ? 29 : 32}
@@ -137,18 +144,20 @@ export function MarketingHeader() {
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={`group relative pb-1 pt-1 font-label-md text-label-md transition-colors ${
-                  active
+                  active || spied
                     ? "font-bold text-primary"
-                    : spied
-                      ? "font-bold text-primary"
+                    : darkTop
+                      ? "text-white/80 hover:text-white"
                       : "text-on-surface-variant hover:text-primary"
                 }`}
               >
                 {link.label}
                 <span
                   aria-hidden
-                  className={`absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary transition-transform duration-300 ${
-                    active || spied ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                  className={`absolute inset-x-0 bottom-0 h-0.5 rounded-full transition-transform duration-300 ${
+                    active || spied
+                      ? "scale-x-100 bg-primary"
+                      : `scale-x-0 group-hover:scale-x-100 ${darkTop ? "bg-white" : "bg-primary"}`
                   }`}
                 />
               </Link>
@@ -161,14 +170,20 @@ export function MarketingHeader() {
             <SignInButton mode="redirect">
               <button
                 type="button"
-                className="font-label-md text-label-md text-on-surface-variant transition-colors hover:text-primary"
+                className={`font-label-md text-label-md transition-colors ${
+                  darkTop ? "text-white/80 hover:text-white" : "text-on-surface-variant hover:text-primary"
+                }`}
               >
                 Masuk
               </button>
             </SignInButton>
             <Link
               href="/sign-up"
-              className="group inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 font-label-md text-label-md text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px"
+              className={`group inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 font-label-md text-label-md transition-all duration-300 active:translate-y-px ${
+                darkTop
+                  ? "bg-white text-primary hover:bg-white/90 hover:shadow-[0_8px_20px_-8px_rgba(255,255,255,0.5)]"
+                  : "bg-primary text-on-primary shadow-sm hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)]"
+              }`}
             >
               Mulai gratis
               <svg
@@ -191,7 +206,11 @@ export function MarketingHeader() {
           <SignedIn>
             <Link
               href="/app"
-              className="group inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 font-label-md text-label-md text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px"
+              className={`group inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 font-label-md text-label-md transition-all duration-300 active:translate-y-px ${
+                darkTop
+                  ? "bg-white text-primary hover:bg-white/90 hover:shadow-[0_8px_20px_-8px_rgba(255,255,255,0.5)]"
+                  : "bg-primary text-on-primary shadow-sm hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)]"
+              }`}
             >
               Buka app
               <svg
@@ -219,7 +238,11 @@ export function MarketingHeader() {
             aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-container-low hover:text-primary md:hidden"
+            className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+              darkTop
+                ? "text-white hover:bg-white/10 hover:text-white"
+                : "text-secondary hover:bg-surface-container-low hover:text-primary"
+            }`}
           >
             <svg
               width="22"
