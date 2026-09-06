@@ -655,7 +655,7 @@ export default function HomePage() {
                       <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
                         check_circle
                       </span>
-                      <span className="font-body-sm text-body-sm text-on-surface">
+                      <span className="min-w-0 font-body-sm text-body-sm text-on-surface">
                         1 · SOP Pembukaan Shift
                       </span>
                     </li>
@@ -663,10 +663,10 @@ export default function HomePage() {
                       <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
                         menu_book
                       </span>
-                      <span className="font-body-sm text-body-sm text-on-surface">
+                      <span className="min-w-0 font-body-sm text-body-sm text-on-surface">
                         2 · Mesin &amp; Peralatan
                       </span>
-                      <span className="ml-auto rounded-full bg-status-ready/10 px-2 py-0.5 font-label-caps text-label-caps text-status-ready">
+                      <span className="ml-auto shrink-0 rounded-full bg-status-ready/10 px-2 py-0.5 font-label-caps text-label-caps text-status-ready">
                         KUIS 90%
                       </span>
                     </li>
@@ -674,7 +674,7 @@ export default function HomePage() {
                       <span className="material-symbols-outlined shrink-0 text-[18px] text-secondary">
                         schedule
                       </span>
-                      <span className="font-body-sm text-body-sm text-on-surface">
+                      <span className="min-w-0 font-body-sm text-body-sm text-on-surface">
                         3 · Standar Rasa Kopi
                       </span>
                     </li>

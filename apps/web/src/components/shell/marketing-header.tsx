@@ -93,7 +93,7 @@ export function MarketingHeader() {
       }`}
     >
       <div
-        className={`mx-auto flex w-full max-w-container items-center justify-between px-4 transition-all duration-300 md:px-10 ${
+        className={`mx-auto flex w-full max-w-container items-center justify-between gap-3 px-4 transition-all duration-300 md:px-10 ${
           scrolled ? "h-14" : "h-16"
         }`}
       >
@@ -101,8 +101,8 @@ export function MarketingHeader() {
           <Image
             src="/logo.png"
             alt="Emplobo"
-            width={scrolled ? 116 : 132}
-            height={34}
+            width={scrolled ? 108 : 120}
+            height={scrolled ? 29 : 32}
             priority
             className="transition-all duration-300"
           />
@@ -153,7 +153,7 @@ export function MarketingHeader() {
             >
               MULAI GRATIS
               <svg
-                className="transition-transform duration-300 group-hover:translate-x-0.5"
+                className="hidden transition-transform duration-300 group-hover:translate-x-0.5 sm:inline-flex"
                 width="14"
                 height="14"
                 viewBox="0 0 24 24"
@@ -184,7 +184,7 @@ export function MarketingHeader() {
                 strokeWidth="2.4"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="transition-transform duration-300 group-hover:translate-x-0.5"
+                className="hidden transition-transform duration-300 group-hover:translate-x-0.5 sm:inline-flex"
                 aria-hidden
               >
                 <path d="M5 12h14" />

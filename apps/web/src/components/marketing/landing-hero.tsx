@@ -300,7 +300,7 @@ export function LandingHero() {
                 {AI_LINES.map((line, index) => (
                   <div
                     key={index}
-                    className="chat-bubble ai-bubble flex max-w-[88%] items-start gap-2 rounded-2xl rounded-tl-sm p-3 text-sm text-on-surface"
+                    className="chat-bubble ai-bubble flex max-w-[88%] items-start gap-2 break-words rounded-2xl rounded-tl-sm p-3 text-sm text-on-surface"
                     data-role="ai"
                   >
                     <span className="type-caret ml-1 mt-0.5 font-data-point text-primary">▍</span>
@@ -308,14 +308,14 @@ export function LandingHero() {
                     <span aria-hidden>
                       {split(line).map((char, charIndex) => (
                         <span key={charIndex} className="type-char">
-                          {char === " " ? "\u00A0" : char}
+                          {char}
                         </span>
                       ))}
                     </span>
                   </div>
                 ))}
                 <div
-                  className="chat-bubble ml-auto flex max-w-[88%] items-start gap-2 rounded-2xl rounded-tr-sm border border-outline-variant bg-surface-container-low p-3 text-sm text-on-surface"
+                  className="chat-bubble ml-auto flex max-w-[88%] items-start gap-2 break-words rounded-2xl rounded-tr-sm border border-outline-variant bg-surface-container-low p-3 text-sm text-on-surface"
                   data-role="admin"
                 >
                   <span className="sr-only">Admin menjawab: </span>
