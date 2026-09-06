@@ -6,7 +6,7 @@
  * Ported 1:1 from uireference/institutional_intelligence (DESIGN.md).
  * Forest Green primary · Enterprise Slate · Indigo AI distinction ·
  * Hanken Grotesk headlines / Inter body / JetBrains Mono labels.
- * Fonts are loaded via next/font in src/app/layout.tsx as CSS variables.
+ * Fonts load via a Google Fonts @import below (Inter + JetBrains Mono).
  */
 
 @theme {

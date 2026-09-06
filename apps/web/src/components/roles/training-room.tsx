@@ -208,7 +208,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
   );
 
   const canGenerate =
-    (status === "READY" || status === "PUBLISHED") && !isGenerating;
+    isLocked && (status === "READY" || status === "PUBLISHED") && !isGenerating;
 
   const visibleDocs = knowledgeDocs.slice(0, 4);
   const draftCount = knowledgeDocs.filter((doc) => doc.status === "DRAFT").length;
@@ -324,9 +324,12 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
         const body = err.body as { activeTrainerName?: string | null } | null;
         setObserverName(body?.activeTrainerName ?? "admin lain");
 
-        // Observer mode still loads the transcript read-only (Section 5.2).
+        // Observer mode still loads the transcript + knowledge list read-only
+        // (Section 5.2), so the side rail shows real status instead of stale
+        // "Belum ada knowledge file" text.
         try {
           await loadTranscript();
+          await loadKnowledgeDocs();
         } catch {
           // Transcript load failed — observer banner still renders.
         }
@@ -695,12 +698,6 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
         {loadError ? (
           <p className="mx-5 mt-4 rounded-lg border border-error-container bg-error-container/40 p-4 font-body-sm text-body-sm text-error">
             {loadError}
-          </p>
-        ) : null}
-
-        {uploadNotice ? (
-          <p className="mx-5 mt-4 rounded-lg border border-status-ready/30 bg-status-ready/10 p-4 font-body-sm text-body-sm text-on-surface">
-            {uploadNotice}
           </p>
         ) : null}
 

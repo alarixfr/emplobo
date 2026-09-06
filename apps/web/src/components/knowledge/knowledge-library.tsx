@@ -740,9 +740,10 @@ export function KnowledgeLibrary() {
                   Upload File
                 </h2>
                 <p className="mt-0.5 font-body-sm text-[12px] leading-5 text-secondary">
-                  PDF, DOCX, XLSX, CSV, Markdown, HTML, atau teks. File
-                  diekstrak jadi text, dipecah menjadi chunk AI, lalu masuk
-                  sebagai DRAFT. Konfirmasi dulu sebelum dipakai AI.
+                  PDF, DOCX, XLSX, CSV, TSV, TXT, Markdown, HTML, JSON,
+                  XML, atau YAML. File diekstrak jadi text, dipecah menjadi
+                  chunk AI, lalu masuk sebagai DRAFT. Konfirmasi dulu sebelum
+                  dipakai AI.
                 </p>
               </div>
             </div>

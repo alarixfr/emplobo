@@ -11,7 +11,7 @@ function split(text: string): string[] {
 }
 
 const AI_LINES = [
-  "Belum ada celah di materi — bagaimana SOP menutup mesin espresso di akhir shift?",
+  "Belum ada celah di materi: bagaimana SOP menutup mesin espresso di akhir shift?",
   "Tercatat. Bagaimana penghitungan stok susu dan bean setiap pagi?",
 ];
 
@@ -185,8 +185,8 @@ export function LandingHero() {
 
         <p className="hero-sub mx-auto mt-6 max-w-2xl font-body-lg text-body-lg text-on-surface-variant">
           Emplobo adalah otak SDM untuk UMKM: latih AI sekali dengan SOP bisnis
-          Anda, lalu biarkan AI meng-onboard dan mengajar setiap karyawan tanpa
-          batas, 24/7.
+          Anda, lalu biarkan AI menyambut, melatih, dan mengajar setiap
+          karyawan baru tanpa batas, 24/7.
         </p>
 
         <div className="hero-ctas mt-9 flex flex-wrap items-center justify-center gap-4">

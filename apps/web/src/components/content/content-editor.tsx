@@ -643,8 +643,7 @@ export function ContentEditor({ roleId }: { roleId: string }) {
                         if (!window.confirm("Hapus seluruh soal kuis chapter ini?")) return;
                         attachQuizToChapter(null);
                       }}
-                      disabled={!chapterQuiz}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-error px-3 py-1.5 font-label-caps text-[11px] text-error transition-colors hover:bg-error-container/20 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-error px-3 py-1.5 font-label-caps text-[11px] text-error transition-colors hover:bg-error-container/20"
                     >
                       <span className="material-symbols-outlined text-[14px]">delete</span>
                       HAPUS KUIS
@@ -669,6 +668,7 @@ export function ContentEditor({ roleId }: { roleId: string }) {
                               updateQuestion(qIndex, { question: e.target.value })
                             }
                             rows={2}
+                            aria-label={`Soal kuis ${qIndex + 1}`}
                             placeholder={`Pertanyaan ${qIndex + 1}…`}
                             maxLength={1000}
                             className={`${fieldClass} resize-y`}

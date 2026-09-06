@@ -61,7 +61,7 @@ const securityHeaders = [
     value: [
       "default-src 'self'",
       "script-src " + scriptSrc.join(" "),
-      // Google Fonts CSS + woff2 files (DM Sans / Fraunces) — without these
+      // Google Fonts CSS + woff2 files (Inter / JetBrains Mono) — without these
       // the @import in globals.css is blocked and the typography system
       // silently falls back to system fonts.
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",

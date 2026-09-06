@@ -1,10 +1,10 @@
 <div align="center">
   
   # Emplobo
-  ### Latih sekali, ajar semua — otak SDM untuk UMKM
+  ### Latih sekali, ajar semua: otak SDM untuk UMKM
   
   [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_Site-success?style=for-the-badge)](https://[URL_DEMO])
-  [![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://[URL_REPO])
+  [![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/alarixfr/emplobo)
   [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
   
   **Submission for ITECHNO CUP 2026 - Web Development**
@@ -47,7 +47,7 @@
 
 ### Latar Belakang
 
-UMKM sering bergantung pada satu orang (owner/HR) untuk mengulang onboarding dan SOP yang sama ke setiap karyawan baru. Proses itu mahal, tidak skalabel, dan mudah inkonsisten — terutama saat bisnis tumbuh cepat tanpa tim training khusus. Emplobo menjawab kebutuhan itu dalam konteks SDG 8 (pekerjaan layak & pertumbuhan ekonomi): pengetahuan operasional yang sudah ada di kepala pemilik bisnis bisa diskalakan ke staf tanpa harus merekrut trainer.
+UMKM sering bergantung pada satu orang (owner/HR) untuk mengulang onboarding dan SOP yang sama ke setiap karyawan baru. Proses itu mahal, tidak skalabel, dan mudah inkonsisten, terutama saat bisnis tumbuh cepat tanpa tim training khusus. Emplobo menjawab kebutuhan itu dalam konteks SDG 8 (pekerjaan layak & pertumbuhan ekonomi): pengetahuan operasional yang sudah ada di kepala pemilik bisnis bisa diskalakan ke staf tanpa harus merekrut trainer.
 
 ### Solusi yang Ditawarkan
 
@@ -74,7 +74,7 @@ Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = sat
 | **Content Editor** | Tinjau & edit guide hasil AI per role: ubah chapter (tambah/pindah/hapus), edit markdown dengan pratinjau, dan kelola soal kuis + jawaban benar | Simpan atomik satu klik, langsung berlaku untuk karyawan; correctIndex hanya untuk admin |
 | **Employee Learning** | Baca chapter → kuis → progress tracking | Jawaban benar dinilai server-side; `correctIndex` tidak bocor ke client |
 | **AI Tutor Chat** | Karyawan tanya AI scoped ke Role yang di-assign | Tidak boleh mengarang SOP di luar materi yang diajarkan |
-| **Knowledge Library** | Upload via drag & drop atau pilih file, tulis catatan manual, edit knowledge organisasi | File diproses server-side, dipecah jadi chunk, dan masuk sebagai DRAFT — dikonfirmasi admin sebelum dipakai AI training/tutor |
+| **Knowledge Library** | Upload via drag & drop atau pilih file, tulis catatan manual, edit knowledge organisasi | File diproses server-side, dipecah jadi chunk, dan masuk sebagai DRAFT, dikonfirmasi admin sebelum dipakai AI training/tutor |
 
 ### Fitur Tambahan
 
@@ -141,7 +141,7 @@ Framework    : Express + TypeScript (apps/api — Section 2+)
 Database     : Neon PostgreSQL (pooled + direct URL)
 ORM          : Prisma 6 (packages/db)
 Auth         : Clerk B2B (JWT verify via @clerk/backend)
-AI           : OpenRouter (default **`minimax/minimax-m3:free`** — gratis; dapat dipin via `OPENROUTER_MODEL`, mis. `anthropic/claude-sonnet-4.5`)
+AI           : OpenRouter (default **`minimax/minimax-m3:free`**, gratis; dapat dipilih via `OPENROUTER_MODEL`, mis. `anthropic/claude-sonnet-4.5`)
 Cache/RL     : Upstash Redis
 ```
 
@@ -160,7 +160,7 @@ Redis        : Upstash
 | **Next.js 15 + Express split** | UI di Next; AI endpoints butuh rate-limit/cooldown/cache konsisten di proses Node panjang (Express) |
 | **Clerk B2B Organizations** | Multi-tenant org/role/invite/session tanpa custom auth — kurangi attack surface |
 | **Prisma + Neon** | Schema typed, migrasi jelas; Neon pooled untuk runtime, direct URL untuk migrate |
-| **OpenRouter (MiniMax M3 free) + Upstash** | AI trainer/tutor default ke `minimax/minimax-m3:free` (gratis, contex 1M) — bisa dipin ke model berbayar via `OPENROUTER_MODEL`; satu gateway API untuk akses model, Redis untuk rate limit & cache guide |
+| **OpenRouter (MiniMax M3 free) + Upstash** | AI trainer/tutor default ke `minimax/minimax-m3:free` (gratis, context 1M). Bisa dipilih ke model berbayar via `OPENROUTER_MODEL`; satu gateway API untuk akses model, Redis untuk rate limit & cache guide |
 
 ### Dependencies Utama
 
@@ -281,7 +281,7 @@ Pastikan Anda telah menginstall:
 #### 1️⃣ Clone Repository
 
 ```bash
-git clone https://github.com/[username]/emplobo.git
+git clone https://github.com/alarixfr/emplobo.git
 cd emplobo
 ```
 
@@ -335,7 +335,7 @@ PORT="4000"
 ```
 
 Di Clerk Dashboard:
-1. Aktifkan **Organizations**, roles `org:admin` / `org:member`
+1. Aktifkan **Organizations**, roles `org:admin` / `org:member`. Karyawan yang diundang mendapat role default `basic_member` dan tetap berfungsi sebagai EMPLOYEE; untuk admin kedua, undang dengan role `org:admin`.
 2. Redirect URLs → `http://localhost:3000`
 3. **Webhooks** → endpoint `http://localhost:4000/webhooks/clerk` (atau URL tunnel ngrok untuk lokal), events: `user.created`, `user.updated`, `organizationMembership.created`, `organizationMembership.updated`, `organizationMembership.deleted`. Paste Signing Secret ke `CLERK_WEBHOOK_SECRET`.
 
@@ -442,7 +442,7 @@ pnpm db:migrate:deploy   # prisma migrate deploy — bukan migrate dev
 ### 4️⃣ Clerk Dashboard (production)
 
 1. Buat **production instance** baru (jangan pakai dev keys)
-2. Aktifkan **Organizations** + roles `org:admin` / `org:member`
+2. Aktifkan **Organizations** + roles `org:admin` / `org:member` (default `basic_member` sudah cukup untuk EMPLOYEE) 
 3. **Redirect URLs** → domain deploy web (mis. `https://<web-domain>/*`)
 4. **Webhooks** → endpoint `https://<api-domain>/webhooks/clerk`, events:
    `user.created`, `user.updated`, `organizationMembership.created`,
@@ -490,11 +490,11 @@ sekali penuh terhadap deployment live sebelum submit.
 1. **Dashboard**: `/app` menampilkan header sapaan + aksi cepat, bento grid metrik (total role, karyawan, rata-rata kuis, AI usage), tabel **Brain Readiness** (status badge, progress bar knowledge completeness, aksi edit per role) dan timeline **Recent Activity**.
 2. **Roles**: buka `/app/roles` → buat role (nama + deskripsi opsional) → lihat detail di `/app/roles/[id]` (right rail berisi ring readiness + knowledge gaps).
 3. **Employee Directory**: `/app/employees`: search, filter pill per role, metrik workforce/completion + kartu AI Insight, tabel progress per karyawan.
-4. **Training Room**: Buka `/app/training` (halaman terpusat, bisa pilih role) atau `/app/training/[id]` untuk langsung ke role tertentu — layout 3 kolom (Roles Context / chat dengan ai-bubble & user-bubble / right rail Brain Readiness ring + Knowledge Gaps + tombol Generate Guide). Sistem mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin. Pesan admin muncul langsung di thread (optimistic) dengan gelembung **"AI sedang berpikir..."** (titik animasi) sampai balasan AI siap. Jika admin lain memegang kunci, room terbuka dalam **mode observer** (baca-saja dengan nama pemegang kunci, plus tombol ambil alih saat kunci bebas), dan badge status/completeness diperbarui otomatis tiap 30 detik via polling cache. Di panel Knowledge Library kanan, file yang masih DRAFT ditampilkan dengan badge + tombol **KONFIRMASI** untuk mengaktifkannya sebagai materi training dan tombol **HAPUS** per file untuk membuangnya; maksimal 5 file DRAFT dapat menunggu konfirmasi sekaligus (unggahan berikutnya ditolak 409 sampai yang lama dikonfirmasi/dihapus).
-5. **Generate Guide**: saat status role `READY` (completeness ≥ 75), klik **Generate Guide** → AI menyusun panduan berstruktur (chapter markdown + kuis) dari seluruh transcript training, divalidasi Zod, lalu ditulis atomik ke DB; status berubah jadi `PUBLISHED`. Maksimal 3 generasi per jam per role.
+4. **Training Room**: Buka `/app/training` (halaman terpusat, bisa pilih role) atau `/app/training/[id]` untuk langsung ke role tertentu, layout 3 kolom (Roles Context / chat dengan ai-bubble & user-bubble / right rail Brain Readiness ring + Knowledge Gaps + tombol Generate Guide). Sistem mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin. Pesan admin muncul langsung di thread (optimistic) dengan gelembung **"AI sedang berpikir..."** (titik animasi) sampai balasan AI siap. Jika admin lain memegang kunci, room terbuka dalam **mode observer** (baca-saja dengan nama pemegang kunci, plus tombol ambil alih saat kunci bebas), dan badge status/completeness diperbarui otomatis tiap 30 detik via polling cache. Di panel Knowledge Library kanan, file yang masih DRAFT ditampilkan dengan badge + tombol **KONFIRMASI** untuk mengaktifkannya sebagai materi training dan tombol **HAPUS** per file untuk membuangnya; maksimal 5 file DRAFT dapat menunggu konfirmasi sekaligus (unggahan berikutnya ditolak 409 sampai yang lama dikonfirmasi/dihapus).
+5. **Generate Guide**: saat status role `READY` (completeness ≥ 75), klik **Generate Guide** → AI menyusun draf panduan berstruktur (chapter markdown + kuis) dari seluruh transcript training, divalidasi Zod, lalu ditulis atomik ke DB sebagai **draf tinjauan**. Tinjau draf, lalu klik **Terbitkan Draft** untuk mengganti guide live (status jadi `PUBLISHED`, versi bertambah, progres karyawan dipertahankan). Maksimal 3 generasi per jam per role.
 6. **Assign Karyawan**: setelah `PUBLISHED`, pilih karyawan (`org:member`) dari panel assignment di halaman detail role untuk memberi akses modul. Di halaman Karyawan (`/app/employees`), chip role di tiap baris menampilkan status assignment karyawan tersebut (baca-saja).
-7. **Edit Konten Guide**: dari card role (`/app/roles`) atau halaman detail, klik **EDIT KONTEN** → `/app/content/[roleId]`: rail chapter (tambah/pindah/hapus), editor markdown + tab pratinjau, dan builder kuis (pilihan jawaban + tandai jawaban benar). Klik **SIMPAN** untuk menulis atomik ke DB (versi bertambah, cache guide di-invalidate) — perubahan langsung dilihat karyawan.
-8. **Knowledge Library & Konfirmasi DRAFT**: `/app/knowledge` menampilkan metrik (dokumen aktif, draft menunggu konfirmasi, chunk AI aktif), daftar dokumen dengan badge status, dan detail dokumen. Upload/catatan baru berstatus **DRAFT**; klik **KONFIRMASI** untuk mengaktifkannya, atau **HAPUS** untuk membuangnya. Kuota DRAFT dibatasi maksimal 5 dokumen per org — dashboard menampilkan `x/5 DRAFT`.
+7. **Edit Konten Guide**: dari card role (`/app/roles`) atau halaman detail, klik **EDIT KONTEN** → `/app/content/[roleId]`: rail chapter (tambah/pindah/hapus), editor markdown + tab pratinjau, dan builder kuis (pilihan jawaban + tandai jawaban benar). Klik **SIMPAN** untuk menulis atomik ke DB (versi bertambah, cache guide di-invalidate), perubahan langsung dilihat karyawan.
+8. **Knowledge Library & Konfirmasi DRAFT**: `/app/knowledge` menampilkan metrik (dokumen aktif, draft menunggu konfirmasi, chunk AI aktif), daftar dokumen dengan badge status, dan detail dokumen. Upload/catatan baru berstatus **DRAFT**; klik **KONFIRMASI** untuk mengaktifkannya, atau **HAPUS** untuk membuangnya. Kuota DRAFT dibatasi maksimal 5 dokumen per org; dashboard menampilkan `x/5 DRAFT`.
 
 #### Untuk Karyawan (`org:member`)
 
@@ -505,7 +505,7 @@ sekali penuh terhadap deployment live sebelum submit.
 
 #### Halaman Publik
 
-- **Landing**: `/` — marketing page lengkap: hero "cockpit" animasi (headline dengan underline SVG, chat typewriter, ring kesiapan AI yang menggambar 0→65%), trust bar marquee industri (ikon + label "DIBANGUN UNTUK BERBAGAI INDUSTRI UMKM"), stats band (1×/3/0/24/7), keunggulan (3 kartu), untuk siapa (owner/HR/karyawan), fitur lengkap (6 kartu), sebelum vs sesudah, cara kerja 3 langkah, **Business Brain Loop** (section transparansi 3 tahap: pendiri mengajar AI → AI menilai kesiapannya sendiri → AI mengajar semua karyawan, dengan spine yang menggambar dan kategori data disuntikkan AI per tahap — menggantikan klaim pemasaran palsu), keamanan & keandalan, FAQ (dengan animasi buka/tutup), dan CTA.
+- **Landing**: `/` — marketing page lengkap: hero "cockpit" animasi (headline dengan underline SVG, chat typewriter, ring kesiapan AI yang menggambar 0→65%), trust bar marquee industri (ikon + label "DIBANGUN UNTUK BERBAGAI INDUSTRI UMKM"), stats band (1×/3/0/24/7), keunggulan (3 kartu), untuk siapa (owner/HR/karyawan), fitur lengkap (6 kartu), sebelum vs sesudah, cara kerja 3 langkah, **Business Brain Loop** (section transparansi 3 tahap: pendiri mengajar AI → AI menilai kesiapannya sendiri → AI mengajar semua karyawan, dengan spine yang menggambar dan kategori data disuntikkan AI per tahap, menggantikan klaim pemasaran palsu), keamanan & keandalan, FAQ (dengan animasi buka/tutup), dan CTA.
 - **Developer Docs**: `/docs` — API reference 2-pane: sticky TOC hierarkis (section + endpoint, scroll-spy, jumlah endpoint), header dengan toggle bahasa global cURL/Node.js, tabel parameter tiap endpoint, dan contoh kode inline per endpoint (expandable + tombol salin).
 - **Legal**: `/privacy` & `/terms` — kebijakan privasi (data, AI grounded, isolasi tenant, keamanan teknis, retensi, kontak) dan syarat & ketentuan, sticky outline bernomor + scroll-spy di desktop, pill navigasi di mobile, tautan silang antar dokumen, dan tautan kembali ke beranda.
 
@@ -622,7 +622,7 @@ const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/roles`, {
 });
 ```
 
-📖 **[Dokumentasi API Lengkap](./docs/API.md)** _(opsional)_
+📖 Dokumentasi API lengkap juga tersedia di dalam aplikasi pada halaman **Developer Docs** (`/docs`).
 
 ---
 

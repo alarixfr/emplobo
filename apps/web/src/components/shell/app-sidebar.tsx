@@ -75,7 +75,7 @@ export function AppSidebar({ isAdmin }: { isAdmin: boolean }) {
           const active = isActive(item.href);
           return (
             <Link
-              key={`${item.href}-${active ? "on" : "off"}`}
+              key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 font-body-sm text-body-sm transition-colors ${

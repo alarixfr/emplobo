@@ -215,8 +215,8 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
               <span className="font-label-caps text-label-caps text-status-ready">
                 PANDUAN TELAH DIPERBARUI
               </span>{" "}
-              — admin/HR memperbarui isi panduan ini. Materi di bawah adalah
-              versi terbaru (v{guide.version}).
+              Admin/HR telah memperbarui isi panduan ini. Materi di bawah
+              adalah versi terbaru (v{guide.version}).
             </p>
           </div>
         ) : null}

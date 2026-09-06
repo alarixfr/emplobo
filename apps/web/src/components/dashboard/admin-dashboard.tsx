@@ -112,7 +112,7 @@ function StatCard({
   iconClass: string;
 }) {
   return (
-    <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
+    <div className="group rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm transition-colors hover:bg-surface-bright">
       <div className="flex items-start justify-between">
         <p className="font-label-caps text-label-caps text-secondary">
           {label}

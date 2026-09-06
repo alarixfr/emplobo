@@ -91,7 +91,7 @@ const { aiMessage, role } = await res.json();`,
       {
         method: "POST",
         path: "/api/roles/:id/guide/generate",
-        desc: "Menghasilkan draf panduan (bab + kuis) dari transkrip training — TIDAK langsung menerbitkan. Hanya saat status READY atau PUBLISHED.",
+        desc: "Menghasilkan draf panduan (bab + kuis) dari transkrip training, tetapi TIDAK langsung menerbitkan. Hanya saat status READY atau PUBLISHED.",
         params: [],
         response: 201,
         code: (lang: Lang) =>
@@ -294,7 +294,7 @@ const { documents, quota } = await res.json();`,
         method: "POST",
         path: "/api/knowledge/documents",
         desc: "Membuat dokumen knowledge manual (DRAFT; perlu dikonfirmasi sebelum dipakai AI). " +
-          "Batas draft 5 dokumen — 409 jika penuh.",
+          "Batas draft 5 dokumen; 409 jika penuh.",
         params: [
           { name: "title", type: "string", required: true, desc: "Judul (max 200)" },
           { name: "content", type: "string", required: true, desc: "Teks dokumen (max 400.000)" },
@@ -401,7 +401,7 @@ const { score, passed, results } = await res.json();`,
       {
         method: "POST",
         path: "/api/my/chat/sessions",
-        desc: "Membuat sesi chat AI Tutor untuk role tertentu. Kapasitas 10 sesi/role — sesi tertua otomatis dibersihkan.",
+        desc: "Membuat sesi chat AI Tutor untuk role tertentu. Kapasitas 10 sesi/role, sesi tertua otomatis dibersihkan.",
         params: [{ name: "roleId", type: "string", required: true, desc: "Role yang ditugaskan ke pengguna" }],
         response: 201,
         code: (lang: Lang) =>
@@ -499,7 +499,7 @@ const { summary } = await res.json();`,
     title: "Keamanan & Batas",
     body: (
       <ul className="mt-4 space-y-2">
-        <li>Setiap model tenant-owned di-scope dengan <code className="font-data-point">orgId</code> dari token sesi.</li>
+        <li>Setiap model tenant-owned selalu dibatasi <code className="font-data-point">orgId</code> dari token sesi.</li>
         <li>Kuis digrading di server; kunci jawaban tidak pernah bocor sebelum submit.</li>
         <li>Semua teks user dibungkus <code className="font-data-point">&lt;business_data&gt;</code> sebagai data, bukan instruksi.</li>
         <li>Dokumen Knowledge Library hanya dipakai AI setelah dikonfirmasi (AKTIF); dokumen DRAFT dibatasi 5 per org.</li>

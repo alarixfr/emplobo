@@ -18,6 +18,7 @@ const NAV_LINKS = [
 /**
  * Marketing header — overdrive on the incumbent reference TopNavBar:
  *  - transparent-born, elevates + compacts on scroll (blur, hairline shadow)
+ *  - ambient brand wash + rim light behind the chrome that answers to scroll
  *  - 2px scroll progress line under the edge once scrolling begins
  *  - animated sliding underlines on the desktop links
  *  - scrollspy that lights the in-view landing section
@@ -92,8 +93,26 @@ export function MarketingHeader() {
           : "border-b border-transparent bg-surface-container-lowest/55 backdrop-blur-sm"
       }`}
     >
+      {/* Ambient brand wash + rim light — scroll-reactive glow behind the chrome */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className={`absolute inset-0 transition-opacity duration-500 ${
+            scrolled ? "opacity-100" : "opacity-40"
+          }`}
+          style={{
+            background:
+              "radial-gradient(65% 140% at 50% -25%, rgba(20,66,37,0.09), rgba(20,66,37,0.04) 42%, transparent 70%)",
+          }}
+        />
+        <div
+          className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-inverse-surface/10 to-transparent transition-opacity duration-500 ${
+            scrolled ? "opacity-90" : "opacity-40"
+          }`}
+        />
+      </div>
+
       <div
-        className={`mx-auto flex w-full max-w-container items-center justify-between gap-3 px-4 transition-all duration-300 md:px-10 ${
+        className={`relative mx-auto flex w-full max-w-container items-center justify-between gap-3 px-4 transition-all duration-300 md:px-10 ${
           scrolled ? "h-14" : "h-16"
         }`}
       >

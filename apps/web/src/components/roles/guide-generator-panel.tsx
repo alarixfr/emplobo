@@ -245,7 +245,7 @@ export function GuideGeneratorPanel({
           </h3>
           <p className="mt-1 font-body-sm text-body-sm text-secondary">
             Hasilkan &amp; perbarui panduan onboarding dari hasil training role{" "}
-            {roleName}. Hasil baru masuk sebagai draf untuk ditinjau dulu —
+            {roleName}. Hasil baru masuk sebagai draf untuk ditinjau dulu,
             tidak langsung menggantikan panduan yang sedang dipakai karyawan.
           </p>
         </div>
@@ -354,7 +354,7 @@ export function GuideGeneratorPanel({
             </div>
             <p className="mt-2 font-body-sm text-[12px] text-secondary">
               Menerbitkan draf tidak menghapus progres bab yang sudah diselesaikan
-              karyawan — bab yang judulnya sama tetap dipetakan ke progres lama.
+              karyawan; bab yang judulnya sama tetap dipetakan ke progres lama.
             </p>
           </div>
 

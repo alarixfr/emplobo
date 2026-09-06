@@ -47,7 +47,7 @@ export function ProgressBar({
     <div className={`h-1 w-full overflow-hidden rounded-full bg-outline-variant/50 ${className}`}>
       <div
         ref={fillRef}
-        className={`h-full rounded-full transition-all duration-500 ${fillClass}`}
+        className={`h-full rounded-full ${animate ? "" : "transition-all duration-500"} ${fillClass}`}
         style={{ width: `${animate ? "0%" : `${clamped}%`}` }}
       />
     </div>

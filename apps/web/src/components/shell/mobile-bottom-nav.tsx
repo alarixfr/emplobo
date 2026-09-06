@@ -42,7 +42,7 @@ export function MobileBottomNav({ isAdmin }: { isAdmin: boolean }) {
           const active = isActive(item.href);
           return (
             <Link
-              key={`${item.href}-${active ? "on" : "off"}`}
+              key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 ${

@@ -19,7 +19,7 @@ const ADVANTAGES = [
   {
     icon: "verified_user",
     title: "Konsistensi Terjamin",
-    desc: "AI tutor di-grounding ketat pada materi yang benar-benar diajarkan. Tidak ada prosedur yang dikarang.",
+    desc: "AI tutor hanya berpegang pada materi yang benar-benar diajarkan. Tidak ada prosedur yang dikarang.",
   },
 ];
 
@@ -36,21 +36,21 @@ const INDUSTRIES = [
 
 const STATS = [
   { value: "1×", label: "Latih pengetahuan sekali", sub: "per role kerja" },
-  { value: "3", label: "Langkah menuju tim siap", sub: "latih → guide → on-board" },
+  { value: "3", label: "Langkah menuju tim siap", sub: "latih → guide → onboarding" },
   { value: "0", label: "Rupiah biaya bulanan", sub: "gratis untuk semua UMKM" },
-  { value: "24/7", label: "Tutor AI selalu siaga", sub: "ter-grounding pada SOP Anda" },
+  { value: "24/7", label: "Tutor AI selalu siaga", sub: "berpegang pada SOP Anda" },
 ];
 
 const AUDIENCES = [
   {
     icon: "storefront",
     title: "Owner UMKM",
-    desc: "Bangun SOP dari kepala Anda sendiri — tanpa konsultan dan tanpa menulis dokumen bertele-tele.",
+    desc: "Bangun SOP dari kepala Anda sendiri, tanpa konsultan dan tanpa menulis dokumen bertele-tele.",
   },
   {
     icon: "groups",
     title: "HR / Manajer",
-    desc: "Hentikan repetisi onboarding. Materi sekali jadi, dikerjakan ulang oleh AI untuk setiap karyawan baru.",
+    desc: "Berhenti mengulang materi yang sama. Latih sekali, AI yang mengajarkannya lagi untuk setiap karyawan baru.",
   },
   {
     icon: "school",
@@ -81,7 +81,7 @@ const FEATURES = [
   {
     icon: "support_agent",
     title: "AI Tutor 24/7",
-    desc: "Karyawan bertanya kapan pun. Jawaban dibatasi pada SOP yang benar-benar diajarkan — tidak mengarang.",
+    desc: "Karyawan bertanya kapan pun, jawaban selalu kembali ke SOP yang benar-benar diajarkan. AI tidak mengarang.",
     tag: "GROUNDED",
   },
   {
@@ -106,7 +106,7 @@ const BEFORE = [
 ];
 
 const AFTER = [
-  "AI mengajar ulang materi yang sama — konsisten, tanpa lelah",
+  "AI mengajar ulang materi yang sama, konsisten, tanpa lelah",
   "SOP tersusun jadi guide terstruktur lengkap dengan kuis",
   "Skor dan progress terlihat real-time di dashboard admin",
   "Tutor 24/7 menjawab pertanyaan karyawan kapan pun",
@@ -123,7 +123,7 @@ const STEPS = [
     num: "02",
     tone: "ai" as const,
     title: "AI mengekstrak pengetahuan",
-    desc: "Chat dengan AI Brain untuk menuangkan SOP dan prosedur role tersebut. AI menilai kelengkapan materi (0-100) dan bilang saat materi sudah cukup.",
+    desc: "Chat dengan AI Brain untuk menuangkan SOP dan prosedur role tersebut. AI menilai kelengkapan materi (0–100) dan memberi tahu saat materi sudah cukup.",
   },
   {
     num: "03",
@@ -137,12 +137,12 @@ const SECURITY = [
   {
     icon: "lock",
     title: "Isolasi antar-bisnis",
-    desc: "Data setiap UMKM terpisah total. Setiap query di-scope otomatis ke organisasi Anda — karyawan hanya melihat bagian miliknya.",
+    desc: "Data setiap UMKM terpisah total. Setiap query otomatis dibatasi ke organisasi Anda, karyawan hanya melihat bagian miliknya.",
   },
   {
     icon: "verified_user",
     title: "AI tidak mengarang SOP",
-    desc: "Tutor di-grounding pada materi yang diajarkan. Bila tidak ada jawabannya dalam materi, AI mengatakannya dan memberi tahu atasan.",
+    desc: "Tutor hanya menjawab dari materi yang diajarkan. Bila pertanyaan tidak tercakup, AI mengatakannya dan menyarankan bertanya ke atasan.",
   },
   {
     icon: "fact_check",
@@ -179,7 +179,7 @@ const FAQS = [
   },
   {
     q: "Dokumen seperti apa yang bisa saya berikan ke AI?",
-    a: "File PDF, DOCX, atau TXT yang diunggah ke Knowledge Library. Dokumen baru aktif setelah Anda konfirmasi — hanya dokumen aktif yang dipakai AI.",
+    a: "File PDF, DOCX, XLSX, CSV, TXT, Markdown, HTML, JSON, XML, atau YAML yang diunggah ke Knowledge Library. Setelah Anda konfirmasi, dokumen langsung aktif dan siap dipakai AI.",
   },
 ];
 
@@ -312,7 +312,7 @@ export default function HomePage() {
               {AUDIENCES.map((a) => (
                 <div
                   key={a.title}
-                  className="rounded-xl border border-outline-variant bg-surface-container-lowest p-8 text-center transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:bg-surface-bright hover:shadow-[0_16px_40px_-20px_rgba(20,66,37,0.25)]"
+                  className="group rounded-xl border border-outline-variant bg-surface-container-lowest p-8 text-center transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:bg-surface-bright hover:shadow-[0_16px_40px_-20px_rgba(20,66,37,0.25)]"
                 >
                   <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-ai-border bg-ai-accent transition-transform duration-300 group-hover:scale-105">
                     <span className="material-symbols-outlined text-[30px] text-primary">
@@ -492,9 +492,9 @@ export default function HomePage() {
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-center font-body-md text-body-md text-on-surface-variant">
               Bukan LMS yang sebatas menyimpan materi. Ini satu otak bisnis yang
-              dilatih sekali, menguji kesiapannya sendiri, lalu mengajar setiap
-              karyawan — dibatasi keras oleh materi yang Anda berikan. Berikut
-              isinya, sebagaimana adanya di dalam produk.
+              dilatih sekali, menguji kesiapannya sendiri, lalu mengajar tiap
+              karyawan dengan berpegang pada materi yang Anda berikan. Berikut
+              isinya, sebagaimana ada di dalam produk.
             </p>
 
             {/* Vertically centered connector; numeric chips sit on it */}
@@ -516,7 +516,7 @@ export default function HomePage() {
                   </div>
                   <div className="mt-4 space-y-3">
                     <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-ai-border bg-ai-accent p-3 text-sm text-on-surface">
-                      Masih ada celah di materi ini — bagaimana SOP menutup mesin
+                      Masih ada celah di materi ini: bagaimana SOP menutup mesin
                       espresso di akhir shift?
                     </div>
                     <div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm border border-outline-variant bg-surface-container-high p-3 text-sm text-on-surface">
@@ -541,7 +541,7 @@ export default function HomePage() {
                   </h3>
                   <p className="mt-3 font-body-md text-body-md text-on-surface-variant">
                     SOP, kebijakan toko, dan know-how dituangkan lewat perbincangan
-                    biasa dengan AI — sekali saja per role kerja.
+                    biasa dengan AI, cukup sekali per role kerja.
                   </p>
                   <p className="mt-5 flex items-start gap-2 rounded-lg border border-outline-variant bg-surface-bright p-3 font-body-sm text-body-sm text-on-surface-variant">
                     <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
@@ -549,7 +549,7 @@ export default function HomePage() {
                     </span>
                     <span>
                       Setiap pesan tersimpan sebagai materi yang bisa ditinjau dan
-                      disunting admin kapan saja — bukan kotak hitam.
+                      disunting admin kapan saja, bukan kotak hitam.
                     </span>
                   </p>
                 </Reveal>
@@ -605,7 +605,7 @@ export default function HomePage() {
                         Skor kelengkapan materi role
                       </p>
                       <p className="mt-1 font-body-sm text-body-sm text-secondary">
-                        82 &gt; 75 — ambang tercapai, role siap dibentuk guide.
+                        Skor 82 melewati ambang 75, role siap dibentuk guide.
                       </p>
                     </div>
                   </div>
@@ -631,7 +631,7 @@ export default function HomePage() {
                     </span>
                     <span>
                       Skor dihitung dari materi Anda sendiri dan diperbarui
-                      mengikuti training — bukan estimasi pemasaran.
+                      mengikuti training, bukan estimasi pemasaran.
                     </span>
                   </p>
                 </Reveal>
