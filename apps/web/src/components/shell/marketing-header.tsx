@@ -252,11 +252,12 @@ export function MarketingHeader() {
       {/* Scroll progress — only while the page scrolls */}
       {scrolled ? <ScrollProgressBar /> : null}
 
-      {/* Mobile dropdown menu */}
+      {/* Mobile dropdown menu — absolute overlay so opening it never grows
+          the header or pushes the page content below it */}
       {menuOpen ? (
         <nav
           ref={menuRef}
-          className="border-t border-outline-variant bg-surface-container-lowest px-4 py-3 shadow-[0_16px_32px_-16px_rgba(20,66,37,0.2)] md:hidden"
+          className="absolute inset-x-0 top-full z-10 max-h-[calc(100dvh-4rem)] overflow-y-auto border-b border-outline-variant bg-surface-container-lowest px-4 py-3 shadow-[0_24px_48px_-16px_rgba(20,66,37,0.28)] md:hidden"
           aria-label="Navigasi utama"
         >
           <div className="flex flex-col gap-1">
