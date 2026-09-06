@@ -1009,7 +1009,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
         <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm lg:hidden">
           <KnowledgeGaps
             gaps={missingAreas}
-            allCovered={missingAreas.length === 0 && completeness >= 75}
+            allCovered={missingAreas.length === 0 && completeness >= 70}
           />
         </div>
 
@@ -1069,7 +1069,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
                 </button>
                 {!canGenerate && !isGenerating ? (
                   <p className="mt-2 text-center text-[11px] uppercase tracking-wider text-outline">
-                    Butuh status READY (≥ 75% completeness)
+                    Butuh status READY (≥ 70% completeness)
                   </p>
                 ) : null}
                 {status === "PUBLISHED" ? (

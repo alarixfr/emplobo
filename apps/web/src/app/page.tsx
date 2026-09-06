@@ -194,7 +194,7 @@ const FAQS = [
   },
   {
     q: "Bagaimana saya tahu materi sudah cukup untuk dilatihkan?",
-    a: "AI menilai kelengkapan materi tiap role dengan skor 0–100. Saat skor mencapai 75+, status role menjadi READY dan tombol Generate Guide muncul.",
+    a: "AI menilai kelengkapan materi tiap role dengan skor 0–100. Saat skor mencapai 70+, status role menjadi READY dan tombol Generate Guide muncul.",
   },
   {
     q: "Apa bedanya dengan LMS atau video training biasa?",
@@ -691,7 +691,7 @@ export default function HomePage() {
                         Skor kelengkapan materi role
                       </p>
                       <p className="mt-1 font-body-sm text-body-sm text-secondary">
-                        Skor 82 melewati ambang 75, role siap dibentuk guide.
+                        Skor 82 melewati ambang kesiapan, role siap dibentuk guide.
                       </p>
                     </div>
                   </div>
@@ -708,7 +708,7 @@ export default function HomePage() {
                   </h3>
                   <p className="mt-3 font-body-md text-body-md text-on-surface-variant">
                     Dari transkrip training, AI menghitung skor kelengkapan 0–100
-                    secara berkala. Menembus 75, role berubah menjadi READY dan
+                    secara berkala. Menembus ambang kesiapan, role berubah menjadi READY dan
                     pintu pembuatan guide terbuka.
                   </p>
                   <p className="mt-5 flex items-start gap-2 rounded-lg border border-outline-variant bg-surface-bright p-3 font-body-sm text-body-sm text-on-surface-variant">

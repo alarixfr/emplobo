@@ -181,11 +181,12 @@ async function extractTextFromBuffer(params: {
   let text = "";
 
   if (kind === "pdf") {
-    const pdfParseModule = await import("pdf-parse");
-    const parsePdf = pdfParseModule as unknown as (buffer: Buffer) => Promise<{
-      text: string;
-    }>;
-    const parsed = await parsePdf(params.buffer);
+    // pdf-parse v2 exports a PDFParse class (not the v1 callable). Only the
+    // in-memory `data` loader is used here — never the `url` option, which
+    // would let an uploaded file's header drive an SSRF fetch.
+    const { PDFParse } = await import("pdf-parse");
+    const parser = new PDFParse({ data: params.buffer });
+    const parsed = await parser.getText();
     text = parsed.text;
   } else if (kind === "docx") {
     const parsed = await mammoth.extractRawText({ buffer: params.buffer });

@@ -14,7 +14,7 @@ import {
   type AiCallResult,
   type AiMessage,
 } from "../lib/ai.js";
-import { buildGuideSystemPrompt, buildScoringPrompt, buildTrainingSystemPrompt } from "../lib/prompts.js";
+import { buildGuideRepairPrompt, buildGuideSystemPrompt, buildScoringPrompt, buildTrainingSystemPrompt } from "../lib/prompts.js";
 import { buildChangeSummary, chapterKey, type FlatChapter } from "../lib/guide-changes.js";
 import { createRateLimiter } from "../lib/rate-limit.js";
 import { logAiUsage } from "../lib/ai-usage.js";
@@ -317,10 +317,53 @@ async function publishGuideDraftTx(
 // the JSON guide finishes under the limit instead of truncating mid-chapter.
 const GUIDE_GEN_MAX_TOKENS = 8000;
 
+/**
+ * Pull a single top-level JSON object out of a model reply. Models wrap JSON
+ * in ``` fences and occasionally emit preamble, several objects, or a stray
+ * closing brace — the greedy `{[\s\S]*}` regex cuts at the LAST `}` and then
+ * fails. This strips fences, then brace-balances from the first `{` while
+ * skipping string literals, so the extracted block is the intact outer object.
+ */
+function extractJsonBlock(raw: string): string {
+  const trimmed = raw.trim();
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) return fenced[1].trim();
+  if (trimmed.startsWith("{")) {
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (let i = 0; i < trimmed.length; i++) {
+      const c = trimmed[i];
+      if (inString) {
+        if (escaped) escaped = false;
+        else if (c === "\\") escaped = true;
+        else if (c === '"') inString = false;
+        continue;
+      }
+      if (c === '"') {
+        inString = true;
+      } else if (c === "{") {
+        depth++;
+      } else if (c === "}") {
+        depth--;
+        if (depth === 0) return trimmed.slice(0, i + 1);
+      }
+    }
+    return trimmed;
+  }
+  return trimmed.match(/\{[\s\S]*\}/)?.[0] ?? trimmed;
+}
+
+// Gate for the DRAFT → READY flip (Section 5.2). Single source of truth for
+// "when is a role ready to become a guide" so client copy and server logic
+// can never disagree.
+const READY_THRESHOLD = 70;
+
 function parseScoringJson(raw: string): { score: number; missingAreas: string[] } | null {
-  const block = raw.match(/\{[\s\S]*\}/)?.[0] ?? raw;
-  // The regex only guarantees braces around the block, not valid JSON — a
-  // malformed model reply must keep the previous score, never 500 (7.2).
+  const block = extractJsonBlock(raw);
+  // extractJsonBlock only guarantees balanced braces around the block, not
+  // valid JSON — a malformed model reply must keep the previous score, never
+  // 500 (7.2).
   let json: unknown;
   try {
     json = JSON.parse(block);
@@ -430,7 +473,7 @@ async function evaluateRoleCompleteness(
   if (!parsedScore) return;
 
   const finalStatus =
-    parsedScore.score >= 75 && roleRow.status === "DRAFT" ? "READY" : roleRow.status;
+    parsedScore.score >= READY_THRESHOLD && roleRow.status === "DRAFT" ? "READY" : roleRow.status;
 
   // orgId-scoped updateMany (Section 3 — never update a tenant row by id
   // alone), then refresh both caches so the next poll sees the new state
@@ -1314,10 +1357,13 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           content: wrapBusinessData(transcriptText),
         };
 
-        // Try up to 2 attempts to get valid structured JSON; if both fail,
-        // fail loudly (Section 5.3) — never half-write a guide.
+        // Try up to 2 raw attempts, then one repair pass that sends the model's
+        // own (malformed) output back to be fixed into schema-valid JSON. If all
+        // fail, fail loudly (Section 5.3) — never half-write a guide.
         let generated: z.infer<typeof guideGenerationSchema> | null = null;
         let lastError = "";
+        let lastRaw = "";
+        let truncated = false;
         for (let attempt = 0; attempt < 2; attempt++) {
           const result = await callAiText(
             env,
@@ -1329,6 +1375,8 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
               fallbackReply: "",
             },
           );
+          lastRaw = result.text;
+          if (result.finishReason === "length") truncated = true;
 
           await logAiUsage({
             orgId: auth.orgId,
@@ -1338,9 +1386,8 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
             tokensOut: result.tokensOut,
           });
 
-          const block = result.text.match(/\{[\s\S]*\}/)?.[0] ?? result.text;
           try {
-            const parsed = guideGenerationSchema.safeParse(JSON.parse(block));
+            const parsed = guideGenerationSchema.safeParse(JSON.parse(extractJsonBlock(result.text)));
             if (parsed.success) {
               generated = parsed.data;
               break;
@@ -1352,8 +1399,51 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         }
 
         if (!generated) {
+          const repairResult = await callAiText(
+            env,
+            buildGuideRepairPrompt(),
+            [
+              {
+                role: "user",
+                content: wrapBusinessData(lastRaw || transcriptText),
+              },
+            ],
+            GUIDE_GEN_MAX_TOKENS,
+            {
+              timeoutMs: 90_000,
+              fallbackReply: "",
+            },
+          );
+          lastRaw = repairResult.text;
+          if (repairResult.finishReason === "length") truncated = true;
+
+          await logAiUsage({
+            orgId: auth.orgId,
+            userId: auth.userId,
+            kind: "guide_gen",
+            tokensIn: repairResult.tokensIn,
+            tokensOut: repairResult.tokensOut,
+          });
+
+          try {
+            const parsed = guideGenerationSchema.safeParse(
+              JSON.parse(extractJsonBlock(repairResult.text)),
+            );
+            if (parsed.success) {
+              generated = parsed.data;
+            } else {
+              lastError = "repair pass still failed schema validation";
+            }
+          } catch {
+            lastError = "repair pass still produced invalid JSON";
+          }
+        }
+
+        if (!generated) {
           res.status(502).json({
-            error: "AI returned malformed guide content after 2 attempts",
+            error: truncated
+              ? "AI output terpotong saat membuat guide. Coba lagi, atau lanjutkan training lebih dulu."
+              : "AI mengembalikan konten guide yang tidak valid. Coba lagi, atau lanjutkan training lebih dulu.",
             detail: lastError,
           });
           return;

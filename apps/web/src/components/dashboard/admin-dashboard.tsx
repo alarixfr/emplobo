@@ -305,7 +305,7 @@ export function AdminDashboard() {
 
           {summary.perRole.length === 0 ? (
             <p className="p-6 font-body-md text-body-md text-on-surface-variant">
-              Belum ada role. Buat role, latih AI sampai READY (≥75%), lalu
+              Belum ada role. Buat role, latih AI sampai READY (≥70%), lalu
               generate guide untuk melihat progress di sini.
             </p>
           ) : (

@@ -67,7 +67,7 @@ Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = sat
 
 | Fitur | Deskripsi | Keunggulan |
 |----------|--------------|---------------|
-| **Training Room** | Admin chat dengan AI untuk mengisi SOP/know-how per Role | AI self-score completeness & gate readiness (≥75 → READY) |
+| **Training Room** | Admin chat dengan AI untuk mengisi SOP/know-how per Role | AI self-score completeness & gate readiness (≥70 → READY) |
 | **Guide Generation** | Dari transcript training → chapter markdown + kuis | Structured JSON tervalidasi Zod; hasil masuk sebagai **draf** untuk ditinjau admin, bukan langsung menimpa guide live |
 | **Siklus Update Guide** | Regenerasi dari training lanjutan → draf → tinjauan → terbit atomik | Progres karyawan dipertahankan (bab dengan judul sama dipetakan ulang), tiap terbitan disimpan sebagai versi immutabel + changelog, dan bisa dibuka ulang untuk rollback; karyawan diberi lencana "panduan diperbarui" |
 | **Training File Attach** | Seret & letakkan file SOP langsung ke composer, atau klik tombol attach, untuk upload dari chat | File masuk ke Knowledge Library sebagai DRAFT dan baru dipakai AI setelah dikonfirmasi |
@@ -230,7 +230,7 @@ flowchart TB
 ```
 
 **Alur inti (AI-trains-AI):** admin melatih AI per role di Training Room → AI
-menilai completeness (≥75 → READY) → guide di-generate terstruktur + kuis →
+menilai completeness (≥70 → READY) → guide di-generate terstruktur + kuis →
 employee membaca chapter, mengerjakan kuis, dan bertanya ke AI tutor yang
 hanya menjawab dari materi yang diajarkan admin.
 
@@ -493,7 +493,7 @@ sekali penuh terhadap deployment live sebelum submit.
 2. **Roles**: buka `/app/roles` → buat role (nama + deskripsi opsional) → lihat detail di `/app/roles/[id]` (right rail berisi ring readiness + knowledge gaps).
 3. **Employee Directory**: `/app/employees`: search, filter pill per role, metrik workforce/completion + kartu AI Insight, tabel progress per karyawan.
 4. **Training Room**: Buka `/app/training` (halaman terpusat, bisa pilih role) atau `/app/training/[id]` untuk langsung ke role tertentu, layout 3 kolom (Roles Context / chat dengan ai-bubble & user-bubble / right rail Brain Readiness ring + Knowledge Gaps + tombol Generate Guide). Sistem mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin. Pesan admin muncul langsung di thread (optimistic) dengan gelembung **"AI sedang berpikir..."** (titik animasi) sampai balasan AI siap. Jika admin lain memegang kunci, room terbuka dalam **mode observer** (baca-saja dengan nama pemegang kunci, plus tombol ambil alih saat kunci bebas), dan badge status/completeness diperbarui otomatis tiap 30 detik via polling cache. Di panel Knowledge Library kanan, file yang masih DRAFT ditampilkan dengan badge + tombol **KONFIRMASI** untuk mengaktifkannya sebagai materi training dan tombol **HAPUS** per file untuk membuangnya; maksimal 5 file DRAFT dapat menunggu konfirmasi sekaligus (unggahan berikutnya ditolak 409 sampai yang lama dikonfirmasi/dihapus).
-5. **Generate Guide**: saat status role `READY` (completeness ≥ 75), klik **Generate Guide** → AI menyusun draf panduan berstruktur (chapter markdown + kuis) dari seluruh transcript training, divalidasi Zod, lalu ditulis atomik ke DB sebagai **draf tinjauan**. Tinjau draf, lalu klik **Terbitkan Draft** untuk mengganti guide live (status jadi `PUBLISHED`, versi bertambah, progres karyawan dipertahankan). Maksimal 3 generasi per jam per role.
+5. **Generate Guide**: saat status role `READY` (completeness ≥ 70), klik **Generate Guide** → AI menyusun draf panduan berstruktur (chapter markdown + kuis) dari seluruh transcript training, divalidasi Zod, lalu ditulis atomik ke DB sebagai **draf tinjauan**. Tinjau draf, lalu klik **Terbitkan Draft** untuk mengganti guide live (status jadi `PUBLISHED`, versi bertambah, progres karyawan dipertahankan). Maksimal 3 generasi per jam per role.
 6. **Assign Karyawan**: setelah `PUBLISHED`, pilih karyawan (`org:member`) dari panel assignment di halaman detail role untuk memberi akses modul. Di halaman Karyawan (`/app/employees`), chip role di tiap baris menampilkan status assignment karyawan tersebut (baca-saja).
 7. **Edit Konten Guide**: dari card role (`/app/roles`) atau halaman detail, klik **EDIT KONTEN** → `/app/content/[roleId]`: rail chapter (tambah/pindah/hapus), editor markdown + tab pratinjau, dan builder kuis (pilihan jawaban + tandai jawaban benar). Klik **SIMPAN** untuk menulis atomik ke DB (versi bertambah, cache guide di-invalidate), perubahan langsung dilihat karyawan.
 8. **Knowledge Library & Konfirmasi DRAFT**: `/app/knowledge` menampilkan metrik (dokumen aktif, draft menunggu konfirmasi, chunk AI aktif), daftar dokumen dengan badge status, dan detail dokumen. Upload/catatan baru berstatus **DRAFT**; klik **KONFIRMASI** untuk mengaktifkannya, atau **HAPUS** untuk membuangnya. Kuota DRAFT dibatasi maksimal 5 dokumen per org; dashboard menampilkan `x/5 DRAFT`.
