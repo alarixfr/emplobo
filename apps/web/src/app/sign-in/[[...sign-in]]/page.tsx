@@ -11,7 +11,7 @@ export default function SignInPage() {
       <div className="relative z-10">
         <Reveal y={14} duration={0.7}>
           <Link href="/" className="mb-6 flex justify-center" aria-label="Emplobo">
-            <Image src="/logo.png" alt="Emplobo" width={160} height={40} priority />
+            <Image src="/logo-icon.png" alt="Emplobo" width={56} height={56} priority className="rounded-2xl" />
           </Link>
           <SignIn
             routing="path"
