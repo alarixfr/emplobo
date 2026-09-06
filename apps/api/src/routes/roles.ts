@@ -1281,7 +1281,10 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         }
 
         if (role.status !== "READY" && role.status !== "PUBLISHED") {
-          res.status(403).json({ error: "guide generation requires READY status" });
+          res.status(403).json({
+            error:
+              "Role belum berstatus READY. Lanjutkan training sampai completeness mencapai ambang kesiapan, lalu coba lagi.",
+          });
           return;
         }
 
@@ -1289,12 +1292,23 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         const roleKey = `${auth.orgId}:${role.id}`;
         const limit = await guideGenLimiter(roleKey);
         if (!limit.ok) {
-          res.status(429).json({ error: "rate limit exceeded", retryAfter: limit.retryAfter });
+          const retryAfter = limit.retryAfter ?? GUIDE_GEN_RATE_WINDOW_SECONDS;
+          res.status(429).json({
+            error:
+              "Jatah pembuatan panduan role ini habis — maksimal 3 kali per jam per role.",
+            retryAfter,
+            retryAt: new Date(Date.now() + retryAfter * 1000).toISOString(),
+            limit: GUIDE_GEN_RATE_LIMIT,
+            windowSeconds: GUIDE_GEN_RATE_WINDOW_SECONDS,
+          });
           return;
         }
 
         if (guideGenInFlight.has(roleKey)) {
-          res.status(409).json({ error: "guide generation already in progress for this role" });
+          res.status(409).json({
+            error:
+              "Pembuatan panduan sedang berjalan untuk role ini. Tunggu sebentar, lalu klik lagi.",
+          });
           return;
         }
         guideGenInFlight.add(roleKey);

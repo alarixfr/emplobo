@@ -8,6 +8,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
+import { guideRateLimitMessage } from "@/lib/rate";
 import type { KnowledgeDocumentSummary, KnowledgeQuota } from "@/lib/knowledge";
 import { KNOWLEDGE_FILE_ACCEPT } from "@/components/ui/file-dropzone";
 import { ReadinessRing } from "@/components/ui/readiness-ring";
@@ -536,8 +537,17 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
       setDraftCreated(true);
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
+        const body =
+          typeof err.body === "object" && err.body !== null ? (err.body as object) : {};
         setGenerateError(
-          "Rate limit aktif. Tunggu beberapa saat sebelum mencoba lagi.",
+          guideRateLimitMessage(
+            "retryAfter" in body ? (body as { retryAfter?: number }).retryAfter : undefined,
+            "retryAt" in body ? (body as { retryAt?: string }).retryAt : undefined,
+          ),
+        );
+      } else if (err instanceof ApiError && err.status === 409) {
+        setGenerateError(
+          "Pembuatan panduan sedang berjalan. Tunggu sebentar, lalu klik lagi.",
         );
       } else {
         setGenerateError(

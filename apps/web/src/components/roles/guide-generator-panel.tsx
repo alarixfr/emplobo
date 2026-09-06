@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { ApiError, apiFetch } from "@/lib/api";
+import { guideRateLimitMessage } from "@/lib/rate";
 import type {
   GuideDraftFull,
   GuideVersionInfo,
@@ -53,7 +54,6 @@ export function GuideGeneratorPanel({
   const [reopeningVersionId, setReopeningVersionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [retryAfter, setRetryAfter] = useState<number | null>(null);
 
   const canGenerate = useMemo(
     () =>
@@ -92,7 +92,6 @@ export function GuideGeneratorPanel({
     if (!canGenerate) return;
     setError(null);
     setNotice(null);
-    setRetryAfter(null);
     setIsGenerating(true);
 
     try {
@@ -116,16 +115,19 @@ export function GuideGeneratorPanel({
       onStatusUpdated?.(data.role.status);
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
-        const retry =
-          typeof err.body === "object" &&
-          err.body &&
-          "retryAfter" in err.body &&
-          typeof (err.body as { retryAfter?: unknown }).retryAfter === "number"
-            ? (err.body as { retryAfter: number }).retryAfter
-            : null;
-        setRetryAfter(retry);
+        const body =
+          typeof err.body === "object" && err.body !== null ? (err.body as object) : {};
+        setError(
+          guideRateLimitMessage(
+            "retryAfter" in body ? (body as { retryAfter?: number }).retryAfter : undefined,
+            "retryAt" in body ? (body as { retryAt?: string }).retryAt : undefined,
+          ),
+        );
+      } else if (err instanceof ApiError && err.status === 409) {
+        setError("Pembuatan panduan sedang berjalan. Tunggu sebentar, lalu klik lagi.");
+      } else {
+        setError(err instanceof Error ? err.message : "Gagal menghasilkan guide.");
       }
-      setError(err instanceof Error ? err.message : "Gagal menghasilkan guide.");
     } finally {
       setIsGenerating(false);
     }
@@ -278,11 +280,6 @@ export function GuideGeneratorPanel({
       {notice ? (
         <p className="mt-3 rounded-lg border border-status-ready/40 bg-status-ready/10 p-3 font-body-sm text-body-sm text-on-surface">
           {notice}
-        </p>
-      ) : null}
-      {retryAfter ? (
-        <p className="mt-2 font-body-sm text-[12px] text-secondary">
-          Rate limit aktif. Coba lagi dalam ~{retryAfter} detik.
         </p>
       ) : null}
 
