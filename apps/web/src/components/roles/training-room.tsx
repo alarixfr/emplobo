@@ -197,6 +197,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const pollRef = useRef<number | null>(null);
   const statusPollRef = useRef<number | null>(null);
+  const statusRefreshRef = useRef<number | null>(null);
   const lockedRef = useRef(false);
   const dragDepth = useRef(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -437,7 +438,6 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
               aiMessage: TrainingMessage;
               role: { status: RoleStatus; completenessScore: number };
               missingAreas?: string[];
-              becameReady: boolean;
             }>(`/api/roles/${role.id}/training/messages`, {
               method: "POST",
               token,
@@ -457,6 +457,13 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
           if (data.missingAreas) {
             setMissingAreas(data.missingAreas);
           }
+          // Scoring now runs in the background after a message; a single
+          // quick re-poll ~3.5s later picks up the updated score/status/gaps
+          // so the room stays in sync without waiting for the 30s interval.
+          if (statusRefreshRef.current) window.clearTimeout(statusRefreshRef.current);
+          statusRefreshRef.current = window.setTimeout(() => {
+            void pollStatus();
+          }, 3500);
           return;
         } catch (err) {
           // Lock lost, rate limit, or a validation error are final — never
@@ -639,6 +646,7 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
     return () => {
       if (pollRef.current) window.clearInterval(pollRef.current);
       if (statusPollRef.current) window.clearInterval(statusPollRef.current);
+      if (statusRefreshRef.current) window.clearTimeout(statusRefreshRef.current);
       if (justUploadedTimer.current) window.clearTimeout(justUploadedTimer.current);
       // Explicit lock release on room close (Section 5.2) — best-effort,
       // only when this client actually holds the lock.
@@ -999,7 +1007,10 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
       <aside className="flex flex-col gap-4 lg:col-span-3">
         {/* Celah Pengetahuan — mobile only (desktop shows it in Roles Context) */}
         <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-sm lg:hidden">
-          <KnowledgeGaps gaps={missingAreas} />
+          <KnowledgeGaps
+            gaps={missingAreas}
+            allCovered={missingAreas.length === 0 && completeness >= 75}
+          />
         </div>
 
         {/* Kesiapan AI + Guide Generation */}

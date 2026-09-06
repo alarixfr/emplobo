@@ -1,7 +1,7 @@
 import { prisma, type Prisma, type RoleStatus } from "@emplobo/db";
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { z } from "zod";
-import { createCache } from "../lib/cache.js";
+import { createCache, type Cache } from "../lib/cache.js";
 import { buildKnowledgeBaseEnvelope, cleanKnowledgeText, searchKnowledgeChunks } from "../lib/knowledge.js";
 import {
   buildHistoryMessages,
@@ -344,6 +344,160 @@ function requireAuthContext(req: Request): AuthContext {
     throw new Error("requireAdmin must run before roles handlers");
   }
   return req.auth;
+}
+
+// ── Completeness evaluation (background, throttled) ───────────────────────
+// Scoring no longer blocks the training-message response. It runs after the
+// reply is saved, on a cadence that keeps the score AND knowledge gaps in
+// sync with the conversation without an evaluation per tiny turn.
+const SCORE_MIN_INTERVAL_MS = 45_000; // at most ~1 evaluation per 45s
+const lastScoreAt = new Map<string, number>();
+// Very long transcripts are trimmed to the most recent messages so the
+// scoring call always fits the model's context window.
+const SCORING_TRANSCRIPT_TOKEN_BUDGET = 30_000;
+
+/**
+ * Re-score a role's training completeness and refresh both the score/status
+ * and the Knowledge Gaps cache. Best-effort: never throws, never 500s; on
+ * failure the previous score and gaps remain untouched (Section 7.2).
+ */
+async function evaluateRoleCompleteness(
+  env: Env,
+  cache: Cache,
+  roleId: string,
+  orgId: string,
+  userId: string,
+): Promise<void> {
+  const roleRow = await prisma.trainingRole.findFirst({
+    where: { id: roleId, orgId },
+    select: {
+      id: true,
+      orgId: true,
+      status: true,
+      trainingMessageCount: true,
+    },
+  });
+  if (!roleRow) return;
+
+  const transcript = await prisma.trainingMessage.findMany({
+    where: { roleId: roleRow.id, orgId: roleRow.orgId },
+    orderBy: { createdAt: "desc" },
+    select: { sender: true, content: true, tokenEst: true },
+  });
+
+  // Keep the most recent messages that fit the budget (oldest trimmed).
+  let used = 0;
+  const kept: Array<{ sender: string; content: string }> = [];
+  for (const msg of transcript) {
+    const tokenEst = msg.tokenEst || estimateTokens(msg.content);
+    if (used + tokenEst > SCORING_TRANSCRIPT_TOKEN_BUDGET) break;
+    used += tokenEst;
+    kept.push({ sender: msg.sender, content: msg.content });
+  }
+  kept.reverse();
+
+  const scoringReply = await callAiText(
+    env,
+    buildScoringPrompt(),
+    [
+      {
+        role: "user",
+        content: wrapBusinessData(
+          kept
+            .map((m) => `${m.sender.toUpperCase()}: ${sanitizeUserText(m.content)}`)
+            .join("\n"),
+        ),
+      },
+    ],
+    1400,
+    {
+      timeoutMs: 60_000,
+      // Empty fallback: in offline dev (no API key) parsing fails and the
+      // previous completeness score is kept (Section 7.2).
+      fallbackReply: "",
+    },
+  );
+
+  await logAiUsage({
+    orgId: roleRow.orgId,
+    userId,
+    kind: "training",
+    tokensIn: scoringReply.tokensIn,
+    tokensOut: scoringReply.tokensOut,
+  });
+
+  const parsedScore = parseScoringJson(scoringReply.text);
+  if (!parsedScore) return;
+
+  const finalStatus =
+    parsedScore.score >= 75 && roleRow.status === "DRAFT" ? "READY" : roleRow.status;
+
+  // orgId-scoped updateMany (Section 3 — never update a tenant row by id
+  // alone), then refresh both caches so the next poll sees the new state
+  // immediately instead of within the old 30s role-status TTL window.
+  await prisma.trainingRole.updateMany({
+    where: { id: roleRow.id, orgId: roleRow.orgId },
+    data: {
+      completenessScore: parsedScore.score,
+      status: finalStatus,
+    },
+  });
+
+  await cache.setJson(
+    `role-gaps:${roleId}`,
+    {
+      missingAreas: parsedScore.missingAreas,
+      updatedAt: new Date().toISOString(),
+    },
+    30 * 24 * 60 * 60,
+  );
+  await cache.setRoleStatus(roleId, {
+    status: finalStatus,
+    completenessScore: parsedScore.score,
+    trainingMessageCount: roleRow.trainingMessageCount,
+  });
+}
+
+// ── Anti-repeat guard (trainer must never ask an already-answered question) ─
+const REPEAT_STOPWORDS = new Set([
+  "terima", "kasih", "anda", "jangan", "tolong", "silakan", "bantu", "minta",
+  "pertanyaan", "penjelasan", "apakah", "bagaimana", "kapan", "dimana",
+  "selanjutnya", "berikutnya", "singkat", "jelaskan", "mohon", "ada",
+]);
+
+function normalizeTokens(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/gi, " ")
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter((word) => word.length >= 4 && !REPEAT_STOPWORDS.has(word));
+}
+
+function isDuplicateQuestion(reply: string, priorQuestions: string[]): boolean {
+  const tokens = normalizeTokens(reply);
+  if (tokens.length < 3) return false;
+  const set = new Set(tokens);
+  for (const prior of priorQuestions) {
+    const priorTokens = normalizeTokens(prior);
+    if (priorTokens.length < 3) continue;
+    const priorSet = new Set(priorTokens);
+    const intersection = [...set].filter((token) => priorSet.has(token)).length;
+    // Containment over the smaller token set (not full Jaccard): words unique
+    // to the acknowledgment boilerplate drag Jaccard down and let paraphrased
+    // repeats slip through. Requiring >= 3 shared content words keeps genuine
+    // new topics (which share at most 1–2 vocabulary words) safe from regen.
+    const smaller = Math.min(set.size, priorSet.size);
+    if (intersection >= 3 && smaller > 0 && intersection / smaller >= 0.5) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function briefify(text: string, max = 140): string {
+  const t = sanitizeUserText(text).replace(/\s+/g, " ").trim();
+  return t.length <= max ? t : `${t.slice(0, max).trimEnd()}…`;
 }
 
 export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Router {
@@ -804,6 +958,31 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           tokenBudget: 4500,
         });
 
+        // Anti-repeat context: the trainer explicitly sees what admins already
+        // taught and what questions it already asked, so it picks the NEXT gap
+        // instead of circling back to a covered topic (a small model forgets
+        // otherwise when the window is long).
+        const priorAiQuestions = selected
+          .filter((m) => m.sender === "ai")
+          .map((m) => briefify(m.content, 160))
+          .slice(-8);
+        const coveredTopics = selected
+          .filter((m) => m.sender === "admin")
+          .map((m) => briefify(m.content))
+          .slice(-10);
+        const recentAdminTexts = selected
+          .filter((m) => m.sender === "admin")
+          .map((m) => m.content);
+
+        const baseSystemPrompt = buildTrainingSystemPrompt(
+          role.name,
+          buildKnowledgeBaseEnvelope(knowledgeChunks),
+          recentAdminTexts,
+          priorAiQuestions,
+          coveredTopics,
+        );
+        const baseHistory = buildHistoryMessages(selected);
+
         // On AI failure, delete the just-saved admin message so the
         // transcript never shows a question without a reply (the client
         // keeps its UI consistent by not appending either message).
@@ -811,14 +990,8 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         try {
           aiReply = await callAiText(
             env,
-            buildTrainingSystemPrompt(
-              role.name,
-              buildKnowledgeBaseEnvelope(knowledgeChunks),
-              selected
-                .filter((m) => m.sender === "admin")
-                .map((m) => m.content),
-            ),
-            buildHistoryMessages(selected),
+            baseSystemPrompt,
+            baseHistory,
             1600,
             {
               timeoutMs: 60_000,
@@ -834,6 +1007,36 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
             throw new Error(
               "AI reply was truncated by the output budget; retrying the turn",
             );
+          }
+
+          // Hard anti-repeat: if the generated question still overlaps an
+          // already-asked one, regenerate exactly once with an explicit "do
+          // not ask that again" note appended to the conversation.
+          if (isDuplicateQuestion(aiReply.text, priorAiQuestions)) {
+            const regenHistory: AiMessage[] = [
+              ...baseHistory,
+              {
+                role: "user",
+                content: `CATATAN (instruksi sistem untuk koreksi): pertanyaan jawaban terakhirmu baru saja sudah pernah ditanyakan dan dijawab admin. DILARANG menanyakan hal yang sama lagi, baik kata-kata yang sama maupun yang disamarkan. Sampaikan kembali balasan yang singkat lalu ajukan SATU pertanyaan BARU tentang topik yang belum dibahas.`,
+              },
+            ];
+            const retryReply = await callAiText(
+              env,
+              baseSystemPrompt,
+              regenHistory,
+              1600,
+              {
+                timeoutMs: 60_000,
+                fallbackReply: aiReply.text,
+              },
+            );
+            if (retryReply.finishReason !== "length" && retryReply.text) {
+              aiReply = {
+                ...retryReply,
+                tokensIn: aiReply.tokensIn + retryReply.tokensIn,
+                tokensOut: aiReply.tokensOut + retryReply.tokensOut,
+              };
+            }
           }
         } catch (err) {
           await prisma.trainingMessage
@@ -875,96 +1078,35 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           },
         });
 
-        let finalStatus = updatedRole.status;
-        let finalScore = updatedRole.completenessScore;
-        let becameReady = false;
-
-        if (updatedRole.trainingMessageCount % 5 === 0) {
-          // Scoring is background, best-effort work — a failed or empty AI
-          // reply must never crash the message request or reset progress.
-          // Section 7.2: on failure keep the previous score and continue.
-          try {
-            const fullTranscript = await prisma.trainingMessage.findMany({
-              where: { roleId: role.id, orgId: auth.orgId },
-              orderBy: { createdAt: "asc" },
-              select: { sender: true, content: true },
-            });
-
-            const scoringReply = await callAiText(
-              env,
-              buildScoringPrompt(),
-              [
-                {
-                  role: "user",
-                  content: wrapBusinessData(
-                    fullTranscript
-                      .map((m) => `${m.sender.toUpperCase()}: ${sanitizeUserText(m.content)}`)
-                      .join("\n"),
-                  ),
-                },
-              ],
-              1400,
-              {
-                timeoutMs: 60_000,
-                // Empty fallback: in offline dev (no API key) parsing fails and
-                // the previous completeness score is kept (Section 7.2).
-                fallbackReply: "",
-              },
-            );
-
-            await logAiUsage({
-              orgId: auth.orgId,
-              userId: auth.userId,
-              kind: "training",
-              tokensIn: scoringReply.tokensIn,
-              tokensOut: scoringReply.tokensOut,
-            });
-
-            const parsedScore = parseScoringJson(scoringReply.text);
-            if (parsedScore) {
-              finalScore = parsedScore.score;
-
-              // Knowledge Gaps (Training Room right rail) — missingAreas is
-              // ephemeral model output, cached per-role (org-shared content)
-              // instead of adding a schema column. Overwritten every re-score.
-              await cache.setJson(
-                `role-gaps:${role.id}`,
-                {
-                  missingAreas: parsedScore.missingAreas,
-                  updatedAt: new Date().toISOString(),
-                },
-                30 * 24 * 60 * 60,
-              );
-              if (parsedScore.score >= 75 && updatedRole.status === "DRAFT") {
-                finalStatus = "READY";
-                becameReady = true;
-              }
-
-              const roleAfterScore = await prisma.trainingRole.update({
-                where: { id: role.id },
-                data: {
-                  completenessScore: finalScore,
-                  status: finalStatus,
-                },
-                select: {
-                  status: true,
-                  completenessScore: true,
-                },
-              });
-              finalStatus = roleAfterScore.status;
-              finalScore = roleAfterScore.completenessScore;
-            }
-          } catch (scoringErr) {
+        // Completeness re-scoring runs IN THE BACKGROUND so the response stays
+        // snappy. It fires when a 5th message lands OR at least 45s have passed
+        // since the last evaluation — that keeps the score and Knowledge Gaps
+        // synced to the conversation without an expensive evaluation per turn.
+        // Best-effort: failures are logged and never affect the reply.
+        const nowMs = Date.now();
+        const lastMs = lastScoreAt.get(role.id) ?? 0;
+        const due =
+          updatedRole.trainingMessageCount % 5 === 0 ||
+          nowMs - lastMs >= SCORE_MIN_INTERVAL_MS;
+        lastScoreAt.set(role.id, nowMs);
+        if (due) {
+          void evaluateRoleCompleteness(
+            env,
+            cache,
+            role.id,
+            auth.orgId,
+            auth.userId,
+          ).catch((err) => {
             console.error(
-              `[scoring] keep previous score for role ${role.id}:`,
-              scoringErr instanceof Error ? scoringErr.message : scoringErr,
+              `[scoring] role ${role.id}:`,
+              err instanceof Error ? err.message : err,
             );
-          }
+          });
         }
 
-        // Always refresh gaps so the UI can update the right rail the moment
-        // a re-score lands (no wait for the 30s status poll). When scoring
-        // didn't run this turn, the previous value is returned unchanged.
+        // Return the freshest gaps we have at this instant; the background
+        // evaluation (when it runs) refreshes both gaps and score, which the
+        // client picks up via its status poll a moment later.
         let latestGaps: string[] = [];
         try {
           const gapsCache = await cache.getJson<{
@@ -979,12 +1121,11 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           adminMessage,
           aiMessage,
           role: {
-            status: finalStatus,
-            completenessScore: finalScore,
+            status: updatedRole.status,
+            completenessScore: updatedRole.completenessScore,
             trainingMessageCount: updatedRole.trainingMessageCount,
           },
           missingAreas: latestGaps,
-          becameReady,
         });
       } catch (err) {
         next(err);

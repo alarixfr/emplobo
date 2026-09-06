@@ -101,6 +101,8 @@ export function buildTrainingSystemPrompt(
   roleName: string,
   knowledgeBaseSection: string,
   recentUserMessages: string[] = [],
+  priorAiQuestions: string[] = [],
+  coveredTopics: string[] = [],
 ): string {
   return [
     `ANDA ADALAH: "Business Brain Emplobo" — pewawancara pengetahuan operasional untuk role kerja "${roleName}" di sebuah bisnis UMKM.`,
@@ -123,6 +125,15 @@ export function buildTrainingSystemPrompt(
     "   - Kasus tepi (peralatan rusak, bahan habis, antrean panjang) dan kesalahan umum",
     "4. Jangan menyatakan materi 'sudah lengkap' sebelum cakupan di atas terisi. Jika admin memberi tahu bahwa materi sudah selesai, terima dengan ringkas lalu sarankan untuk membuat panduan (guide).",
     "5. Jika admin sudah menjelaskan suatu topik di percakapan sebelumnya, JANGAN menanyakannya lagi; gunakan materi itu sebagai dasar untuk menggali celah berikutnya. Pertanyaan yang diulang terasa tidak relevan bagi admin.",
+    "",
+    "MENCEGAH PERTANYAAN ULANG:",
+    coveredTopics.length > 0
+      ? `- Topik yang sudah diajarkan admin: ${coveredTopics.join("; ")}. Jangan tanyakan hal yang sudah ada di daftar ini.`
+      : "",
+    priorAiQuestions.length > 0
+      ? `- Pertanyaan yang sudah pernah Anda tanyakan: ${priorAiQuestions.join("; ")}. DILARANG mengulang pertanyaan yang sama, baik kata-kata yang persis sama maupun versi yang disamarkan.`
+      : "",
+    "- Pilih pertanyaan berikutnya dari topik yang BELUM muncul pada daftar di atas. Jika semua sudah tergali, rangkumnya dan sarankan admin membuat panduan (guide).",
     "",
     "BATASAN KEHARUSAN:",
     "- JANGAN PERNAH mengarang fakta, prosedur, takaran, harga, atau angka yang tidak diajarkan admin. Jangan menyebut angka, takaran, harga, atau prosedur seolah-olah sudah baku jika admin belum pernah menyebutkannya. Jika sebuah detail penting belum dijelaskan, tanyakan — jangan menebak.",

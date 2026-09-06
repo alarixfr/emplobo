@@ -1,6 +1,10 @@
 type KnowledgeGapsProps = {
   gaps: string[];
   size?: "sm" | "md";
+  // When the model scored the training ≥ 75 and reported no remaining gaps,
+  // show a positive "all covered" state instead of the "menunggu evaluasi"
+  // explainer (which would be misleading).
+  allCovered?: boolean;
 };
 
 /**
@@ -8,7 +12,7 @@ type KnowledgeGapsProps = {
  * Rendered in three places (Training Room left rail, Training Room mobile
  * card, role detail sidebar). Keep the visuals consistent across all three.
  */
-export function KnowledgeGaps({ gaps, size = "md" }: KnowledgeGapsProps) {
+export function KnowledgeGaps({ gaps, size = "md", allCovered = false }: KnowledgeGapsProps) {
   const isCompact = size === "sm";
 
   return (
@@ -36,14 +40,27 @@ export function KnowledgeGaps({ gaps, size = "md" }: KnowledgeGapsProps) {
       </div>
 
       {gaps.length === 0 ? (
-        <p
-          className={`font-body-sm text-secondary ${
-            isCompact ? "text-[12px] leading-5" : "text-body-sm"
-          }`}
-        >
-          AI menilai materi setiap 5 pesan training. Topik yang belum dibahas
-          akan tercatat di sini sebagai celah pengetahuan.
-        </p>
+        allCovered ? (
+          <p
+            className={`font-body-sm text-secondary ${
+              isCompact ? "text-[12px] leading-5" : "text-body-sm"
+            }`}
+          >
+            <span className="font-medium text-status-success">
+              Semua area utama sudah tercakup.
+            </span>{" "}
+            Materi role ini sudah cukup untuk menghasilkan panduan.
+          </p>
+        ) : (
+          <p
+            className={`font-body-sm text-secondary ${
+              isCompact ? "text-[12px] leading-5" : "text-body-sm"
+            }`}
+          >
+            AI menilai materi secara berkala. Topik yang belum dibahas akan
+            tercatat di sini sebagai celah pengetahuan.
+          </p>
+        )
       ) : (
         <ul className="space-y-2">
           {gaps.map((gap, idx) => (
