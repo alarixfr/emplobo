@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
@@ -10,6 +11,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type {
+  EmployeeModuleSummary,
   ModuleChapter,
   ModuleGuide,
   QuizSubmitResponse,
@@ -75,6 +77,7 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
   const { getToken, isLoaded } = useAuth();
   const [guide, setGuide] = useState<ModuleGuide | null>(null);
   const [chapters, setChapters] = useState<ModuleChapter[]>([]);
+  const [modules, setModules] = useState<EmployeeModuleSummary[]>([]);
   const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
   const [hasGuideUpdate, setHasGuideUpdate] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -119,6 +122,19 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
       setChapters(data.chapters);
       setHasGuideUpdate(data.hasGuideUpdate);
       setActiveChapterId((prev) => prev ?? data.chapters[0]?.id ?? null);
+
+      // Load the assigned-module list so the last-chapter footer can offer
+      // the next module (or confirm there is none left). Best-effort — a
+      // failure here only hides the footer links, never the chapter content.
+      try {
+        const modulesData = await apiFetch<{ modules: EmployeeModuleSummary[] }>(
+          "/api/my/modules",
+          { token },
+        );
+        setModules(modulesData.modules);
+      } catch {
+        setModules([]);
+      }
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Gagal memuat modul.");
     } finally {
@@ -199,6 +215,12 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
   const activeIndex = chapters.findIndex((c) => c.id === activeChapter.id);
   const hasPrev = activeIndex > 0;
   const hasNext = activeIndex < chapters.length - 1;
+
+  // Next assigned module, in the order the Learning Center lists them
+  // (assignedAt desc → pretty much newest-first; the next module is the one
+  // right after this one in that order).
+  const myIndex = modules.findIndex((m) => m.role.id === roleId);
+  const nextModule = myIndex >= 0 ? modules[myIndex + 1] ?? null : null;
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_280px]">
@@ -432,6 +454,44 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
                 );
               }}
             />
+          </div>
+        ) : null}
+
+        {/* Last-chapter navigation: next module (or all done) + back to list */}
+        {!hasNext ? (
+          <div className="mt-8 border-t border-outline-variant pt-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <Link
+                href="/app/my/modules"
+                className="inline-flex items-center gap-1.5 font-label-caps text-label-caps text-secondary transition-colors hover:text-primary"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  arrow_back
+                </span>
+                LEARNING CENTER
+              </Link>
+
+              {nextModule ? (
+                <Link
+                  href={`/app/my/modules/${nextModule.role.id}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-primary px-4 py-2.5 font-label-caps text-label-caps text-primary transition-colors hover:bg-primary-fixed-dim/40"
+                >
+                  <span className="material-symbols-outlined text-[16px]">
+                    arrow_forward
+                  </span>
+                  <span className="max-w-[220px] truncate sm:max-w-none">
+                    MODUL BERIKUTNYA: {nextModule.role.name}
+                  </span>
+                </Link>
+              ) : modules.length > 0 ? (
+                <span className="inline-flex items-center gap-1.5 font-label-caps text-label-caps text-status-ready">
+                  <span className="material-symbols-outlined ms-fill text-[16px]">
+                    workspace_premium
+                  </span>
+                  SEMUA MODUL SELESAI
+                </span>
+              ) : null}
+            </div>
           </div>
         ) : null}
       </div>

@@ -16,8 +16,8 @@ import {
 import { buildTutorSystemPrompt } from "../lib/prompts.js";
 import type { AuthContext } from "../types.js";
 
-const CHAT_RATE_LIMIT = 15;
-const CHAT_RATE_WINDOW_SECONDS = 5 * 60; // 5 minutes
+const CHAT_RATE_LIMIT = 30;
+const CHAT_RATE_WINDOW_SECONDS = 10 * 60; // 10 minutes
 const CHAT_COOLDOWN_MS = 2000; // 2 seconds between messages in session
 const MAX_SESSIONS_PER_ROLE = 10;
 const CHAT_SESSION_RATE_LIMIT = 10;

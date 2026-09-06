@@ -7,7 +7,7 @@ type PageProps = {
 };
 
 function isCuid(value: string): boolean {
-  return /^c[a-z0-9]{23}$/.test(value);
+  return /^c[a-z0-9]{24}$/.test(value);
 }
 
 export default async function ContentEditorPage({ params }: PageProps) {

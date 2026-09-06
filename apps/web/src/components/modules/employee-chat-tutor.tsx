@@ -353,7 +353,7 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
       {/* Main chat column */}
       <section className="flex h-[72vh] max-h-[680px] min-h-[440px] flex-col overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm">
         {/* Chat header */}
-        <div className="flex items-center justify-between border-b border-outline-variant px-4 py-3">
+        <div className="border-b border-outline-variant px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary-container">
               <span className="material-symbols-outlined ms-fill text-on-primary-container">
@@ -366,16 +366,10 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
                 AI Tutor{roleName ? `: ${roleName}` : ""}
               </h3>
               <p className="font-body-sm text-[12px] text-secondary">
-                Online 24/7 · Berbasis SOP & guide yang disetujui
+                Berbasis SOP &amp; guide yang disetujui
               </p>
             </div>
           </div>
-          <span className="hidden items-center gap-1.5 rounded-full border border-ai-border bg-ai-accent px-3 py-1 font-label-caps text-[10px] text-primary sm:inline-flex">
-            <span className="material-symbols-outlined ms-fill text-[14px]">
-              verified_user
-            </span>
-            GROUNDED AI
-          </span>
         </div>
 
         {/* Message thread */}
@@ -542,9 +536,8 @@ export function EmployeeChatTutor({ roleId, roleName }: EmployeeChatTutorProps) 
               </span>
             ) : (
               <>
-                Jawaban AI Tutor berdasarkan SOP &amp; panduan resmi peran ini.
-                Selalu verifikasi prosedur kritis kepada atasan Anda. · Cooldown
-                2 detik antar pesan.
+                Jeda 2 detik antar pertanyaan. Verifikasi prosedur kritis ke
+                atasan Anda.
               </>
             )}
           </p>

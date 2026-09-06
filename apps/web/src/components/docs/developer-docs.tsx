@@ -423,7 +423,7 @@ const { session } = await res.json();`,
       {
         method: "POST",
         path: "/api/my/chat/sessions/:id/messages",
-        desc: "Mengirim pesan ke AI Tutor. Dibatasi rate limit (15/5 menit) + cooldown 2 detik per sesi.",
+        desc: "Mengirim pesan ke AI Tutor. Dibatasi rate limit (30/10 menit) + cooldown 2 detik per sesi.",
         params: [{ name: "content", type: "string", required: true, desc: "Pertanyaan karyawan" }],
         response: 201,
         code: (lang: Lang) =>
