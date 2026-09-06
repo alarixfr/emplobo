@@ -10,15 +10,15 @@ type NavItem = {
 };
 
 const ADMIN_NAV: NavItem[] = [
-  { href: "/app", label: "Home", icon: "dashboard" },
-  { href: "/app/training", label: "Training", icon: "school" },
-  { href: "/app/knowledge", label: "Knowledge", icon: "database" },
+  { href: "/app", label: "Beranda", icon: "dashboard" },
+  { href: "/app/training", label: "Latih", icon: "school" },
+  { href: "/app/knowledge", label: "Ilmu", icon: "database" },
   { href: "/app/content", label: "Konten", icon: "edit_note" },
-  { href: "/app/roles", label: "Roles", icon: "menu_book" },
+  { href: "/app/roles", label: "Peran", icon: "menu_book" },
 ];
 
 const EMPLOYEE_NAV: NavItem[] = [
-  { href: "/app", label: "Home", icon: "dashboard" },
+  { href: "/app", label: "Beranda", icon: "dashboard" },
   { href: "/app/my/modules", label: "Belajar", icon: "school" },
 ];
 
@@ -57,7 +57,7 @@ export function MobileBottomNav({ isAdmin }: { isAdmin: boolean }) {
                 {item.icon}
               </span>
               <span
-                className={`block w-full min-w-0 truncate px-0.5 font-label-caps text-[10px] leading-tight ${
+                className={`block w-full min-w-0 truncate font-label-caps text-[10px] leading-tight tracking-normal ${
                   active ? "text-primary" : "text-secondary"
                 }`}
               >
