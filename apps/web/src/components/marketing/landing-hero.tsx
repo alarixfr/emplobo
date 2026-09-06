@@ -114,8 +114,7 @@ export function LandingHero() {
       // ── Entrance choreography ──
       const intro = gsap.timeline({ defaults: { ease: EASE_OUT } });
       intro
-        .from(".hero-badge", { autoAlpha: 0, y: 12, duration: 0.5 }, 0.05)
-        .from(".hero-line", { autoAlpha: 0, y: 26, duration: 0.7, stagger: 0.09 }, 0.1)
+        .from(".hero-line", { autoAlpha: 0, y: 26, duration: 0.7, stagger: 0.09 }, 0.05)
         .fromTo(".hero-underline", { strokeDasharray: 220, strokeDashoffset: 220 }, { strokeDashoffset: 0, duration: 0.7, ease: "power2.inOut" }, 0.62)
         .from(".hero-sub", { autoAlpha: 0, y: 16, duration: 0.55 }, "-=0.35")
         .from(".hero-ctas", { autoAlpha: 0, y: 12, duration: 0.45 }, "-=0.3")
@@ -159,15 +158,7 @@ export function LandingHero() {
       </div>
 
       <div className="hero-copy mx-auto w-full max-w-container px-4 pb-12 pt-16 text-center md:px-10 md:pt-24">
-        <p className="hero-badge mx-auto inline-flex items-center gap-2 rounded-full border border-ai-border bg-ai-accent px-3.5 py-1.5 font-label-caps text-label-caps text-primary">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
-          </span>
-          OTAK SDM BERBASIS AI UNTUK UMKM
-        </p>
-
-        <h1 className="mx-auto mt-5 max-w-4xl font-headline-lg text-headline-lg-mobile text-primary md:text-headline-lg">
+        <h1 className="mx-auto max-w-4xl font-headline-lg text-headline-lg-mobile text-primary md:text-headline-lg">
           <span className="hero-line block">{HERO_LINE_1}</span>
           <span className="hero-line block">
             {HERO_LINE_2_HEAD}

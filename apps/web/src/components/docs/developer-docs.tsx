@@ -596,10 +596,39 @@ export function DeveloperDocs() {
   }
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[260px_minmax(0,1fr)]">
+    <>
+      {/* Mobile/tablet sticky content list — desktop uses the left ToC. */}
+      <nav
+        className="scroll-slim sticky top-14 z-30 -mx-4 mb-6 flex items-center gap-2 overflow-x-auto border-y border-outline-variant bg-surface-muted/95 px-4 py-2.5 backdrop-blur-md md:-mx-10 lg:hidden"
+        aria-label="Daftar isi API"
+      >
+        <span className="shrink-0 font-label-caps text-label-caps text-secondary">
+          DAFTAR ISI
+        </span>
+        {SECTIONS.map((section) => {
+          const isActive = activeSection === section.id;
+          return (
+            <button
+              key={section.id}
+              type="button"
+              onClick={() => scrollToId(section.id)}
+              aria-current={isActive ? "location" : undefined}
+              className={`shrink-0 rounded-full border px-3.5 py-1.5 font-label-caps text-label-caps transition-colors ${
+                isActive
+                  ? "border-primary bg-primary-container text-on-primary-container"
+                  : "border-outline-variant text-secondary hover:border-primary hover:text-primary"
+              }`}
+            >
+              {section.title}
+            </button>
+          );
+        })}
+      </nav>
+
+      <div className="grid gap-10 lg:grid-cols-[260px_minmax(0,1fr)]">
       {/* ── Left TOC (desktop) ─────────────────────────────────────────── */}
       <aside className="hidden lg:block">
-        <div className="sticky top-24">
+        <div className="scroll-slim sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto pr-1">
           <p className="font-label-caps text-label-caps text-secondary">
             API DOCS
           </p>
@@ -803,15 +832,37 @@ export function DeveloperDocs() {
                           }}
                           className="group mt-4"
                         >
-                          <summary className="inline-flex cursor-pointer list-none items-center gap-2 rounded-lg font-label-caps text-label-caps text-status-ready hover:underline">
-                            <span className="flex h-6 w-6 items-center justify-center rounded border border-status-ready/30 bg-status-ready/10">
-                              <span className="material-symbols-outlined text-[14px]">
-                                code
+                          <summary className="list-none">
+                            <span className="inline-flex cursor-pointer select-none items-center gap-2 rounded-lg border border-status-ready/30 bg-status-ready/10 px-3 py-2 font-label-caps text-label-caps text-status-ready transition-colors hover:bg-status-ready/15 group-open:border-status-ready/50 group-open:bg-status-ready/15">
+                              <svg
+                                className="h-4 w-4"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden
+                              >
+                                <path d="m8 9-3 3 3 3" />
+                                <path d="m16 9 3 3-3 3" />
+                                <path d="m13 6-2 12" />
+                              </svg>
+                              <span className="whitespace-nowrap">
+                                LIHAT CONTOH {lang === "curl" ? "CURL" : "NODE.JS"}
                               </span>
-                            </span>
-                            <span>LIHAT CONTOH {lang === "curl" ? "CURL" : "NODE.JS"}</span>
-                            <span className="material-symbols-outlined text-[14px] transition-transform group-open:rotate-180">
-                              expand_more
+                              <svg
+                                className="h-3.5 w-3.5 transition-transform duration-200 group-open:rotate-180"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.6"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden
+                              >
+                                <path d="m6 9 6 6 6-6" />
+                              </svg>
                             </span>
                           </summary>
                           <div className="relative mt-3">
@@ -842,5 +893,6 @@ export function DeveloperDocs() {
         </div>
       </div>
     </div>
+    </>
   );
 }

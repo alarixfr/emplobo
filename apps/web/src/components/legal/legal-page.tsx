@@ -40,11 +40,36 @@ export function LegalPage({
 
   return (
     <main className="mx-auto w-full max-w-container flex-1 px-4 py-12 md:px-10">
+      {/* Mobile/tablet sticky content list — desktop uses the left outline. */}
+      <nav
+        className="scroll-slim sticky top-14 z-30 -mx-4 mb-6 flex items-center gap-2 overflow-x-auto border-y border-outline-variant bg-surface-muted/95 px-4 py-2.5 backdrop-blur-md md:-mx-10 lg:hidden"
+        aria-label="Daftar isi dokumen"
+      >
+        <span className="shrink-0 font-label-caps text-label-caps text-secondary">
+          DAFTAR ISI
+        </span>
+        {sections.map((section, index) => (
+          <button
+            key={section.id}
+            type="button"
+            onClick={() => go(section.id)}
+            aria-current={active === section.id ? "location" : undefined}
+            className={`shrink-0 rounded-full border px-3.5 py-1.5 font-label-caps text-label-caps transition-colors ${
+              active === section.id
+                ? "border-primary bg-primary-container text-on-primary-container"
+                : "border-outline-variant text-secondary hover:border-primary hover:text-primary"
+            }`}
+          >
+            {String(index + 1).padStart(2, "0")} · {section.title}
+          </button>
+        ))}
+      </nav>
+
       <div className="grid gap-10 lg:grid-cols-[240px_1fr]">
         {/* ── Sticky outline (desktop) ─────────────────────────────────── */}
         <Reveal x={-8} y={0} duration={0.6}>
         <aside className="hidden lg:block">
-          <div className="sticky top-24">
+          <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto pr-1 scroll-slim">
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 font-body-sm text-body-sm text-secondary transition-colors hover:text-primary"
@@ -110,7 +135,7 @@ export function LegalPage({
         <Reveal y={18} duration={0.7}>
         <article className="mx-auto w-full max-w-[720px]">
           <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-6 shadow-sm md:p-10">
-            {/* Mobile back + section pills (outline is hidden on mobile) */}
+            {/* Mobile back + cross-links (outline is hidden on mobile) */}
             <div className="flex flex-wrap items-center justify-between gap-3 lg:hidden">
               <Link
                 href="/"
@@ -143,27 +168,6 @@ export function LegalPage({
                 Terakhir diperbarui: {lastUpdated}
               </p>
             </div>
-
-            {/* Mobile section quick-nav — horizontal pills */}
-            <nav
-              className="-mx-1 mt-5 flex gap-2 overflow-x-auto px-1 pb-2 lg:hidden"
-              aria-label="Lompat ke bagian"
-            >
-              {sections.map((section, index) => (
-                <button
-                  key={section.id}
-                  type="button"
-                  onClick={() => go(section.id)}
-                  className={`shrink-0 rounded-full border px-3.5 py-1.5 font-label-caps text-label-caps transition-colors ${
-                    active === section.id
-                      ? "border-primary bg-primary-container text-on-primary-container"
-                      : "border-outline-variant text-secondary hover:border-primary hover:text-primary"
-                  }`}
-                >
-                  {String(index + 1).padStart(2, "0")} · {section.title}
-                </button>
-              ))}
-            </nav>
 
             <div className="mt-8 space-y-10">
               {sections.map((section, index) => (
