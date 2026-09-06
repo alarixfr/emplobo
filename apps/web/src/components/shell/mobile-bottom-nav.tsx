@@ -57,7 +57,7 @@ export function MobileBottomNav({ isAdmin }: { isAdmin: boolean }) {
                 {item.icon}
               </span>
               <span
-                className={`font-label-caps text-[10px] ${
+                className={`block w-full min-w-0 truncate px-0.5 font-label-caps text-[10px] leading-tight ${
                   active ? "text-primary" : "text-secondary"
                 }`}
               >

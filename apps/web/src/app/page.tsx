@@ -482,7 +482,7 @@ export default function HomePage() {
             train → self-assessed readiness → teach loop, annotating the
             honesty mechanism inside each stage. This is the product's real
             differentiator (an LMS stores material; Emplobo trains a teacher). */}
-        <section className="border-y border-outline-variant bg-surface-container-lowest">
+        <section className="overflow-hidden border-y border-outline-variant bg-surface-container-lowest">
           <div className="relative mx-auto w-full max-w-container px-4 py-16 md:px-10 md:py-24">
             <p className="text-center font-label-caps text-label-caps text-secondary">
               LOOP TRAINING AI
@@ -531,27 +531,29 @@ export default function HomePage() {
                 </div>
               </Reveal>
 
-              <Reveal x={40} y={16} delay={0.12} className="md:order-2">
+              <div className="md:order-2">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-data-point text-data-point font-bold text-on-primary lg:absolute lg:left-[44%] lg:-translate-x-1/2">
                   01
                 </span>
-                <h3 className="mt-4 font-headline-md text-headline-md text-primary">
-                  Admin berbicara sekali
-                </h3>
-                <p className="mt-3 font-body-md text-body-md text-on-surface-variant">
-                  SOP, kebijakan toko, dan know-how dituangkan lewat perbincangan
-                  biasa dengan AI — sekali saja per role kerja.
-                </p>
-                <p className="mt-5 flex items-start gap-2 rounded-lg border border-outline-variant bg-surface-bright p-3 font-body-sm text-body-sm text-on-surface-variant">
-                  <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
-                    fact_check
-                  </span>
-                  <span>
-                    Setiap pesan tersimpan sebagai materi yang bisa ditinjau dan
-                    disunting admin kapan saja — bukan kotak hitam.
-                  </span>
-                </p>
-              </Reveal>
+                <Reveal x={40} y={16} delay={0.12}>
+                  <h3 className="mt-4 font-headline-md text-headline-md text-primary">
+                    Admin berbicara sekali
+                  </h3>
+                  <p className="mt-3 font-body-md text-body-md text-on-surface-variant">
+                    SOP, kebijakan toko, dan know-how dituangkan lewat perbincangan
+                    biasa dengan AI — sekali saja per role kerja.
+                  </p>
+                  <p className="mt-5 flex items-start gap-2 rounded-lg border border-outline-variant bg-surface-bright p-3 font-body-sm text-body-sm text-on-surface-variant">
+                    <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
+                      fact_check
+                    </span>
+                    <span>
+                      Setiap pesan tersimpan sebagai materi yang bisa ditinjau dan
+                      disunting admin kapan saja — bukan kotak hitam.
+                    </span>
+                  </p>
+                </Reveal>
+              </div>
             </div>
 
             {/* ── Stage 2 · AI self-assesses readiness ─────────────────── */}
@@ -598,7 +600,7 @@ export default function HomePage() {
                         82%
                       </span>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-data-point text-data-point text-on-surface">
                         Skor kelengkapan materi role
                       </p>
@@ -610,28 +612,30 @@ export default function HomePage() {
                 </div>
               </Reveal>
 
-              <Reveal x={-40} y={16} delay={0.12} className="md:order-1">
+              <div className="md:order-1">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full border border-ai-border bg-ai-accent font-data-point text-data-point font-bold text-primary lg:absolute lg:left-[44%] lg:-translate-x-1/2">
                   02
                 </span>
-                <h3 className="mt-4 font-headline-md text-headline-md text-primary">
-                  AI menguji kesiapannya sendiri
-                </h3>
-                <p className="mt-3 font-body-md text-body-md text-on-surface-variant">
-                  Dari transkrip training, AI menghitung skor kelengkapan 0–100
-                  secara berkala. Menembus 75, role berubah menjadi READY dan
-                  pintu pembuatan guide terbuka.
-                </p>
-                <p className="mt-5 flex items-start gap-2 rounded-lg border border-outline-variant bg-surface-bright p-3 font-body-sm text-body-sm text-on-surface-variant">
-                  <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
-                    fact_check
-                  </span>
-                  <span>
-                    Skor dihitung dari materi Anda sendiri dan diperbarui
-                    mengikuti training — bukan estimasi pemasaran.
-                  </span>
-                </p>
-              </Reveal>
+                <Reveal x={-40} y={16} delay={0.12}>
+                  <h3 className="mt-4 font-headline-md text-headline-md text-primary">
+                    AI menguji kesiapannya sendiri
+                  </h3>
+                  <p className="mt-3 font-body-md text-body-md text-on-surface-variant">
+                    Dari transkrip training, AI menghitung skor kelengkapan 0–100
+                    secara berkala. Menembus 75, role berubah menjadi READY dan
+                    pintu pembuatan guide terbuka.
+                  </p>
+                  <p className="mt-5 flex items-start gap-2 rounded-lg border border-outline-variant bg-surface-bright p-3 font-body-sm text-body-sm text-on-surface-variant">
+                    <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
+                      fact_check
+                    </span>
+                    <span>
+                      Skor dihitung dari materi Anda sendiri dan diperbarui
+                      mengikuti training — bukan estimasi pemasaran.
+                    </span>
+                  </p>
+                </Reveal>
+              </div>
             </div>
 
             {/* ── Stage 3 · AI teaches every employee ──────────────────── */}
@@ -682,28 +686,30 @@ export default function HomePage() {
                 </div>
               </Reveal>
 
-              <Reveal x={40} y={16} delay={0.12} className="md:order-2">
+              <div className="md:order-2">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-status-ready font-data-point text-data-point font-bold text-white lg:absolute lg:left-[44%] lg:-translate-x-1/2">
                   03
                 </span>
-                <h3 className="mt-4 font-headline-md text-headline-md text-primary">
-                  AI mengajar semua karyawan
-                </h3>
-                <p className="mt-3 font-body-md text-body-md text-on-surface-variant">
-                  Guide ber-bab, kuis yang dinilai di server, dan tutor 24/7 yang
-                  menjawab hanya dari materi role tersebut. Setiap karyawan baru
-                  tinggal belajar.
-                </p>
-                <p className="mt-5 flex items-start gap-2 rounded-lg border border-outline-variant bg-surface-bright p-3 font-body-sm text-body-sm text-on-surface-variant">
-                  <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
-                    fact_check
-                  </span>
-                  <span>
-                    Tutor tidak mengarang prosedur. Pertanyaan di luar materi
-                    dijawab jujur: sarankan bertanya ke atasan.
-                  </span>
-                </p>
-              </Reveal>
+                <Reveal x={40} y={16} delay={0.12}>
+                  <h3 className="mt-4 font-headline-md text-headline-md text-primary">
+                    AI mengajar semua karyawan
+                  </h3>
+                  <p className="mt-3 font-body-md text-body-md text-on-surface-variant">
+                    Guide ber-bab, kuis yang dinilai di server, dan tutor 24/7 yang
+                    menjawab hanya dari materi role tersebut. Setiap karyawan baru
+                    tinggal belajar.
+                  </p>
+                  <p className="mt-5 flex items-start gap-2 rounded-lg border border-outline-variant bg-surface-bright p-3 font-body-sm text-body-sm text-on-surface-variant">
+                    <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
+                      fact_check
+                    </span>
+                    <span>
+                      Tutor tidak mengarang prosedur. Pertanyaan di luar materi
+                      dijawab jujur: sarankan bertanya ke atasan.
+                    </span>
+                  </p>
+                </Reveal>
+              </div>
             </div>
             </div>
           </div>
