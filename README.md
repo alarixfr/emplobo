@@ -1,7 +1,7 @@
 <div align="center">
   
   # Emplobo
-  ### Latih sekali, ajar semua: otak SDM untuk UMKM
+  ### Skalakan Pengetahuan Bisnis Dengan AI
   
   [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_Site-success?style=for-the-badge)](https://[URL_DEMO])
   [![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/alarixfr/emplobo)
@@ -37,8 +37,8 @@
 | Nama | Peran | GitHub |
 |------|-------|--------|
 | **Alaric Abyasa Putra Himawan** | Project Lead & Full Stack Developer | [GitHub](https://github.com/alarixfr) |
-| **[Nama Lengkap 2]** | UI Design & Tester | [GitHub](https://github.com/[username2]) |
-| **[Nama Lengkap 4]** | UX Design & Tester | [GitHub](https://github.com/[username4]) |
+| **Kenzie Aleron Egaputra Prayata** | UI Design & Tester | [GitHub](https://github.com/AleronStudios) |
+| **Muhammad Farzanafi Adam** | UX Design & Tester | [GitHub](https://github.com/Oncomito) |
 
 ---
 
@@ -99,19 +99,40 @@ Emplobo adalah **AI-powered SDM/training brain** multi-tenant. Satu bisnis = sat
 ### Screenshot Aplikasi
 
 <div align="center">
-  <img src="[URL_SCREENSHOT_1]" alt="Homepage" width="800"/>
-  <p><em>Homepage - Tampilan utama aplikasi</em></p>
+  <img src="screenshot/imagelandingemplobo.jpg" alt="Landing Page" width="800"/>
+  <p><em>Landing Page - Tampilan utama aplikasi</em></p>
   
-  <img src="[URL_SCREENSHOT_2]" alt="Dashboard" width="800"/>
-  <p><em>Dashboard - Panel kontrol pengguna</em></p>
-  
-  <img src="[URL_SCREENSHOT_3]" alt="Feature" width="800"/>
-  <p><em>[Nama Fitur] - [Deskripsi screenshot]</em></p>
+  <img src="screenshot/imagesignupemplobo.jpg" alt="Sign Up" width="800"/>
+  <p><em>Sign Up - Halaman pendaftaran pengguna</em></p>
+
+  <img src="screenshot/Screenshot_from_2026-09-06_19-08-31.jpg" alt="Screenshot Lainnya" width="800"/>
+  <p><em>Screenshot Aplikasi</em></p>
+
+  <img src="screenshot/Screenshot_from_2026-09-06_22-34-41.png" alt="Screenshot Lainnya" width="800"/>
+  <p><em>Screenshot Aplikasi</em></p>
+
+  <img src="screenshot/Screenshot_from_2026-09-06_22-35-07.png" alt="Screenshot Lainnya" width="800"/>
+  <p><em>Screenshot Aplikasi</em></p>
+
+  <img src="screenshot/Screenshot_from_2026-09-06_22-35-23.png" alt="Screenshot Lainnya" width="800"/>
+  <p><em>Screenshot Aplikasi</em></p>
+
+  <img src="screenshot/Screenshot_from_2026-09-06_22-42-51.png" alt="Screenshot Lainnya" width="800"/>
+  <p><em>Screenshot Aplikasi</em></p>
+
+  <img src="screenshot/Screenshot_from_2026-09-06_22-43-14.png" alt="Screenshot Lainnya" width="800"/>
+  <p><em>Screenshot Aplikasi</em></p>
+
+  <img src="screenshot/Screenshot_from_2026-09-06_22-43-39.png" alt="Screenshot Lainnya" width="800"/>
+  <p><em>Screenshot Aplikasi</em></p>
+
+  <img src="screenshot/Screenshot_from_2026-09-06_22-43-57.png" alt="Screenshot Lainnya" width="800"/>
+  <p><em>Screenshot Aplikasi</em></p>
 </div>
 
 ### Video Demo
 
-📹 **[Link Video Demo](https://[URL_VIDEO])** _(opsional)_
+📹 **Video demo: belum tersedia** _(none)_
 
 ---
 
@@ -491,7 +512,7 @@ sekali penuh terhadap deployment live sebelum submit.
 1. **Dashboard**: `/app` menampilkan header sapaan + aksi cepat, bento grid metrik (total role, karyawan, rata-rata kuis, AI usage), tabel **Brain Readiness** (status badge, progress bar knowledge completeness, aksi edit per role) dan timeline **Recent Activity**.
 2. **Roles**: buka `/app/roles` → buat role (nama + deskripsi opsional) → lihat detail di `/app/roles/[id]` (right rail berisi ring readiness + knowledge gaps).
 3. **Employee Directory**: `/app/employees`: search, filter pill per role, metrik workforce/completion + kartu AI Insight, tabel progress per karyawan.
-4. **Training Room**: Buka `/app/training` (halaman terpusat, bisa pilih role) atau `/app/training/[id]` untuk langsung ke role tertentu, layout 3 kolom (Roles Context / chat dengan ai-bubble & user-bubble / right rail Brain Readiness ring + Knowledge Gaps + tombol Generate Guide); di mobile, pemilih role diganti dengan **role rail swipeable** (kartu snap berisi nama, % kelengkapan, dan status role) agar konteks role tidak hilang di layar kecil. Sistem mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin. Pesan admin muncul langsung di thread (optimistic) dengan gelembung **"AI sedang berpikir..."** (titik animasi) sampai balasan AI siap. Jika admin lain memegang kunci, room terbuka dalam **mode observer** (baca-saja dengan nama pemegang kunci, plus tombol ambil alih saat kunci bebas), dan badge status/completeness diperbarui otomatis tiap 30 detik via polling cache. Di panel Knowledge Library kanan, file yang masih DRAFT ditampilkan dengan badge + tombol **KONFIRMASI** untuk mengaktifkannya sebagai materi training dan tombol **HAPUS** per file untuk membuangnya; maksimal 5 file DRAFT dapat menunggu konfirmasi sekaligus (unggahan berikutnya ditolak 409 sampai yang lama dikonfirmasi/dihapus).
+4. **Training Room**: Buka `/app/training` (halaman terpusat, bisa pilih role) atau `/app/training/[id]` untuk langsung ke role tertentu, layout 3 kolom (Roles Context / chat dengan ai-bubble & user-bubble / right rail Brain Readiness ring + Knowledge Gaps + tombol Generate Guide). Sistem mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin. Pesan admin muncul langsung di thread (optimistic) dengan gelembung **"AI sedang berpikir..."** (titik animasi) sampai balasan AI siap. Jika admin lain memegang kunci, room terbuka dalam **mode observer** (baca-saja dengan nama pemegang kunci, plus tombol ambil alih saat kunci bebas), dan badge status/completeness diperbarui otomatis tiap 30 detik via polling cache. Di panel Knowledge Library kanan, file yang masih DRAFT ditampilkan dengan badge + tombol **KONFIRMASI** untuk mengaktifkannya sebagai materi training dan tombol **HAPUS** per file untuk membuangnya; maksimal 5 file DRAFT dapat menunggu konfirmasi sekaligus (unggahan berikutnya ditolak 409 sampai yang lama dikonfirmasi/dihapus).
 5. **Generate Guide**: saat status role `READY` (completeness ≥ 70), klik **Generate Guide** → AI menyusun draf panduan berstruktur (chapter markdown + kuis) dari seluruh transcript training, divalidasi Zod, lalu ditulis atomik ke DB sebagai **draf tinjauan**. Tinjau draf, lalu klik **Terbitkan Draft** untuk mengganti guide live (status jadi `PUBLISHED`, versi bertambah, progres karyawan dipertahankan). Maksimal 3 generasi per jam per role.
 6. **Assign Karyawan**: setelah `PUBLISHED`, pilih karyawan (`org:member`) dari panel assignment di halaman detail role untuk memberi akses modul. Di halaman Karyawan (`/app/employees`), chip role di tiap baris menampilkan status assignment karyawan tersebut (baca-saja).
 7. **Edit Konten Guide**: dari card role (`/app/roles`) atau halaman detail, klik **EDIT KONTEN** → `/app/content/[roleId]`: rail chapter (tambah/pindah/hapus), editor markdown + tab pratinjau, dan builder kuis (pilihan jawaban + tandai jawaban benar). Klik **SIMPAN** untuk menulis atomik ke DB (versi bertambah, cache guide di-invalidate), perubahan langsung dilihat karyawan.
@@ -501,8 +522,8 @@ sekali penuh terhadap deployment live sebelum submit.
 
 1. **Dashboard Karyawan**: `/app` menampilkan kartu akses Learning Center.
 2. **Learning Center**: Buka `/app/my/modules`: kartu modul dengan ikon per role, status pill (BELUM MULAI / SEDANG BERLANGSUNG / SELESAI), progress bar + persentase, tombol Lanjutkan/Mulai, grid sertifikasi kompetensi, dan FAB **Tanya AI Tutor**.
-3. **Membaca Modul & Kuis**: Klik modul → guide reader (breadcrumb, badge "AI Verified", kategori, meta, TOC sticky + chapter progress, CTA "Kerjakan Kuis Bab") → kuis satu-soal-per-halaman ("Soal X dari Y", progress bar, Previous/Skip/Submit) dengan grading server-side, dan tandai selesai atau lulus kuis untuk mencatat progres pembelajaran. Di bab terakhir tersedia navigasi **Modul Berikutnya** (atau status "Semua Modul Selesai") + tautan balik ke Learning Center agar alur belajar tidak buntu.
-4. **Chat AI Tutor (24/7)**: Pindah ke tab "AI TUTOR (24/7)" pada modul terkait: header ringkas dengan avatar + indikator online dan label grounding ("Berbasis SOP & guide yang disetujui"), AI bubble indigo (`ai-bubble`), user bubble hijau, suggestion chips, dan typing indicator. AI tutor di-grounded ketat pada SOP/panduan peran tersebut (tidak mengarang prosedur yang belum diajarkan). Rate limit chat 30 pesan/10 menit per user + cooldown 2 detik per sesi agar demo live tidak terpotong.
+3. **Membaca Modul & Kuis**: Klik modul → guide reader (breadcrumb, badge "AI Verified", kategori, meta, TOC sticky + chapter progress, CTA "Kerjakan Kuis Bab") → kuis satu-soal-per-halaman ("Soal X dari Y", progress bar, Previous/Skip/Submit) dengan grading server-side, dan tandai selesai atau lulus kuis untuk mencatat progres pembelajaran.
+4. **Chat AI Tutor (24/7)**: Pindah ke tab "AI TUTOR (24/7)" pada modul terkait: header dengan avatar + indikator online, AI bubble indigo (`ai-bubble`), user bubble hijau, suggestion chips, typing indicator, dan disclaimer. AI tutor di-grounded ketat pada SOP/panduan peran tersebut (tidak mengarang prosedur yang belum diajarkan).
 
 #### Halaman Publik
 
