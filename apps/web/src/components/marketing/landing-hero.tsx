@@ -23,7 +23,7 @@ const HERO_LINE_2_HEAD = "dengan ";
 const HERO_LINE_2_TAIL = "AI.";
 
 /**
- * Landing hero — dark KineticGrid canvas (monochrome, brand-neutral) as the
+ * Landing hero — light KineticGrid canvas (white bg, brand-green ink) as the
  * stage; one authored sequence on top: the training chat types itself, its
  * admin replies, three role cards slide in, and the readiness ring draws to
  * 65% as the numbers count up. Scrolling past the hero moves it on a subtle
@@ -143,10 +143,10 @@ export function LandingHero() {
   }, []);
 
   return (
-    <section ref={scopeRef} className="relative isolate overflow-hidden bg-[#161618]">
-      {/* KineticGrid — the interactive canvas (white monochrome grid) */}
+    <section ref={scopeRef} className="relative isolate overflow-hidden bg-surface-muted">
+      {/* KineticGrid — the interactive canvas (white background, brand-green ink) */}
       <div aria-hidden className="absolute inset-0">
-        <KineticGrid globalColor="monochrome" />
+        <KineticGrid globalColor="light" />
       </div>
 
       {/* Legibility vignette — deepens edges while the grid stays alive in the middle */}
@@ -155,16 +155,16 @@ export function LandingHero() {
         className="pointer-events-none absolute inset-0 z-[1]"
         style={{
           background:
-            "radial-gradient(120% 95% at 50% 8%, transparent 42%, rgba(0,0,0,0.55) 100%)",
+            "radial-gradient(120% 95% at 50% 8%, transparent 42%, rgba(20,66,37,0.06) 100%)",
         }}
       />
 
       <div className="hero-copy relative z-10 mx-auto w-full max-w-container px-4 pb-10 pt-16 text-center md:px-10 md:pt-20">
-        <h1 className="mx-auto max-w-4xl font-headline-lg text-headline-lg-mobile text-white md:text-headline-lg">
+        <h1 className="mx-auto max-w-4xl font-headline-lg text-headline-lg-mobile text-primary md:text-headline-lg">
           <span className="hero-line block">{HERO_LINE_1}</span>
           <span className="hero-line block">
             {HERO_LINE_2_HEAD}
-            <span className="relative inline-block italic text-primary-fixed">
+            <span className="relative inline-block italic text-primary">
               {HERO_LINE_2_TAIL}
               <svg
                 className="absolute -bottom-1.5 left-0 w-full"
@@ -175,7 +175,7 @@ export function LandingHero() {
                 <path
                   className="hero-underline"
                   d="M4 7c22-4 58-5 112-2"
-                  stroke="#bcefc4"
+                  stroke="#3b6847"
                   strokeWidth="3.5"
                   strokeLinecap="round"
                   fill="none"
@@ -185,7 +185,7 @@ export function LandingHero() {
           </span>
         </h1>
 
-        <p className="hero-sub mx-auto mt-6 max-w-2xl font-body-lg text-body-lg text-white/70">
+        <p className="hero-sub mx-auto mt-6 max-w-2xl font-body-lg text-body-lg text-on-surface-variant">
           Emplobo adalah otak SDM untuk UMKM: latih AI sekali dengan SOP bisnis
           Anda, lalu biarkan AI menyambut, melatih, dan mengajar setiap
           karyawan baru tanpa batas, 24/7.
@@ -195,7 +195,7 @@ export function LandingHero() {
           <SignedOut>
             <Link
               href="/sign-up"
-              className="group inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3.5 font-label-caps text-label-caps text-primary shadow-[0_8px_24px_-12px_rgba(255,255,255,0.5)] transition-all duration-300 hover:bg-white/90 active:translate-y-px"
+              className="group inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3.5 font-label-caps text-label-caps text-on-primary transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_24px_-12px_rgba(20,66,37,0.5)] active:translate-y-px"
             >
               MULAI GRATIS
               <svg
@@ -217,7 +217,7 @@ export function LandingHero() {
             <SignInButton mode="redirect">
               <button
                 type="button"
-                className="inline-flex items-center rounded-lg border border-white/25 px-6 py-3.5 font-label-caps text-label-caps text-white transition-colors hover:border-white/45 hover:bg-white/10"
+                className="inline-flex items-center rounded-lg border border-secondary px-6 py-3.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"
               >
                 MASUK
               </button>
@@ -226,7 +226,7 @@ export function LandingHero() {
           <SignedIn>
             <Link
               href="/app"
-              className="group inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3.5 font-label-caps text-label-caps text-primary shadow-[0_8px_24px_-12px_rgba(255,255,255,0.5)] transition-all duration-300 hover:bg-white/90 active:translate-y-px"
+              className="group inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3.5 font-label-caps text-label-caps text-on-primary transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_24px_-12px_rgba(20,66,37,0.5)] active:translate-y-px"
             >
               BUKA APP
               <svg
@@ -251,7 +251,7 @@ export function LandingHero() {
 
       {/* ── The cockpit: live product mechanism, animated on load ── */}
       <div className="cockpit mx-auto w-full max-w-4xl px-4 pb-16 md:px-10 md:pb-20">
-        <div className="overflow-hidden rounded-xl border border-white/10 bg-surface-container-lowest shadow-[0_24px_60px_-24px_rgba(0,0,0,0.6)]">
+        <div className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-[0_24px_60px_-24px_rgba(0,0,0,0.35)]">
           <div className="flex items-center justify-between border-b border-outline-variant bg-surface-container-low px-4 py-3">
             <div className="flex items-center gap-1.5" aria-hidden>
               <span className="h-2.5 w-2.5 rounded-full bg-surface-container-highest" />
