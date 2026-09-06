@@ -3,6 +3,7 @@ import cors from "cors";
 import express, { type Express } from "express";
 import helmet from "helmet";
 import type { Env } from "./env.js";
+import { webAppOrigins } from "./lib/origins.js";
 import { createAuthMiddleware } from "./middleware/auth.js";
 import { errorHandler, notFound } from "./middleware/error.js";
 import { healthRouter } from "./routes/health.js";
@@ -22,28 +23,6 @@ function isLocalDevOrigin(origin: string): boolean {
   } catch {
     return false;
   }
-}
-
-// Browser origins allowed to call this API. A bare apex deployment
-// (https://emplobo.com) is also reachable via its www companion any time the
-// site is served from www — block one and every /app fetch fails with a
-// "NetworkError". Derived here so no extra env is needed.
-function webAppOrigins(env: Env): string[] {
-  const origins = [env.WEB_APP_ORIGIN];
-  try {
-    const url = new URL(env.WEB_APP_ORIGIN);
-    const parts = url.hostname.split(".");
-    if (
-      url.protocol === "https:" &&
-      parts.length === 2 &&
-      url.hostname !== "localhost"
-    ) {
-      origins.push(`https://www.${url.hostname}`);
-    }
-  } catch {
-    // keep the base origin only
-  }
-  return [...new Set(origins)];
 }
 
 export function createApp(env: Env): Express {

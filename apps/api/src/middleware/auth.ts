@@ -1,6 +1,7 @@
 import { createClerkClient } from "@clerk/backend";
 import type { NextFunction, Request, Response } from "express";
 import type { Env } from "../env.js";
+import { webAppOrigins } from "../lib/origins.js";
 import type { AuthContext } from "../types.js";
 
 function getBearerToken(req: Request): string | null {
@@ -40,7 +41,7 @@ function isLocalDevOrigin(origin: string): boolean {
 
 function buildAuthorizedParties(req: Request, env: Env): string[] {
   const parties = new Set<string>([
-    env.WEB_APP_ORIGIN,
+    ...webAppOrigins(env),
     "http://localhost:3000",
     "http://127.0.0.1:3000",
   ]);

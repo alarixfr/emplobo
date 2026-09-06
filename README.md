@@ -488,6 +488,9 @@ NEXT_PUBLIC_API_URL="https://<api-domain>"
 > CORS di `apps/api` memakai `WEB_APP_ORIGIN` (mis. `https://emplobo.com`).
 > Bila domain apex diakses melalui `www`, versi awal menambahkan
 > `https://www.<domain>` secara otomatis ke daftar allowlist tanpa env tambahan.
+> Daftar yang sama juga dipakai sebagai Clerk `authorizedParties` — sesi yang
+> dibuat dari `www` membawa `azp: https://www.<domain>` dan akan ditolak API
+> bila tidak di-allowlist.
 >
 > Connect-src CSP di `apps/web/next.config.ts` otomatis memakai
 > `NEXT_PUBLIC_API_URL` saat build — pastikan env ini ter-set sebelum
