@@ -38,7 +38,7 @@ type AuthMiddleware = (
 const TRAINING_RATE_WINDOW_SECONDS = 10 * 60; // 10 minutes
 const TRAINING_RATE_LIMIT = 20;
 const TRAINING_LOCK_STALE_MS = 30 * 60 * 1000;
-const TRAINING_CONTEXT_TOKEN_BUDGET = 6000;
+const TRAINING_CONTEXT_TOKEN_BUDGET = 12000;
 
 // Guide generation is the most expensive single AI call — 3/hour per Role
 // (Section 5.3). Protects against accidental double-clicks and cost blowups.
@@ -313,9 +313,9 @@ async function publishGuideDraftTx(
 
 // Guide generation is the most expensive single AI call — 3/hour per Role
 // (Section 5.3). Protects against accidental double-clicks and cost blowups.
-// Budget keeps chain-of-thought headroom (gpt-oss spends ~700–1500 of it) so
+// Budget keeps chain-of-thought headroom (gpt-oss spends ~500–1500 of it) so
 // the JSON guide finishes under the limit instead of truncating mid-chapter.
-const GUIDE_GEN_MAX_TOKENS = 6000;
+const GUIDE_GEN_MAX_TOKENS = 8000;
 
 function parseScoringJson(raw: string): { score: number; missingAreas: string[] } | null {
   const block = raw.match(/\{[\s\S]*\}/)?.[0] ?? raw;
@@ -782,8 +782,12 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         const selected: Array<{ sender: string; content: string }> = [];
         for (const msg of recent) {
           const tokenEst = msg.tokenEst || estimateTokens(msg.content);
+          // Stop (not skip) at the first message that no longer fits — the
+          // window must always be the MOST RECENT messages that fit, never a
+          // mix of recent and arbitrarily older ones, or the model loses the
+          // thread and starts repeating already-answered questions.
           if (used + tokenEst > TRAINING_CONTEXT_TOKEN_BUDGET) {
-            continue;
+            break;
           }
           used += tokenEst;
           selected.push({ sender: msg.sender, content: msg.content });
@@ -815,13 +819,22 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
                 .map((m) => m.content),
             ),
             buildHistoryMessages(selected),
-            800,
+            1600,
             {
               timeoutMs: 60_000,
               fallbackReply:
                 "Terima kasih. Untuk melengkapi SOP role ini, jelaskan langkah kerja utama dari awal sampai selesai secara berurutan.",
             },
           );
+          // A reply cut short by the output budget would be persisted as a
+          // half-sentence bubble. Treat it like any other transient AI failure:
+          // the admin message below gets rolled back and the client retries
+          // the turn (it already implements backoff retry on non-ApiError).
+          if (aiReply.finishReason === "length") {
+            throw new Error(
+              "AI reply was truncated by the output budget; retrying the turn",
+            );
+          }
         } catch (err) {
           await prisma.trainingMessage
             .delete({ where: { id: adminMessage.id } })

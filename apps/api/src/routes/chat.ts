@@ -482,11 +482,19 @@ export function createChatRouter(requireAuth: AuthMiddleware, env: Env): Router 
       // already rolled the optimistic bubble back).
       let aiReply: AiCallResult;
       try {
-        aiReply = await callAiText(env, systemPrompt, history, 1000, {
+        aiReply = await callAiText(env, systemPrompt, history, 1600, {
           timeoutMs: 30_000,
           fallbackReply:
             "Maaf, saat ini AI tutor sedang dalam mode offline. Silakan tanyakan kepada supervisor Anda mengenai prosedur ini.",
         });
+        // Never persist a half-sentence tutor reply — the user message below
+        // is rolled back and the client surfaces the error so the employee
+        // can simply resend.
+        if (aiReply.finishReason === "length") {
+          throw new Error(
+            "AI tutor reply was truncated by the output budget; treat as transient",
+          );
+        }
       } catch (err) {
         await prisma.chatMessage
           .delete({ where: { id: userMessage.id } })

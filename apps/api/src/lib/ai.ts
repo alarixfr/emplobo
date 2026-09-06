@@ -10,6 +10,10 @@ export type AiCallResult = {
   text: string;
   tokensIn: number;
   tokensOut: number;
+  // Raw OpenAI finish_reason. "length" means the model hit the output
+  // budget mid-reply; callers treat it as a transient failure and retry
+  // rather than persisting a truncated message.
+  finishReason?: string;
 };
 
 /**
@@ -125,6 +129,7 @@ export async function callAiText(
       text: options.fallbackReply,
       tokensIn: 0,
       tokensOut: 0,
+      finishReason: "stop",
     };
   }
 
@@ -161,5 +166,10 @@ export async function callAiText(
   const tokensIn = completion.usage?.prompt_tokens ?? estimateTokens(promptJoined);
   const tokensOut = completion.usage?.completion_tokens ?? estimateTokens(text);
 
-  return { text, tokensIn, tokensOut };
+  return {
+    text,
+    tokensIn,
+    tokensOut,
+    finishReason: completion.choices?.[0]?.finish_reason ?? undefined,
+  };
 }
