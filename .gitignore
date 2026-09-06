@@ -38,3 +38,6 @@ pnpm-debug.log*
 .claude/
 .cursor/
 .gemini/
+railway-env.json.txt
+screenshot/
+vercel-env.json.txt
