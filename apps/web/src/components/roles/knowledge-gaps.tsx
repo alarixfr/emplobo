@@ -1,7 +1,7 @@
 type KnowledgeGapsProps = {
   gaps: string[];
   size?: "sm" | "md";
-  // When the model scored the training ≥ 75 and reported no remaining gaps,
+  // When the model scored the training ≥ 70 and reported no remaining gaps,
   // show a positive "all covered" state instead of the "menunggu evaluasi"
   // explainer (which would be misleading).
   allCovered?: boolean;
