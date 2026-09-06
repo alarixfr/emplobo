@@ -156,23 +156,38 @@ export function MarketingHeader() {
           })}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           <SignedOut>
             <SignInButton mode="redirect">
               <button
                 type="button"
-                className="inline-flex cursor-pointer items-center rounded-lg border border-secondary/50 px-4 py-2.5 font-label-md text-label-md text-secondary transition-all duration-300 hover:border-secondary hover:bg-surface-container-low hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-container-lowest active:translate-y-px"
+                className="inline-flex cursor-pointer items-center rounded-lg border border-secondary/50 px-3 py-2 font-label-md text-label-md text-secondary transition-all duration-300 hover:border-secondary hover:bg-surface-container-low hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-container-lowest active:translate-y-px md:px-4 md:py-2.5"
               >
                 Masuk
               </button>
             </SignInButton>
+            {/* Mobile: compact logo-icon sign-up; desktop: full CTA button */}
             <Link
               href="/sign-up"
-              className="group inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 font-label-md text-label-md text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px"
+              aria-label="Mulai gratis — daftar sekarang"
+              title="Mulai gratis"
+              className="shrink-0 md:hidden"
+            >
+              <Image
+                src="/logo-icon.png"
+                alt="Mulai gratis"
+                width={36}
+                height={36}
+                className="h-9 w-9 rounded-lg transition-transform duration-300 hover:scale-105"
+              />
+            </Link>
+            <Link
+              href="/sign-up"
+              className="group hidden items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 font-label-md text-label-md text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px md:inline-flex"
             >
               Mulai gratis
               <svg
-                className="hidden transition-transform duration-300 group-hover:translate-x-0.5 sm:inline-flex"
+                className="hidden transition-transform duration-300 group-hover:translate-x-0.5 md:inline-flex"
                 width="14"
                 height="14"
                 viewBox="0 0 24 24"
@@ -191,7 +206,7 @@ export function MarketingHeader() {
           <SignedIn>
             <Link
               href="/app"
-              className="group inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 font-label-md text-label-md text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px"
+              className="group hidden items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 font-label-md text-label-md text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px md:inline-flex"
             >
               Buka app
               <svg
@@ -203,7 +218,7 @@ export function MarketingHeader() {
                 strokeWidth="2.4"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="hidden transition-transform duration-300 group-hover:translate-x-0.5 sm:inline-flex"
+                className="hidden transition-transform duration-300 group-hover:translate-x-0.5 md:inline-flex"
                 aria-hidden
               >
                 <path d="M5 12h14" />
