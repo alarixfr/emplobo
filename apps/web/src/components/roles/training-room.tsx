@@ -539,12 +539,20 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
       if (err instanceof ApiError && err.status === 429) {
         const body =
           typeof err.body === "object" && err.body !== null ? (err.body as object) : {};
-        setGenerateError(
-          guideRateLimitMessage(
-            "retryAfter" in body ? (body as { retryAfter?: number }).retryAfter : undefined,
-            "retryAt" in body ? (body as { retryAt?: string }).retryAt : undefined,
-          ),
-        );
+        if ("provider" in body && body.provider === "rate_limit") {
+          setGenerateError(
+            err instanceof Error && err.message
+              ? err.message
+              : "Penyedia AI sedang ramai (rate limit). Tunggu sebentar, lalu coba lagi.",
+          );
+        } else {
+          setGenerateError(
+            guideRateLimitMessage(
+              "retryAfter" in body ? (body as { retryAfter?: number }).retryAfter : undefined,
+              "retryAt" in body ? (body as { retryAt?: string }).retryAt : undefined,
+            ),
+          );
+        }
       } else if (err instanceof ApiError && err.status === 409) {
         setGenerateError(
           "Pembuatan panduan sedang berjalan. Tunggu sebentar, lalu klik lagi.",
