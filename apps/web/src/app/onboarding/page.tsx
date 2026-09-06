@@ -1,9 +1,8 @@
-import { OrganizationList } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Reveal } from "@/components/motion/reveal";
+import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
 import { MarketingFooter } from "@/components/shell/marketing-footer";
 
 export default async function OnboardingPage() {
@@ -13,7 +12,6 @@ export default async function OnboardingPage() {
     redirect("/sign-in");
   }
 
-  // Already in an org — go to the app
   if (orgId) {
     redirect("/app");
   }
@@ -29,30 +27,7 @@ export default async function OnboardingPage() {
       </header>
 
       <main className="flex flex-1 items-center justify-center px-4 py-12">
-        <Reveal y={18} duration={0.7}>
-          <div className="w-full max-w-lg rounded-lg border border-outline-variant bg-surface-container-lowest p-8 text-center shadow-sm md:p-10">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary-container">
-              <span className="material-symbols-outlined ms-fill text-[28px] text-on-primary-container">
-                storefront
-              </span>
-            </div>
-            <h1 className="mt-5 font-headline-sm text-headline-sm text-on-surface">
-              Buat atau pilih bisnis Anda
-            </h1>
-            <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
-              Setiap organisasi = satu UMKM. Buat organisasi baru atau terima
-              undangan, lalu lanjut ke dashboard Emplobo.
-            </p>
-
-            <div className="mt-8 [&_.cl-organizationList]:w-full">
-              <OrganizationList
-                hidePersonal
-                afterCreateOrganizationUrl="/app"
-                afterSelectOrganizationUrl="/app"
-              />
-            </div>
-          </div>
-        </Reveal>
+        <OnboardingFlow />
       </main>
 
       <MarketingFooter />

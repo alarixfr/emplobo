@@ -485,8 +485,13 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/onboarding"
 NEXT_PUBLIC_API_URL="https://<api-domain>"
 ```
 
-> CORS di `apps/web/next.config.ts` otomatis memakai `NEXT_PUBLIC_API_URL`
-> untuk `connect-src` CSP — pastikan tidak ada origin lain yang diblokir.
+> CORS di `apps/api` memakai `WEB_APP_ORIGIN` (mis. `https://emplobo.com`).
+> Bila domain apex diakses melalui `www`, versi awal menambahkan
+> `https://www.<domain>` secara otomatis ke daftar allowlist tanpa env tambahan.
+>
+> Connect-src CSP di `apps/web/next.config.ts` otomatis memakai
+> `NEXT_PUBLIC_API_URL` saat build — pastikan env ini ter-set sebelum
+> `next build` (Vercel / CLI).
 >
 > **Konfigurasi Vercel:** Framework → Next.js; *Root Directory* → `apps/web`;
 > *Install Command* biarkan default (Vercel mendeteksi pnpm workspace);
