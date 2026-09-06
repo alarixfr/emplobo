@@ -161,7 +161,7 @@ export function MarketingHeader() {
             <SignInButton mode="redirect">
               <button
                 type="button"
-                className="inline-flex items-center rounded-lg border border-secondary/50 px-4 py-2.5 font-label-md text-label-md text-secondary transition-all duration-300 hover:border-secondary hover:bg-surface-container-low hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-container-lowest active:translate-y-px"
+                className="inline-flex cursor-pointer items-center rounded-lg border border-secondary/50 px-4 py-2.5 font-label-md text-label-md text-secondary transition-all duration-300 hover:border-secondary hover:bg-surface-container-low hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-container-lowest active:translate-y-px"
               >
                 Masuk
               </button>

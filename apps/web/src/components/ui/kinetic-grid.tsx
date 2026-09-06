@@ -406,7 +406,7 @@ export default function KineticGrid({
   return (
     <div
       className={cn(
-        "relative w-full min-h-screen overflow-hidden",
+        "pointer-events-none relative w-full min-h-screen overflow-hidden",
         globalColor === "default"
           ? "bg-[#161618]"
           : globalColor === "monochrome"
@@ -420,7 +420,7 @@ export default function KineticGrid({
         className="absolute inset-0 w-full h-full z-0 pointer-events-none"
       />
 
-      <div className="relative z-10 w-full h-full">{children}</div>
+      <div className="pointer-events-auto relative z-10 w-full h-full">{children}</div>
     </div>
   );
 }

@@ -145,7 +145,7 @@ export function LandingHero() {
   return (
     <section ref={scopeRef} className="relative isolate overflow-hidden bg-surface-muted">
       {/* KineticGrid — the interactive canvas (white background, brand-green ink) */}
-      <div aria-hidden className="absolute inset-0">
+      <div aria-hidden className="pointer-events-none absolute inset-0">
         <KineticGrid globalColor="light" />
       </div>
 
@@ -217,7 +217,7 @@ export function LandingHero() {
             <SignInButton mode="redirect">
               <button
                 type="button"
-                className="inline-flex items-center gap-2 rounded-lg border border-secondary/60 px-6 py-3.5 font-label-caps text-label-caps text-secondary shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_1px_2px_rgba(20,66,37,0.08)] transition-all duration-300 hover:border-secondary hover:bg-surface-container-low hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_4px_12px_-4px_rgba(20,66,37,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-muted active:translate-y-px"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-secondary/60 px-6 py-3.5 font-label-caps text-label-caps text-secondary shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_1px_2px_rgba(20,66,37,0.08)] transition-all duration-300 hover:border-secondary hover:bg-surface-container-low hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_4px_12px_-4px_rgba(20,66,37,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-muted active:translate-y-px"
               >
                 MASUK
               </button>
