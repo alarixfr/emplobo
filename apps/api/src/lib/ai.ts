@@ -1,6 +1,7 @@
+import OpenAI from "openai";
 import type { Env } from "../env.js";
 
-export type AnthropicMessage = {
+export type AiMessage = {
   role: "user" | "assistant";
   content: string;
 };
@@ -12,23 +13,13 @@ export type AiCallResult = {
 };
 
 /**
- * Normalize a configured model slug into an OpenRouter model id. Earlier
- * builds named models by their base names ("claude-sonnet-4-5"); those aliases
- * are mapped here for backward compatibility so existing .env values keep
- * working. Any other slug (e.g. "minimax/minimax-m3:free") passes through
- * unchanged.
+ * Resolve the OpenAI-compatible base URL. The provider is treated as a
+ * drop-in Chat Completions gateway (default: Hack Club AI proxy), so the
+ * official OpenAI SDK is the industry-standard client no matter which
+ * upstream model actually serves the request.
  */
-export function toOpenRouterModel(model: string): string {
-  if (model === "claude-sonnet-4-5") {
-    return "anthropic/claude-sonnet-4.5";
-  }
-  if (model === "claude-haiku-4-5") {
-    return "anthropic/claude-haiku-4.5";
-  }
-  if (model.startsWith("claude-")) {
-    return `anthropic/${model.replace(/-4-5/g, "-4.5").replace(/-3-5/g, "-3.5")}`;
-  }
-  return model;
+export function resolveAiBaseUrl(env: Env): string {
+  return env.AI_BASE_URL || "https://ai.hackclub.com/proxy/v1";
 }
 
 export function estimateTokens(text: string): number {
@@ -98,7 +89,7 @@ export type ChatHistoryMessage = {
  */
 export function buildHistoryMessages(
   messages: ChatHistoryMessage[],
-): AnthropicMessage[] {
+): AiMessage[] {
   return messages.map((message) => {
     const isModel = message.sender === "ai";
     return {
@@ -111,23 +102,25 @@ export function buildHistoryMessages(
 }
 
 /**
- * Single OpenRouter Chat Completions call used by every AI flow (training,
- * scoring, guide generation, tutor). When no API key is configured (local
- * development), a canned Indonesian reply is returned instead, keeping the
- * flow functional without a network call — production requires the key.
+ * Single OpenAI-compatible Chat Completions call used by every AI flow
+ * (training, scoring, guide generation, employee tutor), via the official
+ * OpenAI SDK pointed at an OpenAI-compatible gateway. When no API key is
+ * configured (local development), a canned Indonesian reply is returned
+ * instead, keeping the flow functional without a network call — production
+ * requires the key.
  */
-export async function callOpenRouterText(
+export async function callAiText(
   env: Env,
   system: string,
-  messages: AnthropicMessage[],
+  messages: AiMessage[],
   maxTokens: number,
   options: { timeoutMs?: number; fallbackReply: string } = {
     timeoutMs: 60_000,
     fallbackReply: "",
   },
 ): Promise<AiCallResult> {
-  const openRouterKey = env.OPENROUTER_API_KEY?.trim();
-  if (!openRouterKey) {
+  const apiKey = env.AI_API_KEY?.trim() || env.OPENROUTER_API_KEY?.trim();
+  if (!apiKey) {
     return {
       text: options.fallbackReply,
       tokensIn: 0,
@@ -135,56 +128,29 @@ export async function callOpenRouterText(
     };
   }
 
-  const openRouterMessages: Array<{
-    role: "system" | "user" | "assistant";
-    content: string;
-  }> = [{ role: "system", content: system }, ...messages];
-
-  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    // Hard timeout — a hung upstream must not hold the request for undici's
-    // 300s default while the just-saved message is already persisted.
-    signal: AbortSignal.timeout(options.timeoutMs ?? 60_000),
-    headers: {
-      Authorization: `Bearer ${openRouterKey}`,
-      "X-API-Key": openRouterKey,
-      "content-type": "application/json",
-      "HTTP-Referer": env.WEB_APP_ORIGIN,
-      "X-Title": "Emplobo",
-    },
-    body: JSON.stringify({
-      model: toOpenRouterModel(env.OPENROUTER_MODEL),
-      max_tokens: maxTokens,
-      messages: openRouterMessages,
-    }),
+  const client = new OpenAI({
+    apiKey,
+    baseURL: resolveAiBaseUrl(env),
+    // One shot — assistant replies are persisted per turn, so a transparent
+    // retry could double-write a message. The routes own error handling.
+    maxRetries: 0,
+    timeout: options.timeoutMs ?? 60_000,
   });
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`OpenRouter call failed (${res.status}): ${body.slice(0, 400)}`);
-  }
+  const completion = await client.chat.completions.create({
+    model: env.AI_MODEL,
+    max_tokens: maxTokens,
+    messages: [{ role: "system", content: system }, ...messages],
+  });
 
-  const data = (await res.json()) as {
-    choices?: Array<{
-      message?: {
-        content?: string;
-      };
-    }>;
-    usage?: {
-      prompt_tokens?: number;
-      completion_tokens?: number;
-    };
-  };
-
-  const text = data.choices?.[0]?.message?.content?.trim();
+  const text = completion.choices?.[0]?.message?.content?.trim();
   if (!text) {
-    throw new Error("OpenRouter returned empty text content");
+    throw new Error("AI returned empty text content");
   }
 
-  const tokensIn =
-    data.usage?.prompt_tokens ??
-    estimateTokens(system + openRouterMessages.map((m) => m.content).join("\n"));
-  const tokensOut = data.usage?.completion_tokens ?? estimateTokens(text);
+  const promptJoined = [system, ...messages.map((m) => m.content)].join("\n");
+  const tokensIn = completion.usage?.prompt_tokens ?? estimateTokens(promptJoined);
+  const tokensOut = completion.usage?.completion_tokens ?? estimateTokens(text);
 
   return { text, tokensIn, tokensOut };
 }

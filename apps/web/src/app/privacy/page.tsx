@@ -29,7 +29,7 @@ export default function PrivacyPage() {
             title: "Batasan Jawaban AI",
             paragraphs: [
               "Materi training dan dokumen Knowledge Library yang Anda ajarkan dipakai untuk mengontekstualisasi AI tutor bisnis Anda. AI tutor hanya menjawab berdasarkan materi yang benar-benar Anda ajarkan, tidak dari pengetahuan umum di luar itu. Dokumen yang belum Anda konfirmasi (DRAFT) tidak pernah dipakai oleh AI.",
-              "Semua panggilan AI (training, penilaian kesiapan, penyusunan guide, dan tutor) diproses melalui OpenRouter sebagai penyedia model pihak ketiga. Teks Anda selalu dibungkus sebagai data, bukan instruksi, sebelum dikirim.",
+              "Semua panggilan AI (training, penilaian kesiapan, penyusunan guide, dan tutor) diproses melalui proxy AI Hack Club (model Qwen3 32B) sebagai penyedia model pihak ketiga. Teks Anda selalu dibungkus sebagai data, bukan instruksi, sebelum dikirim.",
               "Jika jawaban tidak tercakup dalam materi, AI tutor akan menyatakannya secara eksplisit dan menyarankan menghubungi atasan, tanpa pernah mengarang prosedur.",
             ],
           },

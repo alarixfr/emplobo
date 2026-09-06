@@ -14,17 +14,18 @@ const envSchema = z
     CLERK_PUBLISHABLE_KEY: z.string().min(1),
     CLERK_WEBHOOK_SECRET: z.string().min(1),
     WEB_APP_ORIGIN: z.string().url(),
-    // All model traffic is routed through OpenRouter (raw fetch), so this is
-    // an OpenRouter key regardless of the model slug used.
+    // Key for the OpenAI-compatible Chat Completions gateway. The default
+    // gateway is the Hack Club AI proxy (https://ai.hackclub.com/proxy/v1),
+    // served through the official OpenAI SDK regardless of upstream model.
+    // OPENROUTER_API_KEY is accepted as a legacy fallback for existing setups.
+    AI_API_KEY: z.string().optional(),
+    AI_BASE_URL: z.string().url().optional(),
+    // Model slug served by the gateway — powers the AI trainer/tutor
+    // (training, completeness scoring, guide generation, and employee chat
+    // tutor). Default: Qwen3 32B on the Hack Club AI proxy.
+    AI_MODEL: z.string().min(1).default("qwen/qwen3-32b"),
     OPENROUTER_API_KEY: z.string().optional(),
-    // Which OpenRouter model slug powers the AI trainer/tutor (training,
-    // completeness scoring, guide generation, and employee chat tutor).
-    // Default: MiniMax M3 free endpoint (no cost, 1M context window, used in
-    // the live demo). Set a specific slug (e.g. "anthropic/claude-sonnet-4.5")
-    // to pin a different model instead. Alias names from earlier builds
-    // (claude-sonnet-4-5, claude-haiku-4-5) are still normalized on the call
-    // path for backward compatibility.
-    OPENROUTER_MODEL: z.string().min(1).default("minimax/minimax-m3:free"),
+    OPENROUTER_MODEL: z.string().min(1).optional(),
     UPSTASH_REDIS_REST_URL: z.string().optional(),
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
   })
@@ -32,10 +33,14 @@ const envSchema = z
     // Fail loudly in production — the AI layer IS the product; silently
     // serving canned replies to real users is worse than refusing to start.
     // Dev without a key still works (canned fallback keeps local dev moving).
-    if (env.NODE_ENV === "production" && !env.OPENROUTER_API_KEY?.trim()) {
+    if (
+      env.NODE_ENV === "production" &&
+      !env.AI_API_KEY?.trim() &&
+      !env.OPENROUTER_API_KEY?.trim()
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["OPENROUTER_API_KEY"],
+        path: ["AI_API_KEY"],
         message: "required when NODE_ENV=production",
       });
     }
@@ -54,6 +59,9 @@ export function loadEnv(): Env {
     CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY,
     CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET,
     WEB_APP_ORIGIN: process.env.WEB_APP_ORIGIN,
+    AI_API_KEY: process.env.AI_API_KEY,
+    AI_BASE_URL: process.env.AI_BASE_URL,
+    AI_MODEL: process.env.AI_MODEL,
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,

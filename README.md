@@ -141,7 +141,7 @@ Framework    : Express + TypeScript (apps/api — Section 2+)
 Database     : Neon PostgreSQL (pooled + direct URL)
 ORM          : Prisma 6 (packages/db)
 Auth         : Clerk B2B (JWT verify via @clerk/backend)
-AI           : OpenRouter (default **`minimax/minimax-m3:free`**, gratis; dapat dipilih via `OPENROUTER_MODEL`, mis. `anthropic/claude-sonnet-4.5`)
+AI           : Hack Club AI proxy (OpenAI-compatible, default **`qwen/qwen3-32b`**; dapat dipilih via `AI_MODEL`)
 Cache/RL     : Upstash Redis
 ```
 
@@ -160,7 +160,7 @@ Redis        : Upstash
 | **Next.js 15 + Express split** | UI di Next; AI endpoints butuh rate-limit/cooldown/cache konsisten di proses Node panjang (Express) |
 | **Clerk B2B Organizations** | Multi-tenant org/role/invite/session tanpa custom auth — kurangi attack surface |
 | **Prisma + Neon** | Schema typed, migrasi jelas; Neon pooled untuk runtime, direct URL untuk migrate |
-| **OpenRouter (MiniMax M3 free) + Upstash** | AI trainer/tutor default ke `minimax/minimax-m3:free` (gratis, context 1M). Bisa dipilih ke model berbayar via `OPENROUTER_MODEL`; satu gateway API untuk akses model, Redis untuk rate limit & cache guide |
+| **Hack Club AI proxy (Qwen3 32B) + Upstash** | AI trainer/tutor default ke `qwen/qwen3-32b` via proxy OpenAI-compatible (dipakai lewat OpenAI SDK resmi). Model bisa diganti via `AI_MODEL`; satu gateway API untuk akses model, Redis untuk rate limit & cache guide |
 
 ### Dependencies Utama
 
@@ -211,7 +211,7 @@ flowchart TB
   subgraph Data["Data & AI"]
     DB[("Neon PostgreSQL<br/>via packages/db (Prisma)")]
     RC[("Upstash Redis<br/>guide 10m · role-status 30s")]
-    AI["OpenRouter API<br/>default minimax/minimax-m3:free · dapat dipin via env"]
+    AI["Hack Club AI proxy<br/>default qwen/qwen3-32b · dapat diganti via env"]
   end
 
   W -->|Clerk session JWT| A
@@ -328,8 +328,8 @@ DIRECT_URL="..."
 CLERK_SECRET_KEY="sk_test_xxx"
 CLERK_PUBLISHABLE_KEY="pk_test_xxx"
 CLERK_WEBHOOK_SECRET="whsec_xxx"
-OPENROUTER_API_KEY="sk-or-xxx"
-OPENROUTER_MODEL="minimax/minimax-m3:free"   # default: model free OpenRouter; pin dengan "anthropic/claude-sonnet-4.5" dst.
+AI_API_KEY="sk-hc-v1-xxx"
+AI_MODEL="qwen/qwen3-32b"   # default: Qwen3 32B via Hack Club AI proxy; bisa diganti ke model lain yang ekspos proxy
 WEB_APP_ORIGIN="http://localhost:3000"
 PORT="4000"
 ```
@@ -402,8 +402,8 @@ DIRECT_URL="postgresql://user:pass@ep-xxx.neon.tech/emplobo?sslmode=require"    
 CLERK_SECRET_KEY="sk_live_xxx"
 CLERK_PUBLISHABLE_KEY="pk_live_xxx"
 CLERK_WEBHOOK_SECRET="whsec_xxx"
-OPENROUTER_API_KEY="sk-or-xxx"
-OPENROUTER_MODEL="minimax/minimax-m3:free"
+AI_API_KEY="sk-hc-v1-xxx"
+AI_MODEL="qwen/qwen3-32b"
 UPSTASH_REDIS_REST_URL="https://xxx.upstash.io"
 UPSTASH_REDIS_REST_TOKEN="xxx"
 WEB_APP_ORIGIN="https://<web-domain>"   # harus persis origin web yang ter-deploy
@@ -570,7 +570,7 @@ POST   /api/knowledge/:id/approve          # approve DRAFT → AKTIF (dipakai AI
 DELETE /api/knowledge/:id                  # soft-delete (ARCHIVED)
 
 # AI model — semua panggilan AI (training, scoring, guide, tutor) memakai slug
-# env OPENROUTER_MODEL (default "minimax/minimax-m3:free", gratis, context 1M).
+# env AI_MODEL (default "qwen/qwen3-32b" via Hack Club AI proxy, OpenAI-compatible).
 # Untuk biaya nol pastikan key WAJIB ada di prod; opsional di dev (fallback canned reply).
 # Bahasa default semua interaksi AI: Bahasa Indonesia, diperkuat sebagai aturan utama
 # (LANGUAGE_DIRECTIVE di lib/prompts.ts). AI juga membaca 4 pesan pengguna terakhir untuk

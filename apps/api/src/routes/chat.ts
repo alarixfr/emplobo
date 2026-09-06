@@ -7,12 +7,12 @@ import { logAiUsage } from "../lib/ai-usage.js";
 import { formatKnowledgeChunksForPrompt, searchKnowledgeChunks } from "../lib/knowledge.js";
 import {
   buildHistoryMessages,
-  callOpenRouterText,
+  callAiText,
   sanitizeUserText,
   stripStructuralTags,
   wrapBusinessData,
   type AiCallResult,
-} from "../lib/openrouter.js";
+} from "../lib/ai.js";
 import { buildTutorSystemPrompt } from "../lib/prompts.js";
 import type { AuthContext } from "../types.js";
 
@@ -482,7 +482,7 @@ export function createChatRouter(requireAuth: AuthMiddleware, env: Env): Router 
       // already rolled the optimistic bubble back).
       let aiReply: AiCallResult;
       try {
-        aiReply = await callOpenRouterText(env, systemPrompt, history, 800, {
+        aiReply = await callAiText(env, systemPrompt, history, 800, {
           timeoutMs: 30_000,
           fallbackReply:
             "Maaf, saat ini AI tutor sedang dalam mode offline. Silakan tanyakan kepada supervisor Anda mengenai prosedur ini.",

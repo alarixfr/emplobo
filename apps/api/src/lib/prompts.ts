@@ -7,7 +7,7 @@
  * - wraps untrusted user text in <business_data> / <knowledge_base> with an
  *   explicit injection defense before it ever reaches the model.
  */
-import { sanitizeUserText } from "./openrouter.js";
+import { sanitizeUserText } from "./ai.js";
 
 const LANGUAGE_DIRECTIVE = [
   "BAHASA (WAJIB, aturan utama):",

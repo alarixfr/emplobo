@@ -5,15 +5,15 @@ import { createCache } from "../lib/cache.js";
 import { buildKnowledgeBaseEnvelope, cleanKnowledgeText, searchKnowledgeChunks } from "../lib/knowledge.js";
 import {
   buildHistoryMessages,
-  callOpenRouterText,
+  callAiText,
   estimateTokens,
   sanitizeUserText,
   stripStructuralMarkers,
   stripStructuralTags,
   wrapBusinessData,
-  type AnthropicMessage,
   type AiCallResult,
-} from "../lib/openrouter.js";
+  type AiMessage,
+} from "../lib/ai.js";
 import { buildGuideSystemPrompt, buildScoringPrompt, buildTrainingSystemPrompt } from "../lib/prompts.js";
 import { buildChangeSummary, chapterKey, type FlatChapter } from "../lib/guide-changes.js";
 import { createRateLimiter } from "../lib/rate-limit.js";
@@ -313,8 +313,8 @@ async function publishGuideDraftTx(
 
 // Guide generation is the most expensive single AI call — 3/hour per Role
 // (Section 5.3). Protects against accidental double-clicks and cost blowups.
-// The free MiniMax endpoint caps output tokens at ~2K, so guide requests stay
-// small and the prompt keeps each chapter compact.
+// The AI proxy caps output tokens (and reasoning models burn budget fast), so
+// guide requests stay small and the prompt keeps each chapter compact.
 const GUIDE_GEN_MAX_TOKENS = 2048;
 
 function parseScoringJson(raw: string): { score: number; missingAreas: string[] } | null {
@@ -805,7 +805,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         // keeps its UI consistent by not appending either message).
         let aiReply: AiCallResult;
         try {
-          aiReply = await callOpenRouterText(
+          aiReply = await callAiText(
             env,
             buildTrainingSystemPrompt(
               role.name,
@@ -873,7 +873,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
             select: { sender: true, content: true },
           });
 
-          const scoringReply = await callOpenRouterText(
+          const scoringReply = await callAiText(
             env,
             buildScoringPrompt(),
             [
@@ -1131,7 +1131,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           existingGuideStructure,
         );
 
-        const transcriptMessage: AnthropicMessage = {
+        const transcriptMessage: AiMessage = {
           role: "user",
           content: wrapBusinessData(transcriptText),
         };
@@ -1141,7 +1141,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         let generated: z.infer<typeof guideGenerationSchema> | null = null;
         let lastError = "";
         for (let attempt = 0; attempt < 2; attempt++) {
-          const result = await callOpenRouterText(
+          const result = await callAiText(
             env,
             systemPrompt,
             [transcriptMessage],
