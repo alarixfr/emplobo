@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
 import { KnowledgeGaps } from "@/components/roles/knowledge-gaps";
 import { RoleDetailPanels } from "@/components/roles/role-detail-panels";
+import { RoleActions } from "@/components/roles/role-actions";
 import { ReadinessRing } from "@/components/ui/readiness-ring";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Reveal } from "@/components/motion/reveal";
@@ -121,6 +122,7 @@ export default async function RoleDetailPage({ params }: PageProps) {
               <span className="material-symbols-outlined text-[18px]">school</span>
               BUKA TRAINING ROOM
             </Link>
+            <RoleActions role={role} redirectOnDelete="/app/roles" />
           </div>
         </div>
       </Reveal>

@@ -566,7 +566,7 @@ sekali penuh terhadap deployment live sebelum submit.
 #### Untuk Admin (`org:admin`)
 
 1. **Dashboard**: `/app` menampilkan header sapaan + aksi cepat, bento grid metrik (total role, karyawan, rata-rata kuis, AI usage), tabel **Brain Readiness** (status badge, progress bar knowledge completeness, aksi edit per role) dan timeline **Recent Activity**.
-2. **Roles**: buka `/app/roles` → buat role (nama + deskripsi opsional) → lihat detail di `/app/roles/[id]` (right rail berisi ring readiness + knowledge gaps).
+2. **Roles**: buka `/app/roles` → buat role (nama + deskripsi opsional) → lihat detail di `/app/roles/[id]` (right rail berisi ring readiness + knowledge gaps). Setiap card/detail punya tombol **EDIT** (ubah nama/deskripsi kapan pun; aman — guide & training room tidak terpengaruh) dan **HAPUS** (dialog konfirmasi menyebutkan konsekuensi; ditolak 423 saat Training Room role sedang aktif, 409 saat guide sedang dibuat).
 3. **Employee Directory**: `/app/employees`: search, filter pill per role, metrik workforce/completion + kartu AI Insight, tabel progress per karyawan.
 4. **Training Room**: Buka `/app/training` (halaman terpusat, bisa pilih role) atau `/app/training/[id]` untuk langsung ke role tertentu, layout 3 kolom (Roles Context / chat dengan ai-bubble & user-bubble / right rail Brain Readiness ring + Knowledge Gaps + tombol Generate Guide). Sistem mengunci sesi training untuk admin aktif, mengirim heartbeat tiap 60 detik, menyimpan pesan admin+AI, serta mengevaluasi completeness tiap 5 pesan admin. Pesan admin muncul langsung di thread (optimistic) dengan gelembung **"AI sedang berpikir..."** (titik animasi) sampai balasan AI siap. Jika admin lain memegang kunci, room terbuka dalam **mode observer** (baca-saja dengan nama pemegang kunci, plus tombol ambil alih saat kunci bebas), dan badge status/completeness diperbarui otomatis tiap 30 detik via polling cache. Di panel Knowledge Library kanan, file yang masih DRAFT ditampilkan dengan badge + tombol **KONFIRMASI** untuk mengaktifkannya sebagai materi training dan tombol **HAPUS** per file untuk membuangnya; maksimal 5 file DRAFT dapat menunggu konfirmasi sekaligus (unggahan berikutnya ditolak 409 sampai yang lama dikonfirmasi/dihapus).
 5. **Generate Guide**: saat status role `READY` (completeness ≥ 70), klik **Generate Guide** → AI menyusun draf panduan berstruktur (chapter markdown + kuis) dari seluruh transcript training, divalidasi Zod, lalu ditulis atomik ke DB sebagai **draf tinjauan**. Tinjau draf, lalu klik **Terbitkan Draft** untuk mengganti guide live (status jadi `PUBLISHED`, versi bertambah, progres karyawan dipertahankan). Maksimal 3 generasi per jam per role.
@@ -612,6 +612,8 @@ GET  /api/admin/ping         # requireAdmin — 403 unless org:admin
 POST /api/roles              # body: { name, description? } → create DRAFT
 GET  /api/roles              # list active roles in org
 GET  /api/roles/:id          # single role (404 if wrong org / missing) + missingAreas (Knowledge Gaps, dari cache Redis)
+PATCH /api/roles/:id         # edit nama/deskripsi role (org-scoped); aman kapan pun
+DELETE /api/roles/:id        # hapus permanen role + guide/kuis/training/assignment; 423 bila Training Room aktif (lock fresh), 409 bila guide gen sedang berjalan
 
 # Section 4 — Training Room (requireAdmin; tenant-scoped + lock enforced)
 POST   /api/roles/:id/training/lock       # atomic lock acquire (423 if held by other admin)

@@ -698,6 +698,159 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
     },
   );
 
+  // PATCH /api/roles/:id — edit role metadata (name / description).
+  // Safe to run at any time: the Training Room reads role.name fresh on every
+  // message and the Knowledge Library has no FK to a role, so a rename can
+  // never corrupt either. Guide titles keep their own value until the next
+  // generation/publish — renaming a role does not silently rename live SOPs.
+  const editRoleSchema = z
+    .object({
+      name: z.string().trim().min(1).max(100).optional(),
+      description: z.string().trim().max(500).nullable().optional(),
+    })
+    .strict()
+    .superRefine((data, ctx) => {
+      if (data.name === undefined && data.description === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "provide name or description",
+        });
+      }
+    });
+
+  router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const auth = requireAuthContext(req);
+      const id = z.string().cuid().safeParse(req.params.id);
+      if (!id.success) {
+        res.status(400).json({ error: "invalid role id" });
+        return;
+      }
+
+      const parsed = editRoleSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: "invalid body", details: parsed.error.flatten() });
+        return;
+      }
+
+      const updated = await prisma.trainingRole.updateMany({
+        where: { id: id.data, orgId: auth.orgId, isActive: true },
+        data: {
+          ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
+          ...(parsed.data.description !== undefined
+            ? { description: parsed.data.description === "" ? null : parsed.data.description }
+            : {}),
+        },
+      });
+      if (updated.count === 0) {
+        res.status(404).json({ error: "role not found" });
+        return;
+      }
+
+      const role = await prisma.trainingRole.findFirst({
+        where: { id: id.data, orgId: auth.orgId },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          status: true,
+          completenessScore: true,
+          trainingMessageCount: true,
+        },
+      });
+
+      res.json({ role });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // DELETE /api/roles/:id — permanently remove the role and EVERYTHING tied
+  // to it (training transcript, guide + chapters + quizzes, guide drafts and
+  // version history, employee assignments + quiz attempts + chat sessions).
+  // Hard-deletes are guarded so they can never corrupt the Training Room:
+  //   - a FRESH training lock (this role is being trained right now) → 423
+  //   - an in-flight guide generation → 409
+  // Knowledge documents are org-wide and share zero FK with a role, so the
+  // Knowledge Library is untouched by design. The DB-level ON DELETE CASCADE
+  // clears the relation-chained rows inside the same transaction; FK-less
+  // orphans (ChatSession.roleId, QuizAttempt.quizId) are cleaned explicitly.
+  router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const auth = requireAuthContext(req);
+      const id = z.string().cuid().safeParse(req.params.id);
+      if (!id.success) {
+        res.status(400).json({ error: "invalid role id" });
+        return;
+      }
+
+      const role = await prisma.trainingRole.findFirst({
+        where: { id: id.data, orgId: auth.orgId, isActive: true },
+        select: { id: true, activeTrainerId: true, activeTrainerAt: true },
+      });
+      if (!role) {
+        res.status(404).json({ error: "role not found" });
+        return;
+      }
+
+      // Block while another admin is actively training this role — deleting
+      // under a live lock would strand an open Training Room on 404s.
+      const lockFresh =
+        role.activeTrainerAt &&
+        role.activeTrainerAt.getTime() >= Date.now() - TRAINING_LOCK_STALE_MS;
+      if (lockFresh) {
+        res.status(423).json({
+          error:
+            "Training Room role ini sedang dibuka. Tutup Training Room-nya terlebih dahulu, baru hapus role.",
+        });
+        return;
+      }
+
+      const guideGenKey = `${auth.orgId}:${role.id}`;
+      if (guideGenInFlight.has(guideGenKey)) {
+        res.status(409).json({
+          error:
+            "Pembuatan panduan sedang berjalan untuk role ini. Tunggu sampai selesai, lalu coba hapus lagi.",
+        });
+        return;
+      }
+
+      await prisma.$transaction(async (tx) => {
+        // FK-less orphans first (no DB cascade ever removes them otherwise).
+        const chapterIds = await tx.chapter.findMany({
+          where: { guide: { roleId: role.id, orgId: auth.orgId } },
+          select: { id: true },
+        });
+        const quizIds =
+          chapterIds.length > 0
+            ? await tx.quiz.findMany({
+                where: { chapterId: { in: chapterIds.map((c) => c.id) } },
+                select: { id: true },
+              })
+            : [];
+
+        if (quizIds.length > 0) {
+          await tx.quizAttempt.deleteMany({
+            where: { quizId: { in: quizIds.map((q) => q.id) } },
+          });
+        }
+        await tx.chatSession.deleteMany({
+          where: { roleId: role.id, orgId: auth.orgId },
+        });
+
+        // Deletes the role + every relation-chained row via ON DELETE CASCADE.
+        await tx.trainingRole.deleteMany({ where: { id: role.id, orgId: auth.orgId } });
+      });
+
+      await cache.invalidateGuide(role.id);
+      await cache.del(`role-status:${role.id}`, `role-gaps:${role.id}`);
+
+      res.json({ ok: true, deletedRoleId: role.id });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   // POST /api/roles/:id/training/lock
   router.post(
     "/:id/training/lock",

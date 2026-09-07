@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { CreateRoleForm } from "@/components/roles/create-role-form";
+import { RoleActions } from "@/components/roles/role-actions";
 import { Reveal, Stagger } from "@/components/motion/reveal";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -161,6 +162,7 @@ export default async function RolesPage() {
                           EDIT KONTEN
                         </Link>
                       ) : null}
+                      <RoleActions role={role} />
                     </div>
 </div>
                   </div>
