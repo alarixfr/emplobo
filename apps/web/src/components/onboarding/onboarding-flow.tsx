@@ -114,7 +114,11 @@ export function OnboardingFlow() {
   return (
     <div
       ref={cardRef}
-      className="w-full max-w-lg rounded-lg border border-outline-variant bg-surface-container-lowest p-6 text-center shadow-sm sm:p-8 md:p-10"
+      className={
+        effectiveStep === "create"
+          ? "w-full max-w-lg text-center"
+          : "w-full max-w-lg rounded-lg border border-outline-variant bg-surface-container-lowest p-6 text-center shadow-sm sm:p-8 md:p-10"
+      }
     >
       {!isLoaded ? (
           <div role="status" aria-label="Memuat" className="mx-auto flex max-w-xs flex-col items-center py-8">
@@ -309,9 +313,11 @@ export function OnboardingFlow() {
             ) : null}
 
             {effectiveStep === "create" ? (
-              <div className="mt-8 min-w-0 text-left [&_.cl-cardBox]:mx-auto [&_.cl-cardBox]:w-full [&_.cl-cardBox]:max-w-md [&_.cl-cardBox]:shadow-none [&_.cl-card]:w-full [&_.cl-card]:max-w-none [&_.cl-card]:border-0 [&_.cl-card]:shadow-none [&_.cl-card]:max-sm:px-4 sm:[&_.cl-card]:px-6">
+              <div className="mt-8 w-full">
                 <CreateOrganization afterCreateOrganizationUrl="/app" />
-                <BackLink onClick={() => setStep("choose")} />
+                <div className="mt-6 flex justify-center">
+                  <BackLink onClick={() => setStep("choose")} />
+                </div>
               </div>
             ) : null}
 
