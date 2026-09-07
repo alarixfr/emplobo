@@ -18,7 +18,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      afterSignInUrl="/app"
+      afterSignUpUrl="/onboarding"
+      afterSignOutUrl="/"
+      signInFallbackRedirectUrl="/app"
+      signUpFallbackRedirectUrl="/onboarding"
+    >
       <html lang="id">
         <head>
           {/* Material Symbols Outlined — icon set of the design system */}
