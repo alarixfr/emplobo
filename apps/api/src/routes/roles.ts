@@ -373,7 +373,7 @@ function parseScoringJson(raw: string): { score: number; missingAreas: string[] 
   const parsed = z
     .object({
       score: z.number().int().min(0).max(100),
-      missingAreas: z.array(z.string().trim().min(1)).max(30),
+      missingAreas: z.array(z.string().trim().min(1)).max(5),
     })
     .safeParse(json);
   if (!parsed.success) {
@@ -416,6 +416,8 @@ async function evaluateRoleCompleteness(
     select: {
       id: true,
       orgId: true,
+      name: true,
+      description: true,
       status: true,
       trainingMessageCount: true,
     },
@@ -441,7 +443,7 @@ async function evaluateRoleCompleteness(
 
   const scoringReply = await callAiText(
     env,
-    buildScoringPrompt(),
+    buildScoringPrompt(roleRow.name, roleRow.description),
     [
       {
         role: "user",
@@ -1084,6 +1086,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           select: {
             id: true,
             name: true,
+            description: true,
             status: true,
             completenessScore: true,
             trainingMessageCount: true,
@@ -1176,6 +1179,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           recentAdminTexts,
           priorAiQuestions,
           coveredTopics,
+          role.description,
         );
         const baseHistory = buildHistoryMessages(selected);
 
@@ -1275,15 +1279,19 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         });
 
         // Completeness re-scoring runs IN THE BACKGROUND so the response stays
-        // snappy. It fires when a 5th message lands OR at least 45s have passed
-        // since the last evaluation — that keeps the score and Knowledge Gaps
-        // synced to the conversation without an expensive evaluation per turn.
+        // snappy. It fires from the 5th admin message onward, when a multiple of
+        // 5 lands OR at least 45s have passed since the last evaluation — that
+        // keeps the score and Knowledge Gaps synced to the conversation without
+        // an expensive evaluation per turn. The `>= 5` gate matters: before the
+        // conversation has substance an evaluation would produce a premature,
+        // misleading score and gap list (a known source of wrong data).
         // Best-effort: failures are logged and never affect the reply.
         const nowMs = Date.now();
         const lastMs = lastScoreAt.get(role.id) ?? 0;
         const due =
-          updatedRole.trainingMessageCount % 5 === 0 ||
-          nowMs - lastMs >= SCORE_MIN_INTERVAL_MS;
+          updatedRole.trainingMessageCount >= 5 &&
+          (updatedRole.trainingMessageCount % 5 === 0 ||
+            nowMs - lastMs >= SCORE_MIN_INTERVAL_MS);
         lastScoreAt.set(role.id, nowMs);
         if (due) {
           void evaluateRoleCompleteness(
@@ -1424,6 +1432,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           select: {
             id: true,
             name: true,
+            description: true,
             status: true,
             completenessScore: true,
           },
@@ -1517,6 +1526,7 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
             .filter((m) => m.sender === "admin")
             .map((m) => m.content),
           existingGuideStructure,
+          role.description,
         );
 
         const transcriptMessage: AiMessage = {
