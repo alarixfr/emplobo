@@ -309,7 +309,7 @@ export function OnboardingFlow() {
             ) : null}
 
             {effectiveStep === "create" ? (
-              <div className="mt-8 [&_.cl-cardRoot]:mx-auto [&_.cl-cardRoot]:w-full [&_.cl-cardRoot]:max-w-md [&_.cl-cardRoot]:text-left">
+              <div className="mt-8 min-w-0 text-left [&_.cl-cardBox]:mx-auto [&_.cl-cardBox]:w-full [&_.cl-cardBox]:max-w-md [&_.cl-cardBox]:shadow-none [&_.cl-card]:w-full [&_.cl-card]:max-w-none [&_.cl-card]:border-0 [&_.cl-card]:shadow-none [&_.cl-card]:max-sm:px-4 sm:[&_.cl-card]:px-6">
                 <CreateOrganization afterCreateOrganizationUrl="/app" />
                 <BackLink onClick={() => setStep("choose")} />
               </div>
