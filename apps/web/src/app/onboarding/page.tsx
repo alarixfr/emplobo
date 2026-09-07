@@ -26,7 +26,7 @@ export default async function OnboardingPage() {
         </div>
       </header>
 
-      <main className="flex flex-1 items-center justify-center px-4 py-12">
+      <main className="flex w-full flex-1 items-center justify-center px-4 py-10 sm:py-12">
         <OnboardingFlow />
       </main>
 

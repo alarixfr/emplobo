@@ -2,8 +2,8 @@
 
 import { CreateOrganization, useOrganizationList, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Reveal } from "@/components/motion/reveal";
+import { useLayoutEffect, useRef, useState } from "react";
+import { EASE_OUT, gsap, prefersReducedMotion } from "@/lib/motion";
 
 type Step = "auto" | "choose" | "create" | "join" | "select";
 
@@ -43,6 +43,7 @@ export function OnboardingFlow() {
   const [step, setStep] = useState<Step>("auto");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const pendingInvitations = (userInvitations.data ?? []).filter(
     (inv) => inv.status === "pending",
@@ -64,6 +65,25 @@ export function OnboardingFlow() {
           : "choose";
 
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
+
+  // GSAP choreography: on first load and on every step change, the card's
+  // top-level blocks (icon, heading, then the interactive rows) rise in
+  // sequence. Honors prefers-reduced-motion — content stays visible.
+  useLayoutEffect(() => {
+    const el = cardRef.current;
+    if (!el || !isLoaded) return;
+    if (prefersReducedMotion()) return;
+    const items = Array.from(el.children) as HTMLElement[];
+    if (items.length === 0) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        items,
+        { autoAlpha: 0, y: 10 },
+        { autoAlpha: 1, y: 0, duration: 0.45, stagger: 0.06, ease: EASE_OUT },
+      );
+    }, el);
+    return () => ctx.revert();
+  }, [isLoaded, effectiveStep]);
 
   const handleJoin = async (invitation: NonNullable<typeof userInvitations.data>[number]) => {
     setBusyId(invitation.id);
@@ -92,9 +112,11 @@ export function OnboardingFlow() {
   };
 
   return (
-    <Reveal y={18} duration={0.7}>
-      <div className="w-full max-w-lg rounded-lg border border-outline-variant bg-surface-container-lowest p-8 text-center shadow-sm md:p-10">
-        {!isLoaded ? (
+    <div
+      ref={cardRef}
+      className="w-full max-w-lg rounded-lg border border-outline-variant bg-surface-container-lowest p-6 text-center shadow-sm sm:p-8 md:p-10"
+    >
+      {!isLoaded ? (
           <div role="status" aria-label="Memuat" className="mx-auto flex max-w-xs flex-col items-center py-8">
             <div className="h-14 w-14 animate-pulse rounded-full bg-surface-container-high" />
             <div className="mt-5 h-5 w-44 animate-pulse rounded bg-surface-container-high" />
@@ -111,39 +133,39 @@ export function OnboardingFlow() {
 
             {effectiveStep === "auto" || effectiveStep === "choose" ? (
               <>
-                <h1 className="mt-5 font-headline-sm text-headline-sm text-on-surface">
+                <h1 className="mt-5 font-headline-sm text-headline-sm text-balance text-on-surface">
                   Mulai di Emplobo
                 </h1>
-                <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+                <p className="mt-2 font-body-md text-body-md text-pretty text-on-surface-variant">
                   Pilih cara masuk: sebagai karyawan yang diundang, atau sebagai pemilik
                   yang mendaftarkan bisnisnya.
                 </p>
               </>
             ) : effectiveStep === "join" ? (
               <>
-                <h1 className="mt-5 font-headline-sm text-headline-sm text-on-surface">
+                <h1 className="mt-5 font-headline-sm text-headline-sm text-balance text-on-surface">
                   Anda diundang bergabung
                 </h1>
-                <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+                <p className="mt-2 font-body-md text-body-md text-pretty text-on-surface-variant">
                   Pemilik bisnis sudah mengirim undangan belajar untuk Anda.
                   Terima untuk mulai onboarding.
                 </p>
               </>
             ) : effectiveStep === "select" ? (
               <>
-                <h1 className="mt-5 font-headline-sm text-headline-sm text-on-surface">
+                <h1 className="mt-5 font-headline-sm text-headline-sm text-balance text-on-surface">
                   Pilih bisnis Anda
                 </h1>
-                <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+                <p className="mt-2 font-body-md text-body-md text-pretty text-on-surface-variant">
                   Anda sudah terdaftar di bisnis berikut. Pilih untuk melanjutkan.
                 </p>
               </>
             ) : (
               <>
-                <h1 className="mt-5 font-headline-sm text-headline-sm text-on-surface">
+                <h1 className="mt-5 font-headline-sm text-headline-sm text-balance text-on-surface">
                   Daftarkan bisnis Anda
                 </h1>
-                <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+                <p className="mt-2 font-body-md text-body-md text-pretty text-on-surface-variant">
                   Buat organisasi UMKM Anda, lalu latih AI untuk peran-peran di dalamnya.
                 </p>
               </>
@@ -154,15 +176,15 @@ export function OnboardingFlow() {
                 <button
                   type="button"
                   onClick={() => setStep("join")}
-                  className="group flex w-full cursor-pointer items-start gap-4 rounded-xl border border-outline-variant bg-surface-container-lowest p-5 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-surface-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="group flex w-full cursor-pointer items-center gap-3.5 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-surface-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:items-start sm:gap-4 sm:p-5"
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary-container transition-transform duration-300 group-hover:scale-105">
-                    <span className="material-symbols-outlined ms-fill text-[22px] text-on-primary-container">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-container transition-transform duration-300 group-hover:scale-105 sm:h-11 sm:w-11">
+                    <span className="material-symbols-outlined ms-fill text-[20px] text-on-primary-container sm:text-[22px]">
                       badge
                     </span>
                   </span>
                   <span className="min-w-0">
-                    <span className="block font-headline-sm text-[16px] text-on-surface">
+                    <span className="block font-headline-sm text-[15px] text-on-surface sm:text-[16px]">
                       Saya karyawan / diundang belajar
                     </span>
                     <span className="mt-1 block font-body-md text-body-md text-on-surface-variant">
@@ -175,15 +197,15 @@ export function OnboardingFlow() {
                 <button
                   type="button"
                   onClick={() => setStep("create")}
-                  className="group flex w-full cursor-pointer items-start gap-4 rounded-xl border border-outline-variant bg-surface-container-lowest p-5 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-surface-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="group flex w-full cursor-pointer items-center gap-3.5 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-surface-bright focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:items-start sm:gap-4 sm:p-5"
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary-container transition-transform duration-300 group-hover:scale-105">
-                    <span className="material-symbols-outlined ms-fill text-[22px] text-on-primary-container">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-container transition-transform duration-300 group-hover:scale-105 sm:h-11 sm:w-11">
+                    <span className="material-symbols-outlined ms-fill text-[20px] text-on-primary-container sm:text-[22px]">
                       add_business
                     </span>
                   </span>
                   <span className="min-w-0">
-                    <span className="block font-headline-sm text-[16px] text-on-surface">
+                    <span className="block font-headline-sm text-[15px] text-on-surface sm:text-[16px]">
                       Saya pemilik / HR
                     </span>
                     <span className="mt-1 block font-body-md text-body-md text-on-surface-variant">
@@ -200,9 +222,9 @@ export function OnboardingFlow() {
                   {pendingInvitations.map((inv) => (
                     <div
                       key={inv.id}
-                      className="flex items-center justify-between gap-4 rounded-xl border border-outline-variant bg-surface-container-lowest p-5"
+                      className="flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
                     >
-                      <div className="min-w-0">
+                      <div className="min-w-0 break-words">
                         <p className="font-headline-sm text-[16px] text-on-surface">
                           {inv.publicOrganizationData.name}
                         </p>
@@ -214,7 +236,7 @@ export function OnboardingFlow() {
                         type="button"
                         disabled={busyId !== null}
                         onClick={() => handleJoin(inv)}
-                        className="shrink-0 cursor-pointer rounded-lg bg-primary px-4 py-2.5 font-label-md text-label-md text-on-primary transition-colors hover:bg-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="w-full shrink-0 cursor-pointer rounded-lg bg-primary px-4 py-3 font-label-md text-label-md text-on-primary transition-colors hover:bg-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:py-2.5"
                       >
                         {busyId === inv.id ? "Menerima…" : "Terima"}
                       </button>
@@ -232,18 +254,18 @@ export function OnboardingFlow() {
                 <p className="font-label-caps text-label-caps text-secondary">
                   BELUM ADA UNDANGAN MASUK
                 </p>
-                <p className="mt-2 font-body-md text-body-md text-on-surface">
+                <p className="mt-2 font-body-md text-body-md text-pretty text-on-surface">
                   Belum ada undangan untuk {email || "email Anda"}.
                 </p>
-                <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant">
+                <p className="mt-2 font-body-sm text-body-sm text-pretty text-on-surface-variant">
                   Pemilik bisnis perlu mengirim undangan lewat dashboard Emplobo ke email
                   tersebut. Setelah undangan terkirim, cek email Anda dan buka link
-                  undangannya — undangan yang masuk akan muncul di sini.
+                  undangannya. Undangan yang masuk akan muncul di sini.
                 </p>
                 <button
                   type="button"
                   onClick={() => window.location.reload()}
-                  className="mt-4 cursor-pointer font-label-md text-label-md text-primary underline-offset-4 hover:underline"
+                  className="mt-4 cursor-pointer rounded-lg py-2 font-label-md text-label-md text-primary underline-offset-4 hover:underline"
                 >
                   Periksa lagi
                 </button>
@@ -256,9 +278,9 @@ export function OnboardingFlow() {
                   {memberships.map((membership) => (
                     <div
                       key={membership.id}
-                      className="flex items-center justify-between gap-4 rounded-xl border border-outline-variant bg-surface-container-lowest p-5"
+                      className="flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
                     >
-                      <div className="min-w-0">
+                      <div className="min-w-0 break-words">
                         <p className="font-headline-sm text-[16px] text-on-surface">
                           {membership.organization.name}
                         </p>
@@ -270,7 +292,7 @@ export function OnboardingFlow() {
                         type="button"
                         disabled={busyId !== null}
                         onClick={() => handleSelect(membership.organization.id)}
-                        className="shrink-0 cursor-pointer rounded-lg bg-primary px-4 py-2.5 font-label-md text-label-md text-on-primary transition-colors hover:bg-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="w-full shrink-0 cursor-pointer rounded-lg bg-primary px-4 py-3 font-label-md text-label-md text-on-primary transition-colors hover:bg-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:py-2.5"
                       >
                         {busyId === membership.organization.id ? "Membuka…" : "Pilih"}
                       </button>
@@ -298,15 +320,14 @@ export function OnboardingFlow() {
                 <button
                   type="button"
                   onClick={() => setStep("create")}
-                  className="cursor-pointer font-label-md text-label-md text-on-surface-variant underline-offset-4 hover:text-primary hover:underline"
+                  className="cursor-pointer rounded-lg px-2 py-2 font-label-md text-label-md text-on-surface-variant underline-offset-4 hover:text-primary hover:underline"
                 >
-                  Saya pemilik bisnis — daftarkan bisnis saya
+                  Saya pemilik bisnis, daftarkan bisnis saya
                 </button>
               </div>
             ) : null}
           </>
         )}
       </div>
-    </Reveal>
   );
 }
