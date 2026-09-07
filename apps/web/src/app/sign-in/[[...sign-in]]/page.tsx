@@ -7,7 +7,7 @@ import { BackgroundBeams } from "@/components/ui/background-beams";
 export default function SignInPage() {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-surface-muted px-4 py-10">
-      <BackgroundBeams className="opacity-70" aria-hidden />
+      <BackgroundBeams className="opacity-90" aria-hidden />
       <div className="relative z-10">
         <Reveal y={14} duration={0.7}>
           <Link href="/" className="mb-6 flex justify-center" aria-label="Emplobo">
