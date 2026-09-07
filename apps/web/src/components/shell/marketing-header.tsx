@@ -161,23 +161,23 @@ export function MarketingHeader() {
             <SignInButton mode="redirect">
               <button
                 type="button"
-                className="inline-flex cursor-pointer items-center rounded-lg border border-secondary/50 px-3 py-2 font-label-md text-label-md text-secondary transition-all duration-300 hover:border-secondary hover:bg-surface-container-low hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-container-lowest active:translate-y-px md:px-4 md:py-2.5"
+                className="inline-flex h-9 cursor-pointer items-center rounded-lg border border-secondary/50 px-3.5 font-label-md text-label-md text-secondary transition-all duration-300 hover:border-secondary hover:bg-surface-container-low hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-container-lowest active:translate-y-px md:h-10 md:px-4"
               >
                 Masuk
               </button>
             </SignInButton>
-            {/* Mobile: compact icon sign-up; desktop: full CTA button */}
+            {/* Mobile: compact text sign-up; desktop: full CTA button */}
             <Link
               href="/sign-up"
-              aria-label="Daftar — Mulai gratis"
-              title="Mulai gratis"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px md:hidden"
+              aria-label="Mulai — daftar sekarang"
+              title="Mulai"
+              className="inline-flex h-9 items-center rounded-lg bg-primary px-3.5 font-label-md text-label-md text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px md:hidden"
             >
-              <span className="material-symbols-outlined text-[20px]">person_add</span>
+              Mulai
             </Link>
             <Link
               href="/sign-up"
-              className="group hidden items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 font-label-md text-label-md text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px md:inline-flex"
+              className="group hidden items-center gap-1.5 rounded-lg bg-primary px-4 font-label-md text-label-md text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px md:inline-flex md:h-10"
             >
               Mulai gratis
               <svg
@@ -200,7 +200,7 @@ export function MarketingHeader() {
           <SignedIn>
             <Link
               href="/app"
-              className="group hidden items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 font-label-md text-label-md text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px md:inline-flex"
+              className="group hidden items-center gap-1.5 rounded-lg bg-primary px-4 font-label-md text-label-md text-on-primary shadow-sm transition-all duration-300 hover:bg-primary-container hover:shadow-[0_8px_20px_-8px_rgba(20,66,37,0.5)] active:translate-y-px md:inline-flex md:h-10"
             >
               Buka app
               <svg
