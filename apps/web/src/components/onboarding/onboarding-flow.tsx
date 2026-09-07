@@ -313,7 +313,7 @@ export function OnboardingFlow() {
             ) : null}
 
             {effectiveStep === "create" ? (
-              <div className="mt-8 w-full [&_.cl-cardBox]:mx-auto!">
+              <div className="mt-8 w-full [&_.cl-rootBox]:mx-auto! [&_.cl-cardBox]:mx-auto!">
                 <CreateOrganization afterCreateOrganizationUrl="/app" />
                 <div className="mt-6 flex justify-center">
                   <BackLink onClick={() => setStep("choose")} />
