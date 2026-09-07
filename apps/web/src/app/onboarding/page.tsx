@@ -17,7 +17,7 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-surface-muted">
+    <div className="flex min-h-screen flex-col overflow-x-clip bg-surface-muted">
       <header className="border-b border-outline-variant bg-surface-container-lowest/95 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-container items-center justify-between px-4 md:px-10">
           <Link href="/" aria-label="Emplobo">
