@@ -2,6 +2,7 @@
 
 import { useOrganization } from "@clerk/nextjs";
 import { useEffect, useRef, useState } from "react";
+import { Dialog } from "@/components/ui/dialog";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -75,19 +76,19 @@ export function InviteEmployeeDialog() {
       </button>
 
       {isOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="invite-dialog-title"
+        <Dialog
+          onClose={() => setIsOpen(false)}
+          labelledBy="invite-dialog-title"
         >
-          <button
-            type="button"
-            aria-label="Tutup"
-            onClick={() => setIsOpen(false)}
-            className="absolute inset-0 cursor-default bg-on-surface/45 backdrop-blur-sm"
-          />
-          <div className="relative w-full max-w-md rounded-xl border border-outline-variant bg-surface-container-lowest p-6 shadow-lg sm:p-8">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              aria-label="Tutup dialog"
+              className="absolute -right-2 -top-2 grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-on-surface"
+            >
+              <span className="material-symbols-outlined text-[20px]">close</span>
+            </button>
             <h2
               id="invite-dialog-title"
               className="font-headline-sm text-headline-sm text-on-surface"
@@ -166,7 +167,7 @@ export function InviteEmployeeDialog() {
               </div>
             </form>
           </div>
-        </div>
+        </Dialog>
       ) : null}
     </>
   );

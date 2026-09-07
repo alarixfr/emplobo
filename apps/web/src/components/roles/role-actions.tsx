@@ -4,41 +4,12 @@ import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ApiError, apiFetch } from "@/lib/api";
+import { Dialog } from "@/components/ui/dialog";
 
 type RoleActionsProps = {
   role: { id: string; name: string; description: string | null };
   redirectOnDelete?: string;
 };
-
-function ModalShell({
-  onClose,
-  children,
-}: {
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <button
-        type="button"
-        aria-label="Tutup"
-        onClick={onClose}
-        className="absolute inset-0 cursor-default bg-on-surface/45 backdrop-blur-sm"
-      />
-      <div className="relative w-full max-w-md rounded-xl border border-outline-variant bg-surface-container-lowest p-6 shadow-lg sm:p-8">
-        {children}
-      </div>
-    </div>
-  );
-}
 
 export function RoleActions({ role, redirectOnDelete }: RoleActionsProps) {
   const { getToken } = useAuth();
@@ -133,7 +104,7 @@ export function RoleActions({ role, redirectOnDelete }: RoleActionsProps) {
       </button>
 
       {mode === "edit" ? (
-        <ModalShell onClose={() => setMode("closed")}>
+        <Dialog onClose={() => setMode("closed")}>
           <span className="material-symbols-outlined ms-fill text-[24px] text-primary">
             edit
           </span>
@@ -204,11 +175,11 @@ export function RoleActions({ role, redirectOnDelete }: RoleActionsProps) {
               </button>
             </div>
           </form>
-        </ModalShell>
+        </Dialog>
       ) : null}
 
       {mode === "delete" ? (
-        <ModalShell onClose={() => setMode("closed")}>
+        <Dialog onClose={() => setMode("closed")}>
           <span className="material-symbols-outlined ms-fill text-[24px] text-error">
             warning
           </span>
@@ -274,7 +245,7 @@ export function RoleActions({ role, redirectOnDelete }: RoleActionsProps) {
               {saving ? "MENGHAPUS…" : "HAPUS PERMANEN"}
             </button>
           </div>
-        </ModalShell>
+        </Dialog>
       ) : null}
     </>
   );
