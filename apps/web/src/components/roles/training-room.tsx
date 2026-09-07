@@ -41,12 +41,30 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
     initialSelectedRoleId,
   );
 
+  // Live copy of the roles list: the prop is a server snapshot taken at page
+  // load, so the rails (Roles Context / mobile) would otherwise keep showing a
+  // stale completeness % forever while training in this session. Every poll
+  // and message response patches the current role here so the whole room
+  // stays in sync in realtime.
+  const [liveRoles, setLiveRoles] = useState<TrainingRoleSummary[]>(roles);
+
   const selectedRole = useMemo(
-    () => roles.find((role) => role.id === selectedRoleId) ?? null,
-    [roles, selectedRoleId],
+    () => liveRoles.find((role) => role.id === selectedRoleId) ?? null,
+    [liveRoles, selectedRoleId],
   );
 
   const [missingAreas, setMissingAreas] = useState<string[]>([]);
+
+  function applyLiveRoleUpdate(
+    roleId: string,
+    patch: { status?: RoleStatus; completenessScore?: number },
+  ) {
+    setLiveRoles((prev) =>
+      prev.map((role) =>
+        role.id === roleId ? { ...role, ...patch } : role,
+      ),
+    );
+  }
 
   if (!selectedRole) {
     return (
@@ -76,7 +94,7 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
       {/* Mobile role switcher (left rail is hidden on small screens) */}
       <div className="lg:hidden">
         <MobileRoleRail
-          roles={roles}
+          roles={liveRoles}
           activeRoleId={selectedRole.id}
           onSelect={selectRole}
         />
@@ -90,7 +108,7 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
           </h2>
         </div>
         <div className="scroll-slim flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto bg-surface-container-low p-4">
-          {roles.map((role) => {
+          {liveRoles.map((role) => {
             const active = role.id === selectedRole.id;
             const statusLabel =
               role.status === "PUBLISHED"
@@ -145,6 +163,7 @@ export function TrainingRoom({ roles, initialRoleId }: TrainingRoomProps) {
         role={selectedRole}
         missingAreas={missingAreas}
         setMissingAreas={setMissingAreas}
+        onRoleUpdated={(roleId, patch) => applyLiveRoleUpdate(roleId, patch)}
       />
     </div>
   );
@@ -154,9 +173,18 @@ type RoleTrainingChatProps = {
   role: TrainingRoleSummary;
   missingAreas: string[];
   setMissingAreas: Dispatch<SetStateAction<string[]>>;
+  onRoleUpdated?: (
+    roleId: string,
+    patch: { status?: RoleStatus; completenessScore?: number },
+  ) => void;
 };
 
-function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingChatProps) {
+function RoleTrainingChat({
+  role,
+  missingAreas,
+  setMissingAreas,
+  onRoleUpdated,
+}: RoleTrainingChatProps) {
   const { getToken, isLoaded } = useAuth();
   const [messages, setMessages] = useState<TrainingMessage[]>([]);
   const [input, setInput] = useState("");
@@ -356,8 +384,13 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
   }
 
   // Idle status polling (Section 6) — GET /api/roles/:id overlays the 30s
-  // role-status cache; also refreshes the Knowledge Gaps list.
-  async function pollStatus() {
+  // role-status cache; also refreshes the Knowledge Gaps list. Returns the
+  // fetched freshness so callers (the post-message sync loop) can detect when
+  // a background evaluation has changed the score.
+  async function pollStatus(): Promise<{
+    status: RoleStatus;
+    completenessScore: number;
+  } | null> {
     try {
       const data = await withToken((token) =>
         apiFetch<{
@@ -375,8 +408,47 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
       if (data.missingAreas) {
         setMissingAreas(data.missingAreas);
       }
+      // Feed the fresh progress back to the rails (Roles Context / mobile) so
+      // every status label and % updates in realtime, not just the ring.
+      onRoleUpdated?.(role.id, {
+        status: data.role.status,
+        completenessScore: data.role.completenessScore,
+      });
+      return {
+        status: data.role.status,
+        completenessScore: data.role.completenessScore,
+      };
     } catch {
       // Polling is best-effort — never surface transient errors here.
+      return null;
+    }
+  }
+
+  // The background completeness evaluation is NOT awaited by the message POST,
+  // so its result can land several seconds later. After each message, poll for
+  // a short bounded window and stop early once the score/status has been stable
+  // for two consecutive reads — this is what makes Kesiapan AI (and gaps) tick
+  // up in near-realtime instead of waiting for the 30s idle interval.
+  async function syncAfterMessage() {
+    let last: { status: RoleStatus; completenessScore: number } | null = null;
+    let stable = 0;
+    const wait = (ms: number) =>
+      new Promise<void>((resolve) => setTimeout(resolve, ms));
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const current = await pollStatus();
+      if (current && last) {
+        if (
+          last.status === current.status &&
+          last.completenessScore === current.completenessScore
+        ) {
+          stable += 1;
+          if (stable >= 2) break;
+        } else {
+          stable = 0;
+        }
+      }
+      last = current;
+      await wait(4000);
     }
   }
 
@@ -441,17 +513,21 @@ function RoleTrainingChat({ role, missingAreas, setMissingAreas }: RoleTrainingC
           ]);
           setStatus(data.role.status);
           setCompleteness(data.role.completenessScore);
+          onRoleUpdated?.(role.id, {
+            status: data.role.status,
+            completenessScore: data.role.completenessScore,
+          });
           // A re-score may have run inside this request — apply the fresh
           // knowledge gaps immediately instead of waiting for the 30s poll.
           if (data.missingAreas) {
             setMissingAreas(data.missingAreas);
           }
-          // Scoring now runs in the background after a message; a single
-          // quick re-poll ~3.5s later picks up the updated score/status/gaps
-          // so the room stays in sync without waiting for the 30s interval.
+          // Scoring runs in the BACKGROUND after a message and is not awaited,
+          // so a single early re-poll would miss it. Run a bounded sync loop
+          // that keeps polling until the score/status settles (Section 6 sync).
           if (statusRefreshRef.current) window.clearTimeout(statusRefreshRef.current);
           statusRefreshRef.current = window.setTimeout(() => {
-            void pollStatus();
+            void syncAfterMessage();
           }, 3500);
           return;
         } catch (err) {

@@ -655,21 +655,11 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           return;
         }
 
-        // Section 6 — role status is polled for the "Generate Guide" CTA.
-        // Try the 30s cache first; on a hit, overlay the cached status fields
-        // onto the fresh DB row (id/name/description etc. still come from
-        // Postgres — never cache lock state, it changes with heartbeats).
-        const cachedStatus = await cache.getRoleStatus<{
-          status: RoleStatus;
-          completenessScore: number;
-          trainingMessageCount: number;
-        }>(id.data);
-        if (cachedStatus) {
-          role.status = cachedStatus.status;
-          role.completenessScore = cachedStatus.completenessScore;
-          role.trainingMessageCount = cachedStatus.trainingMessageCount;
-        }
-
+        // Previously the 30s role-status cache was overlaid here. That is a
+        // pure bug: evaluations write the DB FIRST then the cache, and nothing
+        // updates the cache without updating the DB, so the DB row is always
+        // at least as fresh as the cache — the overlay could only serve stale
+        // status/completeness to the training-room poll. Use the fresh row.
         const gaps = await cache.getJson<{
           missingAreas: string[];
           updatedAt: string;
