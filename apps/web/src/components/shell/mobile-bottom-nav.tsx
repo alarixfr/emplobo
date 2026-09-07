@@ -15,6 +15,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/app/knowledge", label: "Ilmu", icon: "database" },
   { href: "/app/content", label: "Konten", icon: "edit_note" },
   { href: "/app/roles", label: "Peran", icon: "menu_book" },
+  { href: "/app/employees", label: "Karyawan", icon: "group" },
 ];
 
 const EMPLOYEE_NAV: NavItem[] = [
