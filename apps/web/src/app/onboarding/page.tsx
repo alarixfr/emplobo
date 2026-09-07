@@ -6,15 +6,17 @@ import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
 import { MarketingFooter } from "@/components/shell/marketing-footer";
 
 export default async function OnboardingPage() {
-  const { userId, orgId } = await auth();
+  const { userId } = await auth();
 
   if (!userId) {
     redirect("/sign-in");
   }
 
-  if (orgId) {
-    redirect("/app");
-  }
+  // NOTE: no `if (orgId) redirect("/app")` here on purpose. OnboardingFlow is
+  // the entry point for every signed-in user after login, and whether they go
+  // to the dashboard, the business picker, or the invite-accept screen depends
+  // on the full org list + pending invitations — data only Clerk exposes
+  // client-side. Routing everyone here lets that decision happen in one place.
 
   return (
     <div className="flex min-h-screen flex-col overflow-x-clip bg-surface-muted">

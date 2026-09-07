@@ -2,7 +2,7 @@
 
 import { CreateOrganization, useOrganizationList, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { EASE_OUT, gsap, prefersReducedMotion } from "@/lib/motion";
 
 type Step = "auto" | "choose" | "create" | "join" | "select";
@@ -48,11 +48,16 @@ export function OnboardingFlow() {
   const pendingInvitations = (userInvitations.data ?? []).filter(
     (inv) => inv.status === "pending",
   );
-  const memberships = userMemberships.data ?? [];
+  const memberships = useMemo(
+    () => userMemberships.data ?? [],
+    [userMemberships.data],
+  );
 
   // Decide the entry step from the user's actual state instead of asking:
   // an employee who already has a pending invitation is routed straight to
-  // accepting it; someone already in a business is offered that business.
+  // accepting it (and can still switch to an existing business below).
+  // Someone in two+ businesses gets a picker; someone in exactly one is sent
+  // straight to their dashboard ("single"); a brand-new user creates an org.
   // The "create organization" screen is only reachable through the explicit
   // owner/HR choice — never a default landing for confused employees.
   const effectiveStep =
@@ -60,9 +65,11 @@ export function OnboardingFlow() {
       ? step
       : pendingInvitations.length > 0
         ? "join"
-        : memberships.length > 0
+        : memberships.length > 1
           ? "select"
-          : "choose";
+          : memberships.length === 1
+            ? "single"
+            : "choose";
 
   const email = user?.primaryEmailAddress?.emailAddress ?? "";
 
@@ -85,12 +92,38 @@ export function OnboardingFlow() {
     return () => ctx.revert();
   }, [isLoaded, effectiveStep]);
 
+  // Single-org owners glide straight into their dashboard — no picker.
+  // Multi-org and invited users are handled by the "select"/"join" steps,
+  // and the phantom "single" state only ever lives for one render cycle
+  // (it's gated by the loading block in the render below). Activate the org
+  // explicitly so /app never bounces back here when no org is active yet.
+  const autoAdvancedRef = useRef(false);
+  useLayoutEffect(() => {
+    if (!isLoaded || effectiveStep !== "single" || autoAdvancedRef.current) return;
+    autoAdvancedRef.current = true;
+    const target = memberships[0];
+    if (!target) return;
+    const orgId = target.organization.id;
+    void (async () => {
+      await setActive?.({ organization: orgId });
+      router.replace("/app");
+    })();
+  }, [isLoaded, effectiveStep, memberships, router, setActive]);
+
   const handleJoin = async (invitation: NonNullable<typeof userInvitations.data>[number]) => {
     setBusyId(invitation.id);
     setError(null);
     try {
       await invitation.accept();
-      router.push("/app");
+      // Accepting an invitation alone does not reliably activate the org in
+      // the session — this is what used to strand users on /onboarding until
+      // a manual reload. Activate the org explicitly before navigating so
+      // /app's layout sees the org context on the very first render.
+      const invitedOrgId = invitation.publicOrganizationData.id;
+      if (invitedOrgId) {
+        await setActive?.({ organization: invitedOrgId });
+      }
+      router.replace("/app");
       router.refresh();
     } catch {
       setError("Gagal menerima undangan. Silakan coba lagi.");
@@ -103,7 +136,7 @@ export function OnboardingFlow() {
     setError(null);
     try {
       await setActive?.({ organization: orgId });
-      router.push("/app");
+      router.replace("/app");
       router.refresh();
     } catch {
       setError("Gagal memilih bisnis. Silakan coba lagi.");
@@ -120,7 +153,7 @@ export function OnboardingFlow() {
           : "w-full max-w-lg rounded-lg border border-outline-variant bg-surface-container-lowest p-6 text-center shadow-sm sm:p-8 md:p-10"
       }
     >
-      {!isLoaded ? (
+      {!isLoaded || effectiveStep === "single" ? (
           <div role="status" aria-label="Memuat" className="mx-auto flex max-w-xs flex-col items-center py-8">
             <div className="h-14 w-14 animate-pulse rounded-full bg-surface-container-high" />
             <div className="mt-5 h-5 w-44 animate-pulse rounded bg-surface-container-high" />
@@ -161,7 +194,8 @@ export function OnboardingFlow() {
                   Pilih bisnis Anda
                 </h1>
                 <p className="mt-2 font-body-md text-body-md text-pretty text-on-surface-variant">
-                  Anda sudah terdaftar di bisnis berikut. Pilih untuk melanjutkan.
+                  Pilih bisnis yang ingin Anda buka, atau terima undangan belajar yang
+                  masuk.
                 </p>
               </>
             ) : (
@@ -220,37 +254,70 @@ export function OnboardingFlow() {
               </div>
             ) : null}
 
-            {effectiveStep === "join" && pendingInvitations.length > 0 ? (
-              <>
-                <div className="mt-8 grid gap-3 text-left">
-                  {pendingInvitations.map((inv) => (
-                    <div
-                      key={inv.id}
-                      className="flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
-                    >
-                      <div className="min-w-0 break-words">
-                        <p className="font-headline-sm text-[16px] text-on-surface">
-                          {inv.publicOrganizationData.name}
-                        </p>
-                        <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-                          Undangan belajar dari pemilik bisnis
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={busyId !== null}
-                        onClick={() => handleJoin(inv)}
-                        className="w-full shrink-0 cursor-pointer rounded-lg bg-primary px-4 py-3 font-label-md text-label-md text-on-primary transition-colors hover:bg-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:py-2.5"
+            {effectiveStep === "join" || effectiveStep === "select" ? (
+              <div className="mt-8 grid gap-5 text-left">
+                {pendingInvitations.length > 0 ? (
+                  <section className="space-y-3">
+                    <p className="font-label-caps text-label-caps text-secondary">
+                      UNDANGAN MASUK
+                    </p>
+                    {pendingInvitations.map((inv) => (
+                      <div
+                        key={inv.id}
+                        className="flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
                       >
-                        {busyId === inv.id ? "Menerima…" : "Terima"}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <p className="mt-4 font-body-sm text-body-sm text-on-surface-variant">
-                  Setelah menerima, Anda akan diarahkan ke materi pelatihan Anda.
-                </p>
-              </>
+                        <div className="min-w-0 break-words">
+                          <p className="font-headline-sm text-[16px] text-on-surface">
+                            {inv.publicOrganizationData.name}
+                          </p>
+                          <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+                            Undangan belajar dari pemilik bisnis
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={busyId !== null}
+                          onClick={() => handleJoin(inv)}
+                          className="w-full shrink-0 cursor-pointer rounded-lg bg-primary px-4 py-3 font-label-md text-label-md text-on-primary transition-colors hover:bg-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:py-2.5"
+                        >
+                          {busyId === inv.id ? "Menerima…" : "Terima"}
+                        </button>
+                      </div>
+                    ))}
+                  </section>
+                ) : null}
+
+                {memberships.length > 0 ? (
+                  <section className="space-y-3">
+                    <p className="font-label-caps text-label-caps text-secondary">
+                      BISNIS ANDA
+                    </p>
+                    {memberships.map((membership) => (
+                      <div
+                        key={membership.id}
+                        className="flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
+                      >
+                        <div className="min-w-0 break-words">
+                          <p className="font-headline-sm text-[16px] text-on-surface">
+                            {membership.organization.name}
+                          </p>
+                          <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+                            {membership.role === "org:admin" ? "Pemilik / HR" : "Karyawan"}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={busyId !== null}
+                          onClick={() => handleSelect(membership.organization.id)}
+                          className="w-full shrink-0 cursor-pointer rounded-lg bg-primary px-4 py-3 font-label-md text-label-md text-on-primary transition-colors hover:bg-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:py-2.5"
+                        >
+                          {busyId === membership.organization.id ? "Membuka…" : "Pilih"}
+                        </button>
+                      </div>
+                    ))}
+                  </section>
+                ) : null}
+              </div>
             ) : null}
 
             {effectiveStep === "join" && pendingInvitations.length === 0 ? (
@@ -274,36 +341,6 @@ export function OnboardingFlow() {
                   Periksa lagi
                 </button>
               </div>
-            ) : null}
-
-            {effectiveStep === "select" && memberships.length > 0 ? (
-              <>
-                <div className="mt-8 grid gap-3 text-left">
-                  {memberships.map((membership) => (
-                    <div
-                      key={membership.id}
-                      className="flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 text-left sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
-                    >
-                      <div className="min-w-0 break-words">
-                        <p className="font-headline-sm text-[16px] text-on-surface">
-                          {membership.organization.name}
-                        </p>
-                        <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-                          {membership.role === "org:admin" ? "Pemilik / HR" : "Karyawan"}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={busyId !== null}
-                        onClick={() => handleSelect(membership.organization.id)}
-                        className="w-full shrink-0 cursor-pointer rounded-lg bg-primary px-4 py-3 font-label-md text-label-md text-on-primary transition-colors hover:bg-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:py-2.5"
-                      >
-                        {busyId === membership.organization.id ? "Membuka…" : "Pilih"}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </>
             ) : null}
 
             {error ? (

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { EmployeeDirectory } from "@/components/employees/employee-directory";
+import { InviteEmployeeDialog } from "@/components/employees/invite-employee-dialog";
 import { Reveal } from "@/components/motion/reveal";
 
 export default async function EmployeesPage() {
@@ -25,6 +26,7 @@ export default async function EmployeesPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <InviteEmployeeDialog />
             <Link
               href="/app/roles"
               className="inline-flex items-center gap-2 rounded-lg border border-secondary bg-surface-container-lowest px-4 py-2.5 font-label-caps text-label-caps text-secondary transition-colors hover:bg-surface-container-low"

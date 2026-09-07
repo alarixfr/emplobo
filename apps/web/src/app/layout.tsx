@@ -21,10 +21,10 @@ export default function RootLayout({
     <ClerkProvider
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
-      afterSignInUrl="/app"
+      afterSignInUrl="/onboarding"
       afterSignUpUrl="/onboarding"
       afterSignOutUrl="/"
-      signInFallbackRedirectUrl="/app"
+      signInFallbackRedirectUrl="/onboarding"
       signUpFallbackRedirectUrl="/onboarding"
     >
       <html lang="id">
