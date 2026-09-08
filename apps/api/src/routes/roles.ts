@@ -16,7 +16,7 @@ import {
 } from "../lib/ai.js";
 import { buildGuideRepairPrompt, buildGuideSystemPrompt, buildScoringPrompt, buildTrainingSystemPrompt } from "../lib/prompts.js";
 import { buildChangeSummary, chapterKey, type FlatChapter } from "../lib/guide-changes.js";
-import { createRateLimiter } from "../lib/rate-limit.js";
+import { createRateLimiter, createRefundableRateLimiter } from "../lib/rate-limit.js";
 import { logAiUsage } from "../lib/ai-usage.js";
 import { syncOrgMembersIfStale } from "../lib/membership.js";
 import type { Env } from "../env.js";
@@ -555,7 +555,12 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
     windowSeconds: TRAINING_RATE_WINDOW_SECONDS,
     prefix: "rl:training-messages",
   });
-  const guideGenLimiter = createRateLimiter(env, {
+  // Refundable counter for guide generation (Section 5.3): max 3/hour per
+  // Role. Unlike the sliding windows above, a slot is only permanently burned
+  // when generation actually succeeds — failed generations (invalid guide
+  // JSON, provider down after retries) release their slot back, so a user
+  // isn't locked out of retrying by a provider hiccup.
+  const guideGenLimiter = createRefundableRateLimiter(env, {
     limit: GUIDE_GEN_RATE_LIMIT,
     windowSeconds: GUIDE_GEN_RATE_WINDOW_SECONDS,
     prefix: "rl:guide-gen",
@@ -1409,6 +1414,8 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
     "/:id/guide/generate",
     async (req: Request, res: Response, next: NextFunction) => {
       let guideGenKey: string | null = null;
+      let guideQuotaKey: string | null = null;
+      let guideQuotaHeld = false;
       try {
         const auth = requireAuthContext(req);
         const id = z.string().cuid().safeParse(req.params.id);
@@ -1440,9 +1447,23 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           return;
         }
 
-        // Rate limit: max 3 generations/hour per Role (Section 5.3)
+        // Concurrency guard first — refusing because a generation is already
+        // running must not burn a quota slot.
         const roleKey = `${auth.orgId}:${role.id}`;
-        const limit = await guideGenLimiter(roleKey);
+        if (guideGenInFlight.has(roleKey)) {
+          res.status(409).json({
+            error:
+              "Pembuatan panduan sedang berjalan untuk role ini. Tunggu sebentar, lalu klik lagi.",
+          });
+          return;
+        }
+        guideGenInFlight.add(roleKey);
+        guideGenKey = roleKey;
+
+        // Rate limit: max 3 generations/hour per Role (Section 5.3). The slot
+        // stays held only when generation succeeds — on failure it is released
+        // below so a provider hiccup can't lock the user out of retrying.
+        const limit = await guideGenLimiter.acquire(roleKey);
         if (!limit.ok) {
           const retryAfter = limit.retryAfter ?? GUIDE_GEN_RATE_WINDOW_SECONDS;
           res.status(429).json({
@@ -1455,16 +1476,8 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           });
           return;
         }
-
-        if (guideGenInFlight.has(roleKey)) {
-          res.status(409).json({
-            error:
-              "Pembuatan panduan sedang berjalan untuk role ini. Tunggu sebentar, lalu klik lagi.",
-          });
-          return;
-        }
-        guideGenInFlight.add(roleKey);
-        guideGenKey = roleKey;
+        guideQuotaHeld = true;
+        guideQuotaKey = roleKey;
 
         // On updates, tell the model what already exists so it keeps coherent
         // chapters (and preserves titles of essentially-unchanged chapters,
@@ -1607,6 +1620,12 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
         }
 
         if (!generated) {
+          // Generation failed — give the quota slot back so retrying isn't
+          // penalized for a provider/tone glitch.
+          if (guideQuotaHeld && guideQuotaKey) {
+            await guideGenLimiter.release(guideQuotaKey).catch(() => undefined);
+            guideQuotaHeld = false;
+          }
           res.status(502).json({
             error: truncated
               ? "AI output terpotong saat membuat guide. Coba lagi, atau lanjutkan training lebih dulu."
@@ -1666,6 +1685,12 @@ export function createRolesRouter(requireAdmin: AuthMiddleware, env: Env): Route
           role: { id: role.id, status: role.status },
         });
       } catch (err) {
+        // Any unexpected failure inside generation also refunds the slot —
+        // a hard error must never silently consume one of the 3/hour quota.
+        if (guideQuotaHeld && guideQuotaKey) {
+          await guideGenLimiter.release(guideQuotaKey).catch(() => undefined);
+          guideQuotaHeld = false;
+        }
         next(err);
       } finally {
         if (guideGenKey) {

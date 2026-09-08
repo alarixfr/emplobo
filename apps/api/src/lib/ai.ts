@@ -36,7 +36,25 @@ export class AiEmptyReplyError extends Error {
   }
 }
 
-const MAX_TRANSIENT_RETRIES = 2;
+// Every AI flow retries transient upstream failures (provider 429 with a
+// short Retry-After, 5xx, dropped/timeout connections, empty-reply reasoning
+// models, output-budget truncation) this many times before giving up. Ten
+// retries is deliberately generous: guide generation and training turns are
+// the two moments a live demo is most likely to suffer a provider hiccup, and
+// a hard failure there is a hard product failure. Per-call `options.maxRetries`
+// can override it where a faster decision is preferred.
+const DEFAULT_MAX_TRANSIENT_RETRIES = 10;
+
+// Output-budget truncation (finish_reason "length") is repaired inside the
+// call by re-asking with a bigger max_tokens, bounded to a few bumps so a
+// model that cannot respect any budget is treated as a hard failure rather
+// than burning quota forever.
+const MAX_LENGTH_RETRIES = 3;
+const MAX_OUTPUT_BUDGET = 32_000;
+
+// Cap exponential backoff per step so a dead provider can't hold a request
+// hostage well past its own timeout (with jitter added on top).
+const BACKOFF_CAP_MS = 15_000;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -114,17 +132,25 @@ export function classifyProviderError(err: unknown): ProviderErrorInfo {
  * requires the key.
  *
  * Transient upstream failures (provider 429 with a short Retry-After, 5xx,
- * dropped/timeout connections) are retried a bounded number of times with
- * exponential backoff + jitter. Permanent provider errors (4xx other than
- * 429, aborts) and unknown errors propagate unchanged so the caller's own
- * error handling / Indonesian surface stays in control.
+ * dropped/timeout connections, empty-reply reasoning models) are retried up to
+ * `options.maxRetries` (default 10) with exponential backoff + jitter, honoring
+ * Retry-After when the provider gave one. Output-budget truncation is repaired
+ * inside the call by re-asking with a larger budget, so callers only ever see
+ * a complete reply or a hard error — never a half-sentence turn. Permanent
+ * provider errors (4xx other than 429, aborts) and unknown errors propagate
+ * unchanged so the caller's own error handling / Indonesian surface stays in
+ * control.
  */
 export async function callAiText(
   env: Env,
   system: string,
   messages: AiMessage[],
   maxTokens: number,
-  options: { timeoutMs?: number; fallbackReply: string } = {
+  options: {
+    timeoutMs?: number;
+    maxRetries?: number;
+    fallbackReply: string;
+  } = {
     timeoutMs: 60_000,
     fallbackReply: "",
   },
@@ -143,17 +169,21 @@ export async function callAiText(
     apiKey,
     baseURL: resolveAiBaseUrl(env),
     // One shot — assistant replies are persisted per turn, so a transparent
-    // retry could double-write a message. The routes own error handling.
-    // Transient failures are retried explicitly below.
+    // out-of-band retry could double-write a message. Retries are therefore
+    // explicit and bounded below.
     maxRetries: 0,
     timeout: options.timeoutMs ?? 60_000,
   });
+
+  const maxRetries = options.maxRetries ?? DEFAULT_MAX_TRANSIENT_RETRIES;
+  let budget = Math.min(maxTokens, MAX_OUTPUT_BUDGET);
+  let lengthRetries = 0;
 
   for (let attempt = 0; ; attempt++) {
     try {
       const completion = await client.chat.completions.create({
         model: env.AI_MODEL,
-        max_tokens: maxTokens,
+        max_tokens: budget,
         // Reasoning models (gpt-oss, qwen3) burn their whole output budget on
         // chain-of-thought unless steered. "minimal" is the default so replies
         // are complete, fast, and free of leaked thinking; it's configurable per
@@ -169,6 +199,17 @@ export async function callAiText(
         throw new AiEmptyReplyError();
       }
 
+      const finishReason = completion.choices?.[0]?.finish_reason ?? "stop";
+
+      // A reply cut short by the output budget is usually a half-sentence
+      // bubble. Rather than return it (and risk persisting a truncated turn),
+      // re-ask once with a larger budget right here — bounded by MAX_LENGTH_RETRIES.
+      if (finishReason === "length" && lengthRetries < MAX_LENGTH_RETRIES) {
+        lengthRetries += 1;
+        budget = Math.min(Math.round(budget * 1.5), MAX_OUTPUT_BUDGET);
+        continue;
+      }
+
       const promptJoined = [system, ...messages.map((m) => m.content)].join("\n");
       const tokensIn = completion.usage?.prompt_tokens ?? estimateTokens(promptJoined);
       const tokensOut = completion.usage?.completion_tokens ?? estimateTokens(text);
@@ -177,27 +218,26 @@ export async function callAiText(
         text,
         tokensIn,
         tokensOut,
-        finishReason: completion.choices?.[0]?.finish_reason ?? undefined,
+        finishReason,
       };
     } catch (err) {
       const info = classifyProviderError(err);
       const retryable = info.kind === "transient" || info.kind === "rate-limit"
         ? info.retryable
         : false;
-      if (!retryable || attempt + 1 >= MAX_TRANSIENT_RETRIES) {
+      if (!retryable || attempt + 1 >= maxRetries) {
         throw err;
       }
 
       // Backoff: settle on Retry-After when the provider gave one, else
-      // exponential with jitter (1s, then ~2s). Cap so a dead provider can't
-      // hold a request hostage past its own timeout.
+      // exponential with jitter (1s, 2s, 4s, ...), capped per step.
       const retryAfter = info.kind === "rate-limit" ? info.retryAfter : undefined;
       const baseMs =
         retryAfter !== undefined
           ? retryAfter * 1000
           : 1000 * 2 ** attempt;
       const jitter = Math.floor(Math.random() * 400);
-      await sleep(Math.min(baseMs, 60_000) + jitter);
+      await sleep(Math.min(baseMs, BACKOFF_CAP_MS) + jitter);
     }
   }
 }
