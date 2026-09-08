@@ -3,6 +3,7 @@
 import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { useLayoutEffect, useRef } from "react";
+import { BorderGlow } from "@/components/ui/border-glow";
 import KineticGrid from "@/components/ui/kinetic-grid";
 import { EASE_OUT, gsap, prefersReducedMotion } from "@/lib/motion";
 
@@ -251,8 +252,18 @@ export function LandingHero() {
 
       {/* ── The cockpit: live product mechanism, animated on load ── */}
       <div className="cockpit mx-auto w-full max-w-4xl px-4 pb-16 md:px-10 md:pb-20">
-        <div className="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-[0_24px_60px_-24px_rgba(0,0,0,0.35)]">
-          <div className="flex items-center justify-between border-b border-outline-variant bg-surface-container-low px-4 py-3">
+        <BorderGlow
+          edgeSensitivity={20}
+          glowColor="136 30 32"
+          backgroundColor="#ffffff"
+          borderRadius={8}
+          glowRadius={28}
+          glowIntensity={1.15}
+          coneSpread={20}
+          animated={!prefersReducedMotion()}
+          colors={["#3b6847", "#7cc48f", "#2d5a3a"]}
+        >
+          <div className="flex items-center justify-between rounded-t-[8px] border-b border-outline-variant bg-surface-container-low px-4 py-3">
             <div className="flex items-center gap-1.5" aria-hidden>
               <span className="h-2.5 w-2.5 rounded-full bg-surface-container-highest" />
               <span className="h-2.5 w-2.5 rounded-full bg-surface-container-highest" />
@@ -364,7 +375,7 @@ export function LandingHero() {
               </p>
             </div>
           </div>
-        </div>
+        </BorderGlow>
       </div>
     </section>
   );
