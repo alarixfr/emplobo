@@ -578,8 +578,8 @@ sekali penuh terhadap deployment live sebelum submit.
 
 1. **Dashboard Karyawan**: `/app` menampilkan kartu akses Learning Center.
 2. **Learning Center**: Buka `/app/my/modules`: kartu modul dengan ikon per role, status pill (BELUM MULAI / SEDANG BERLANGSUNG / SELESAI), progress bar + persentase, tombol Lanjutkan/Mulai, grid sertifikasi kompetensi, dan FAB **Tanya AI Tutor**.
-3. **Membaca Modul & Kuis**: Klik modul → guide reader (breadcrumb, badge "AI Verified", kategori, meta, TOC sticky + chapter progress, CTA "Kerjakan Kuis Bab") → kuis satu-soal-per-halaman ("Soal X dari Y", progress bar, Previous/Skip/Submit) dengan grading server-side, dan tandai selesai atau lulus kuis untuk mencatat progres pembelajaran.
-4. **Chat AI Tutor (24/7)**: Pindah ke tab "AI TUTOR (24/7)" pada modul terkait: header dengan avatar + indikator online, AI bubble indigo (`ai-bubble`), user bubble hijau, suggestion chips, typing indicator, dan disclaimer. AI tutor di-grounded ketat pada SOP/panduan peran tersebut (tidak mengarang prosedur yang belum diajarkan).
+3. **Membaca Modul & Kuis**: Klik modul → guide reader yang **melanjutkan ke bab yang belum dibaca** (bukan mulai dari awal: breadcrumb, badge "AI Verified", kategori, meta, TOC sticky + chapter progress, CTA "Kerjakan Kuis Bab"; di layar ponsel ada rail bab yang bisa di-scroll untuk loncat antar-bab plus progress "x/y bab selesai") → kuis satu-soal-per-halaman ("Soal X dari Y", progress bar, navigator soal untuk loncat/cek jawaban, Previous/Skip/Submit) dengan grading server-side, dan tandai selesai atau lulus kuis untuk mencatat progres pembelajaran.
+4. **Chat AI Tutor (24/7)**: Pindah ke tab "AI TUTOR (24/7)" pada modul terkait: header dengan avatar + indikator online serta nama peran ("AI Tutor: Kasir"), AI bubble indigo (`ai-bubble`), user bubble hijau, suggestion chips, typing indicator, dan disclaimer. AI tutor di-grounded ketat pada SOP/panduan peran tersebut (tidak mengarang prosedur yang belum diajarkan).
 
 #### Halaman Publik
 

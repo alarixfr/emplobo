@@ -131,6 +131,46 @@ export function ModuleQuizCard({
         <span>MIN. LULUS: 70</span>
       </div>
 
+      {result ? null : (
+        <div
+          aria-label="Navigasi soal"
+          className="scroll-slim mt-4 flex flex-wrap items-center gap-1.5"
+        >
+          {questions.map((q, qi) => {
+            const answered = selectedAnswers[qi] !== undefined;
+            const isCurrent = currentQuestion === qi;
+            return (
+              <button
+                key={q.id}
+                type="button"
+                onClick={() => setCurrentQuestion(qi)}
+                aria-current={isCurrent ? "true" : undefined}
+                aria-label={`Lompat ke soal ${qi + 1}${
+                  answered ? " (sudah dijawab)" : ""
+                }`}
+                className={`flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg border px-2 font-data-point text-data-point transition-colors ${
+                  isCurrent
+                    ? "border-primary bg-primary text-on-primary"
+                    : answered
+                      ? "border-primary-fixed-dim bg-primary-fixed/40 text-on-primary-fixed-variant"
+                      : "border-outline-variant bg-surface-container-lowest text-secondary hover:bg-surface-container-high"
+                }`}
+              >
+                {answered ? (
+                  <span
+                    className="material-symbols-outlined text-[14px]"
+                    aria-hidden="true"
+                  >
+                    check
+                  </span>
+                ) : null}
+                {qi + 1}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {result ? (
         /* ── Result view ─────────────────────────────────────────────── */
         <div className="animate-fade-rise mt-8 space-y-4" aria-live="polite">

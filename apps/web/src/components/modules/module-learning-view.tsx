@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useAuth } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api";
+import type { EmployeeModuleSummary } from "@/lib/modules";
 import { EmployeeChatTutor } from "./employee-chat-tutor";
 import { ModuleReader } from "./module-reader";
 
@@ -15,7 +18,32 @@ type ModuleLearningViewProps = {
  * messages, scroll) survive a tab switch instead of remounting fresh.
  */
 export function ModuleLearningView({ roleId, initialTab = "reader" }: ModuleLearningViewProps) {
+  const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<"reader" | "tutor">(initialTab);
+  const [roleName, setRoleName] = useState<string | null>(null);
+
+  // Best-effort: give the tutor a friendlier "AI Tutor: <Peran>" header.
+  // Not worth gating the whole page on; default to plain "AI Tutor" if it
+  // fails or the role can't be found.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const data = await apiFetch<EmployeeModuleSummary[]>(`/api/my/modules`, {
+          token,
+        });
+        const match = data.find((m) => m.role.id === roleId);
+        if (!cancelled && match) setRoleName(match.role.name);
+      } catch {
+        // ignore — cosmetic label only
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [getToken, roleId]);
 
   return (
     <div className="space-y-6">
@@ -24,6 +52,8 @@ export function ModuleLearningView({ roleId, initialTab = "reader" }: ModuleLear
         <button
           type="button"
           onClick={() => setActiveTab("reader")}
+          aria-pressed={activeTab === "reader"}
+          aria-controls="panel-reader"
           className={`flex items-center gap-2 border-b-2 pb-3 pt-2 font-label-caps text-label-caps transition-colors ${
             activeTab === "reader"
               ? "border-primary font-bold text-primary"
@@ -39,6 +69,8 @@ export function ModuleLearningView({ roleId, initialTab = "reader" }: ModuleLear
         <button
           type="button"
           onClick={() => setActiveTab("tutor")}
+          aria-pressed={activeTab === "tutor"}
+          aria-controls="panel-tutor"
           className={`flex items-center gap-2 border-b-2 pb-3 pt-2 font-label-caps text-label-caps transition-colors ${
             activeTab === "tutor"
               ? "border-primary font-bold text-primary"
@@ -52,11 +84,11 @@ export function ModuleLearningView({ roleId, initialTab = "reader" }: ModuleLear
         </button>
       </div>
 
-      <div className={activeTab === "reader" ? "block" : "hidden"}>
+      <div id="panel-reader" className={activeTab === "reader" ? "block" : "hidden"}>
         <ModuleReader roleId={roleId} />
       </div>
-      <div className={activeTab === "tutor" ? "block" : "hidden"}>
-        <EmployeeChatTutor roleId={roleId} />
+      <div id="panel-tutor" className={activeTab === "tutor" ? "block" : "hidden"}>
+        <EmployeeChatTutor roleId={roleId} roleName={roleName ?? undefined} />
       </div>
     </div>
   );

@@ -121,7 +121,15 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
       setGuide(data.guide);
       setChapters(data.chapters);
       setHasGuideUpdate(data.hasGuideUpdate);
-      setActiveChapterId((prev) => prev ?? data.chapters[0]?.id ?? null);
+      // Resume instead of restart: land on the first *unread* chapter (the
+      // employee's actual next task), falling back to chapter 1 when the
+      // module is already fully read (replay/refresh).
+      setActiveChapterId((prev) => {
+        if (prev) return prev;
+        const firstIncomplete =
+          data.chapters.find((chapter) => chapter.completedAt === null) ?? null;
+        return (firstIncomplete ?? data.chapters[0] ?? null)?.id ?? null;
+      });
 
       // Load the assigned-module list so the last-chapter footer can offer
       // the next module (or confirm there is none left). Best-effort — a
@@ -243,37 +251,89 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
           </div>
         ) : null}
 
-        {/* Mobile chapter stepper — desktop has the sticky TOC instead */}
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-outline-variant bg-surface-container-lowest p-2 shadow-sm lg:hidden">
-          <button
-            type="button"
-            onClick={() =>
-              hasPrev && setActiveChapterId(chapters[activeIndex - 1]!.id)
-            }
-            disabled={!hasPrev}
-            aria-label="Bab sebelumnya"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              arrow_back
+        {/* Mobile chapter navigation — desktop gets the sticky TOC instead */}
+        <div className="mb-4 space-y-2 rounded-lg border border-outline-variant bg-surface-container-lowest p-3 shadow-sm lg:hidden">
+          {/* Prev / next step + current position */}
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() =>
+                hasPrev && setActiveChapterId(chapters[activeIndex - 1]!.id)
+              }
+              disabled={!hasPrev}
+              aria-label="Bab sebelumnya"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                arrow_back
+              </span>
+            </button>
+            <span className="font-data-point text-data-point text-on-surface">
+              BAB {activeIndex + 1} / {chapters.length}
             </span>
-          </button>
-          <span className="font-data-point text-data-point text-on-surface">
-            BAB {activeIndex + 1} / {chapters.length}
-          </span>
-          <button
-            type="button"
-            onClick={() =>
-              hasNext && setActiveChapterId(chapters[activeIndex + 1]!.id)
-            }
-            disabled={!hasNext}
-            aria-label="Bab berikutnya"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              arrow_forward
+            <button
+              type="button"
+              onClick={() =>
+                hasNext && setActiveChapterId(chapters[activeIndex + 1]!.id)
+              }
+              disabled={!hasNext}
+              aria-label="Bab berikutnya"
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-secondary transition-colors hover:bg-surface-container-low disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                arrow_forward
+              </span>
+            </button>
+          </div>
+
+          {/* Overall progress — mobile has no sidebar, so this is its only
+              glanceable readout of where the employee stands in the module. */}
+          <div className="flex items-center gap-3">
+            <ProgressBar percent={progressPercent} className="h-1.5 flex-1" />
+            <span className="shrink-0 font-label-caps text-[10px] text-secondary">
+              {completedCount}/{chapters.length} BAB
             </span>
-          </button>
+          </div>
+
+          {/* Chapter rail — jump straight to any chapter from the phone
+              instead of stepping one by one. */}
+          <div
+            aria-label="Daftar bab"
+            className="scroll-slim -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1"
+          >
+            {chapters.map((chapter, idx) => {
+              const isActive = chapter.id === activeChapter.id;
+              const isDone = chapter.completedAt !== null;
+              return (
+                <button
+                  key={chapter.id}
+                  type="button"
+                  onClick={() => setActiveChapterId(chapter.id)}
+                  aria-current={isActive ? "true" : undefined}
+                  aria-label={`Bab ${idx + 1}: ${chapter.title}${
+                    isDone ? " (selesai)" : ""
+                  }`}
+                  className={`flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 font-data-point text-data-point transition-colors ${
+                    isActive
+                      ? "border-primary bg-primary text-on-primary"
+                      : isDone
+                        ? "border-primary-fixed-dim bg-primary-fixed/40 text-on-primary-fixed-variant"
+                        : "border-outline-variant bg-surface-container-lowest text-secondary"
+                  }`}
+                >
+                  {isDone ? (
+                    <span
+                      className="material-symbols-outlined text-[14px]"
+                      aria-hidden="true"
+                    >
+                      check
+                    </span>
+                  ) : null}
+                  {idx + 1}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <article className="relative rounded-lg border border-outline-variant bg-surface-container-lowest p-6 shadow-sm md:p-10">
@@ -511,6 +571,7 @@ export function ModuleReader({ roleId }: ModuleReaderProps) {
                     <button
                       type="button"
                       onClick={() => setActiveChapterId(chapter.id)}
+                      aria-current={isActive ? "true" : undefined}
                       className={`block w-full border-l-4 py-2 pl-3 pr-2 text-left font-body-sm text-body-sm transition-colors ${
                         isActive
                           ? "border-primary font-medium text-primary"
