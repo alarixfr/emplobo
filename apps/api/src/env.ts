@@ -31,6 +31,13 @@ const envSchema = z
     AI_REASONING_EFFORT: z
       .enum(["minimal", "low", "medium", "high"])
       .default("minimal"),
+    // Backup gateway — the LAST resort before an AI error reaches a user.
+    // Used only after the primary exhausts every transient retry (industry
+    // standard provider failover). All three vars are optional but must be
+    // set together or failover is disabled.
+    AI_BACKUP_BASE_URL: z.string().url().optional(),
+    AI_BACKUP_API_KEY: z.string().min(1).optional(),
+    AI_BACKUP_MODEL: z.string().min(1).optional(),
     OPENROUTER_API_KEY: z.string().optional(),
     OPENROUTER_MODEL: z.string().min(1).optional(),
     UPSTASH_REDIS_REST_URL: z.string().optional(),
@@ -49,6 +56,21 @@ const envSchema = z
         code: z.ZodIssueCode.custom,
         path: ["AI_API_KEY"],
         message: "required when NODE_ENV=production",
+      });
+    }
+    // Partial backup config is worse than none: failover would be silently
+    // disabled at the call site. Fail loudly at boot instead.
+    const backupSet = [
+      env.AI_BACKUP_BASE_URL,
+      env.AI_BACKUP_API_KEY,
+      env.AI_BACKUP_MODEL,
+    ].filter((v) => Boolean(v && v.trim()));
+    if (backupSet.length > 0 && backupSet.length < 3) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["AI_BACKUP_BASE_URL"],
+        message:
+          "backup failover is all-or-nothing: set AI_BACKUP_BASE_URL, AI_BACKUP_API_KEY, and AI_BACKUP_MODEL together (or none of them)",
       });
     }
   });
@@ -70,6 +92,9 @@ export function loadEnv(): Env {
     AI_BASE_URL: process.env.AI_BASE_URL,
     AI_MODEL: process.env.AI_MODEL,
     AI_REASONING_EFFORT: process.env.AI_REASONING_EFFORT,
+    AI_BACKUP_BASE_URL: process.env.AI_BACKUP_BASE_URL,
+    AI_BACKUP_API_KEY: process.env.AI_BACKUP_API_KEY,
+    AI_BACKUP_MODEL: process.env.AI_BACKUP_MODEL,
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,

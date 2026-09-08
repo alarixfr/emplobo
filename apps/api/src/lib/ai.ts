@@ -5,6 +5,7 @@ import OpenAI, {
   APIUserAbortError,
   RateLimitError,
 } from "openai";
+import type { ReasoningEffort } from "openai/resources/shared.js";
 import type { Env } from "../env.js";
 
 export type AiMessage = {
@@ -55,6 +56,20 @@ const MAX_OUTPUT_BUDGET = 32_000;
 // Cap exponential backoff per step so a dead provider can't hold a request
 // hostage well past its own timeout (with jitter added on top).
 const BACKOFF_CAP_MS = 15_000;
+
+// The backup gateway is the LAST resort before a user-facing error: a couple
+// of quick transient retries is enough — it should fail fast, not stack
+// another minute of backoff on top of the primary's exhausted retries.
+const BACKUP_MAX_RETRIES = 3;
+
+// A single OpenAI-compatible endpoint (primary or backup) fully described by
+// env. Backup is enabled only when every AI_BACKUP_* var is set.
+type ProviderConfig = {
+  apiKey: string;
+  baseURL: string;
+  model: string;
+  reasoningEffort?: ReasoningEffort;
+};
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -124,72 +139,46 @@ export function classifyProviderError(err: unknown): ProviderErrorInfo {
 }
 
 /**
- * Single OpenAI-compatible Chat Completions call used by every AI flow
- * (training, scoring, guide generation, employee tutor), via the official
- * OpenAI SDK pointed at an OpenAI-compatible gateway. When no API key is
- * configured (local development), a canned Indonesian reply is returned
- * instead, keeping the flow functional without a network call — production
- * requires the key.
- *
- * Transient upstream failures (provider 429 with a short Retry-After, 5xx,
- * dropped/timeout connections, empty-reply reasoning models) are retried up to
- * `options.maxRetries` (default 10) with exponential backoff + jitter, honoring
- * Retry-After when the provider gave one. Output-budget truncation is repaired
- * inside the call by re-asking with a larger budget, so callers only ever see
- * a complete reply or a hard error — never a half-sentence turn. Permanent
- * provider errors (4xx other than 429, aborts) and unknown errors propagate
- * unchanged so the caller's own error handling / Indonesian surface stays in
- * control.
+ * Run one provider to completion: transient failures (provider 429 with a
+ * short Retry-After, 5xx, dropped/timeout connections, empty-reply reasoning
+ * models) are retried up to `maxRetries` with exponential backoff + jitter,
+ * honoring Retry-After. Output-budget truncation is repaired inside the call
+ * by re-asking with a larger budget. The caller only ever sees a complete
+ * reply or a hard error — never a half-sentence turn.
  */
-export async function callAiText(
-  env: Env,
+async function runProvider(
+  provider: ProviderConfig,
   system: string,
   messages: AiMessage[],
   maxTokens: number,
-  options: {
-    timeoutMs?: number;
-    maxRetries?: number;
-    fallbackReply: string;
-  } = {
-    timeoutMs: 60_000,
-    fallbackReply: "",
-  },
+  opts: { timeoutMs: number; maxRetries: number },
 ): Promise<AiCallResult> {
-  const apiKey = env.AI_API_KEY?.trim() || env.OPENROUTER_API_KEY?.trim();
-  if (!apiKey) {
-    return {
-      text: options.fallbackReply,
-      tokensIn: 0,
-      tokensOut: 0,
-      finishReason: "stop",
-    };
-  }
-
   const client = new OpenAI({
-    apiKey,
-    baseURL: resolveAiBaseUrl(env),
+    apiKey: provider.apiKey,
+    baseURL: provider.baseURL,
     // One shot — assistant replies are persisted per turn, so a transparent
     // out-of-band retry could double-write a message. Retries are therefore
     // explicit and bounded below.
     maxRetries: 0,
-    timeout: options.timeoutMs ?? 60_000,
+    timeout: opts.timeoutMs,
   });
 
-  const maxRetries = options.maxRetries ?? DEFAULT_MAX_TRANSIENT_RETRIES;
+  const maxRetries = opts.maxRetries;
   let budget = Math.min(maxTokens, MAX_OUTPUT_BUDGET);
   let lengthRetries = 0;
 
   for (let attempt = 0; ; attempt++) {
     try {
       const completion = await client.chat.completions.create({
-        model: env.AI_MODEL,
+        model: provider.model,
         max_tokens: budget,
         // Reasoning models (gpt-oss, qwen3) burn their whole output budget on
         // chain-of-thought unless steered. "minimal" is the default so replies
-        // are complete, fast, and free of leaked thinking; it's configurable per
-        // deployment and dropped entirely when unset (non-reasoning models).
-        ...(env.AI_REASONING_EFFORT
-          ? { reasoning_effort: env.AI_REASONING_EFFORT }
+        // are complete, fast, and free of leaked thinking; it's configurable
+        // per deployment and dropped entirely when unset (non-reasoning
+        // models or the backup gateway).
+        ...(provider.reasoningEffort
+          ? { reasoning_effort: provider.reasoningEffort }
           : {}),
         messages: [{ role: "system", content: system }, ...messages],
       });
@@ -239,6 +228,85 @@ export async function callAiText(
       const jitter = Math.floor(Math.random() * 400);
       await sleep(Math.min(baseMs, BACKOFF_CAP_MS) + jitter);
     }
+  }
+}
+
+/**
+ * Single AI entry point used by every flow (training, scoring, guide
+ * generation, employee tutor) via the official OpenAI SDK pointed at an
+ * OpenAI-compatible gateway. When no API key is configured (local
+ * development), a canned Indonesian reply is returned instead, keeping the
+ * flow functional without a network call — production requires the key.
+ *
+ * Resilience ladder (industry-standard failover):
+ *   1. Primary gateway — transient failures retried up to `options.maxRetries`
+ *      (default 10), plus in-call output-budget repair.
+ *   2. If the primary STILL fails (and the request wasn't aborted by the
+ *      client), the configured backup gateway (AI_BACKUP_*) is tried with a
+ *      short bounded retry budget before an error is surfaced to the user.
+ * Permanent provider errors (4xx other than 429, aborts) and unknown errors
+ * propagate unchanged when no backup is configured, so the caller's own
+ * error handling / Indonesian surface stays in control.
+ */
+export async function callAiText(
+  env: Env,
+  system: string,
+  messages: AiMessage[],
+  maxTokens: number,
+  options: {
+    timeoutMs?: number;
+    maxRetries?: number;
+    fallbackReply: string;
+  } = {
+    timeoutMs: 60_000,
+    fallbackReply: "",
+  },
+): Promise<AiCallResult> {
+  const apiKey = env.AI_API_KEY?.trim() || env.OPENROUTER_API_KEY?.trim();
+  if (!apiKey) {
+    return {
+      text: options.fallbackReply,
+      tokensIn: 0,
+      tokensOut: 0,
+      finishReason: "stop",
+    };
+  }
+
+  const timeoutMs = options.timeoutMs ?? 60_000;
+  const primary: ProviderConfig = {
+    apiKey,
+    baseURL: resolveAiBaseUrl(env),
+    model: env.AI_MODEL,
+    reasoningEffort: env.AI_REASONING_EFFORT,
+  };
+
+  const backupKey = env.AI_BACKUP_API_KEY?.trim();
+  const backupBase = env.AI_BACKUP_BASE_URL?.trim();
+  const backupModel = env.AI_BACKUP_MODEL?.trim();
+  const backup: ProviderConfig | null =
+    backupKey && backupBase && backupModel
+      ? { apiKey: backupKey, baseURL: backupBase, model: backupModel }
+      : null;
+
+  try {
+    return await runProvider(primary, system, messages, maxTokens, {
+      timeoutMs,
+      maxRetries: options.maxRetries ?? DEFAULT_MAX_TRANSIENT_RETRIES,
+    });
+  } catch (err) {
+    // The user (or the request) is gone — nobody is left to fail over for.
+    if (!backup || err instanceof APIUserAbortError) {
+      throw err;
+    }
+
+    console.warn(
+      `[ai] primary provider exhausted all retries, failing over to backup model "${backup.model}":`,
+      err instanceof Error ? err.message : err,
+    );
+    return await runProvider(backup, system, messages, maxTokens, {
+      timeoutMs,
+      maxRetries: BACKUP_MAX_RETRIES,
+    });
   }
 }
 

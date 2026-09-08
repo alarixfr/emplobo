@@ -180,7 +180,7 @@ Redis        : Upstash
 | **Next.js 15 + Express split** | UI di Next; AI endpoints butuh rate-limit/cooldown/cache konsisten di proses Node panjang (Express) |
 | **Clerk B2B Organizations** | Multi-tenant org/role/invite/session tanpa custom auth — kurangi attack surface |
 | **Prisma + Neon** | Schema typed, migrasi jelas; Neon pooled untuk runtime, direct URL untuk migrate |
-| **Hack Club AI proxy (gpt-oss-safeguard-20b) + Upstash** | AI trainer/tutor default ke `openai/gpt-oss-safeguard-20b` via proxy OpenAI-compatible (dipakai lewat OpenAI SDK resmi). Model bisa diganti via `AI_MODEL`; satu gateway API untuk akses model, Redis untuk rate limit & cache guide |
+| **Hack Club AI proxy (gpt-oss-safeguard-20b) + Upstash** | AI trainer/tutor default ke `openai/gpt-oss-safeguard-20b` via proxy OpenAI-compatible (dipakai lewat OpenAI SDK resmi). Model bisa diganti via `AI_MODEL`; satu gateway API untuk akses model, Redis untuk rate limit & cache guide. **Failover otomatis**: jika gateway utama tetap gagal setelah seluruh retry, panggilan dialihkan ke gateway cadangan OpenAI-compatible (`AI_BACKUP_BASE_URL`/`AI_BACKUP_API_KEY`/`AI_BACKUP_MODEL`) sebelum error sampai ke pengguna |
 
 ### Dependencies Utama
 
@@ -688,7 +688,7 @@ GET    /api/employees                     # per-employee aggregates (assignments
 > admin. Rate limit tetap ditegakkan oleh Redis; tabel ini murni untuk
 > audit/statistik dan tidak pernah dipakai untuk enforcement.
 
-Training Room lock/heartbeat/messages sudah tersedia di Section 4, termasuk observer mode saat lock dipakai admin lain, server cooldown 2 detik, dan rate limit per user. Step 5 (Guide Generation) sudah aktif dengan validasi JSON ketat, retry sekali untuk output model invalid, rate limit (3x/jam per role) yang **refundable** — jika generasi gagal, jatah kembali dikembalikan, dan penulisan DB atomik via transaction. Semua panggilan AI (training, scoring, guide gen, chatting) otomatis di-retry hingga 10 kali pada kegagalan sementara (5xx, timeout koneksi, 429 dengan Retry-After singkat, output terpotong) dengan exponential backoff, sebelum dinyatakan error. Step 6, 7, dan 8 juga aktif: admin bisa assign employee dari role detail page, employee bisa membuka modul sendiri, membaca chapter, mengerjakan kuis dengan grading server-side tanpa kebocoran kunci jawaban, serta berdialog langsung dengan AI Tutor 24/7 yang di-grounded pada SOP bisnis.
+Training Room lock/heartbeat/messages sudah tersedia di Section 4, termasuk observer mode saat lock dipakai admin lain, server cooldown 2 detik, dan rate limit per user. Step 5 (Guide Generation) sudah aktif dengan validasi JSON ketat, retry sekali untuk output model invalid, rate limit (3x/jam per role) yang **refundable** — jika generasi gagal, jatah kembali dikembalikan, dan penulisan DB atomik via transaction. Semua panggilan AI (training, scoring, guide gen, chatting) otomatis di-retry hingga 10 kali pada kegagalan sementara (5xx, timeout koneksi, 429 dengan Retry-After singkat, output terpotong) dengan exponential backoff, lalu dialihkan ke **gateway AI cadangan** (failover) sebelum dinyatakan error. Step 6, 7, dan 8 juga aktif: admin bisa assign employee dari role detail page, employee bisa membuka modul sendiri, membaca chapter, mengerjakan kuis dengan grading server-side tanpa kebocoran kunci jawaban, serta berdialog langsung dengan AI Tutor 24/7 yang di-grounded pada SOP bisnis.
 
 ### Example Request
 
