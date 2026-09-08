@@ -84,7 +84,11 @@ export function createRateLimiter(env: Env, config: LimiterConfig): RateLimiter 
       redis,
       limiter: Ratelimit.slidingWindow(config.limit, `${config.windowSeconds} s`),
       prefix: config.prefix,
-      analytics: true,
+      // Analytics OFF: it writes a per-window `events:*` zset per prefix that
+      // persists without a TTL (verified on prod — 27 orphaned zsets), an
+      // unbounded junk accumulator. Nothing in this codebase reads analytics
+      // data, so the write cost buys nothing.
+      analytics: false,
     });
 
     return async (key) => {
@@ -136,27 +140,40 @@ export function createRefundableRateLimiter(
         const startKey = `${config.prefix}:${key}:start`;
         const now = Date.now();
 
-        const startRaw = await redis.get<string>(startKey);
-        const start = startRaw ? Number(startRaw) : null;
+        // The whole acquire — window-rollover reset, INCR, first-use EXPIRE —
+        // must be ONE atomic step. Doing GET-then-INCR across round trips was
+        // a check-then-write race: two concurrent acquires straddling the
+        // window rollover could both reset the bucket and clobber an
+        // increment, letting guide-gen exceed its 3/hour quota.
+        const [ok, start] = await redis.eval<
+          string[],
+          [number, number, number]
+        >(
+          `local now = tonumber(ARGV[1])
+           local windowMs = tonumber(ARGV[2])
+           local limit = tonumber(ARGV[3])
+           local ttl = tonumber(ARGV[4])
+           local start = tonumber(redis.call('GET', KEYS[2]) or '0')
+           if start == 0 or (now - start) >= windowMs then
+             redis.call('SET', KEYS[2], now, 'EX', ttl)
+             redis.call('SET', KEYS[1], 1, 'EX', ttl)
+             return {1, now, 1}
+           end
+           local count = redis.call('INCR', KEYS[1])
+           if count == 1 then
+             redis.call('EXPIRE', KEYS[1], ttl)
+           end
+           if count <= limit then
+             return {1, start, count}
+           end
+           return {0, start, count}`,
+          [countKey, startKey],
+          [String(now), String(windowMs), String(config.limit), String(config.windowSeconds)],
+        );
 
-        // The hour window has fully elapsed — swap in a fresh bucket so the
-        // quota genuinely resets (and an old near-full bucket can't block the
-        // new hour because refunds happened later in the previous one).
-        if (start !== null && now - start >= windowMs) {
-          await redis.set(startKey, String(now), { ex: config.windowSeconds });
-          await redis.set(countKey, "1", { ex: config.windowSeconds });
-          return { ok: true };
-        }
+        if (ok === 1) return { ok: true };
 
-        const count = await redis.incr(countKey);
-        if (count === 1) {
-          await redis.set(startKey, String(now), { ex: config.windowSeconds });
-          await redis.expire(countKey, config.windowSeconds);
-        }
-
-        if (count <= config.limit) return { ok: true };
-
-        const resetAt = start ?? now;
+        const resetAt = start || now;
         return {
           ok: false,
           retryAfter: Math.max(1, Math.ceil((resetAt + windowMs - now) / 1000)),
