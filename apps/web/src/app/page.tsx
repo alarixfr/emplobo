@@ -581,14 +581,9 @@ export default function HomePage() {
               <div className="relative mt-16 grid items-center gap-8 md:grid-cols-2 md:gap-12">
                 <Reveal x={-40} y={16} className="md:order-1">
                   <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] md:p-5">
-                    <div className="flex items-center justify-between gap-2">
                       <p className="font-label-caps text-label-caps text-secondary">
                         TRAINING · BARISTA
                       </p>
-                      <span className="rounded-full border border-outline-variant bg-surface-container-low px-2.5 py-0.5 font-label-caps text-label-caps text-on-surface-variant">
-                        DRAFT
-                      </span>
-                    </div>
                     <div className="mt-4 space-y-3">
                       <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-ai-border bg-ai-accent p-3 text-sm text-on-surface">
                         Masih ada celah di materi ini: bagaimana SOP menutup mesin
@@ -635,14 +630,9 @@ export default function HomePage() {
               <div className="relative mt-16 grid items-center gap-8 md:grid-cols-2 md:gap-12">
                 <Reveal x={40} y={16} className="md:order-2">
                   <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] md:p-5">
-                    <div className="flex items-center justify-between gap-2">
                       <p className="font-label-caps text-label-caps text-secondary">
                         BRAIN READINESS · BARISTA
                       </p>
-                      <span className="rounded-full bg-status-ready/10 px-2.5 py-0.5 font-label-caps text-label-caps text-status-ready">
-                        READY
-                      </span>
-                    </div>
                     <div className="mt-4 flex items-center gap-5">
                       <div className="relative inline-flex h-20 w-20 shrink-0 items-center justify-center">
                         <svg
@@ -717,14 +707,9 @@ export default function HomePage() {
               <div className="relative mt-16 grid items-center gap-8 md:grid-cols-2 md:gap-12">
                 <Reveal x={-40} y={16} className="md:order-1">
                   <div className="rounded-xl border border-outline-variant bg-surface-container-lowest p-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] md:p-5">
-                    <div className="flex items-center justify-between gap-2">
                       <p className="font-label-caps text-label-caps text-secondary">
                         LEARNING · BARISTA
                       </p>
-                      <span className="rounded-full bg-primary-fixed/50 px-2.5 py-0.5 font-label-caps text-label-caps text-on-primary-fixed-variant">
-                        PANDUAN V2
-                      </span>
-                    </div>
                     <ul className="mt-4 space-y-2">
                       <li className="flex items-center gap-3 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2.5">
                         <span className="material-symbols-outlined ms-fill shrink-0 text-[18px] text-primary">
@@ -740,9 +725,6 @@ export default function HomePage() {
                         </span>
                         <span className="min-w-0 font-body-sm text-body-sm text-on-surface">
                           2 · Mesin &amp; Peralatan
-                        </span>
-                        <span className="ml-auto shrink-0 rounded-full bg-status-ready/10 px-2 py-0.5 font-label-caps text-label-caps text-status-ready">
-                          KUIS 90%
                         </span>
                       </li>
                       <li className="flex items-center gap-3 rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2.5 opacity-70">
