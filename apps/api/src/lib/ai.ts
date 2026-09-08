@@ -62,6 +62,10 @@ const BACKOFF_CAP_MS = 15_000;
 // another minute of backoff on top of the primary's exhausted retries.
 const BACKUP_MAX_RETRIES = 3;
 
+// One-time notice when AI_BACKUP_* is only partially configured: failover is
+// then simply disabled (never a boot failure — the vars are fully optional).
+let warnedPartialBackup = false;
+
 // A single OpenAI-compatible endpoint (primary or backup) fully described by
 // env. Backup is enabled only when every AI_BACKUP_* var is set.
 type ProviderConfig = {
@@ -283,10 +287,19 @@ export async function callAiText(
   const backupKey = env.AI_BACKUP_API_KEY?.trim();
   const backupBase = env.AI_BACKUP_BASE_URL?.trim();
   const backupModel = env.AI_BACKUP_MODEL?.trim();
-  const backup: ProviderConfig | null =
-    backupKey && backupBase && backupModel
-      ? { apiKey: backupKey, baseURL: backupBase, model: backupModel }
-      : null;
+  let backup: ProviderConfig | null = null;
+  if (backupKey && backupBase && backupModel) {
+    backup = { apiKey: backupKey, baseURL: backupBase, model: backupModel };
+  } else if (backupKey || backupBase || backupModel) {
+    // Fully optional: a partial AI_BACKUP_* config just means "no failover",
+    // not a broken deployment. Warn once so the misconfiguration is visible.
+    if (!warnedPartialBackup) {
+      warnedPartialBackup = true;
+      console.warn(
+        "[ai] AI_BACKUP_* is partially configured (base url, api key, and model are all required) — backup failover is disabled",
+      );
+    }
+  }
 
   try {
     return await runProvider(primary, system, messages, maxTokens, {

@@ -58,21 +58,6 @@ const envSchema = z
         message: "required when NODE_ENV=production",
       });
     }
-    // Partial backup config is worse than none: failover would be silently
-    // disabled at the call site. Fail loudly at boot instead.
-    const backupSet = [
-      env.AI_BACKUP_BASE_URL,
-      env.AI_BACKUP_API_KEY,
-      env.AI_BACKUP_MODEL,
-    ].filter((v) => Boolean(v && v.trim()));
-    if (backupSet.length > 0 && backupSet.length < 3) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["AI_BACKUP_BASE_URL"],
-        message:
-          "backup failover is all-or-nothing: set AI_BACKUP_BASE_URL, AI_BACKUP_API_KEY, and AI_BACKUP_MODEL together (or none of them)",
-      });
-    }
   });
 
 export type Env = z.infer<typeof envSchema>;
