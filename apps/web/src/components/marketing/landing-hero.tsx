@@ -253,15 +253,16 @@ export function LandingHero() {
       {/* ── The cockpit: live product mechanism, animated on load ── */}
       <div className="cockpit mx-auto w-full max-w-4xl px-4 pb-16 md:px-10 md:pb-20">
         <BorderGlow
-          edgeSensitivity={20}
-          glowColor="136 30 32"
+          edgeSensitivity={10}
+          glowColor="136 36 34"
           backgroundColor="#ffffff"
           borderRadius={8}
-          glowRadius={28}
-          glowIntensity={1.15}
-          coneSpread={20}
+          glowRadius={58}
+          glowIntensity={2.2}
+          coneSpread={32}
+          fillOpacity={0.65}
           animated={!prefersReducedMotion()}
-          colors={["#3b6847", "#7cc48f", "#2d5a3a"]}
+          colors={["#2d5a3a", "#7cc48f", "#144225"]}
         >
           <div className="flex items-center justify-between rounded-t-[8px] border-b border-outline-variant bg-surface-container-low px-4 py-3">
             <div className="flex items-center gap-1.5" aria-hidden>
@@ -269,7 +270,6 @@ export function LandingHero() {
               <span className="h-2.5 w-2.5 rounded-full bg-surface-container-highest" />
               <span className="h-2.5 w-2.5 rounded-full bg-status-locked/70" />
             </div>
-            <p className="font-label-caps text-label-caps text-secondary">EMPLOBO · BARISTA</p>
           </div>
 
           <div className="grid gap-4 p-4 text-left md:grid-cols-12 md:p-6">
