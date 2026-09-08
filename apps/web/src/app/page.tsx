@@ -91,37 +91,31 @@ const FEATURES = [
     icon: "forum",
     title: "Training Room",
     desc: "Latih AI per role lewat percakapan. AI bertanya untuk mengisi celah pengetahuan bisnis Anda.",
-    tag: "CHAT",
   },
   {
     icon: "speed",
     title: "Skor kesiapan otomatis",
     desc: "AI mengukur kelengkapan materi 0–100 dan memberi tahu saat sebuah role siap dibuatkan guide.",
-    tag: "0–100",
   },
   {
     icon: "auto_stories",
     title: "Guide ber-bab + kuis",
     desc: "Pengetahuan tersusun menjadi panduan terstruktur lengkap dengan evaluasi pemahaman karyawan.",
-    tag: "STRUCTURED",
   },
   {
     icon: "support_agent",
     title: "AI Tutor 24/7",
     desc: "Karyawan bertanya kapan pun, jawaban selalu kembali ke SOP yang benar-benar diajarkan. AI tidak mengarang.",
-    tag: "GROUNDED",
   },
   {
     icon: "inventory",
     title: "Knowledge Library",
     desc: "Unggah dokumen SOP dan catatan. AI memakainya hanya setelah Anda konfirmasi.",
-    tag: "DOCS",
   },
   {
     icon: "monitor_heart",
     title: "Dashboard progres",
     desc: "Pantau kelulusan per role, skor kuis, dan progress tiap karyawan secara real-time.",
-    tag: "INSIGHT",
   },
 ];
 
@@ -435,14 +429,9 @@ export default function HomePage() {
                 key={f.title}
                 className="group rounded-xl border border-outline-variant bg-surface-container-lowest p-7 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-surface-bright hover:shadow-[0_16px_40px_-20px_rgba(20,66,37,0.22)] md:p-8"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-container transition-transform duration-300 group-hover:scale-110">
-                    <span className="material-symbols-outlined text-[22px] text-on-primary-container">
-                      {f.icon}
-                    </span>
-                  </div>
-                  <span className="rounded-full border border-outline-variant px-2.5 py-1 font-label-caps text-[10px] text-secondary transition-colors group-hover:border-primary/30 group-hover:text-primary">
-                    {f.tag}
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary-container transition-transform duration-300 group-hover:scale-110">
+                  <span className="material-symbols-outlined text-[22px] text-on-primary-container">
+                    {f.icon}
                   </span>
                 </div>
                 <h3 className="mt-5 font-headline-sm text-headline-sm text-primary">
